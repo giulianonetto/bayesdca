@@ -32,9 +32,7 @@ simulate_diagnostic_test_data <- function(B = 100,
   tp <- rbinom(n = B, size = d, prob = true_se)
   tn <- rbinom(n = B, size = N - d, prob = true_sp)
 
-  df <- data.frame(
-    N, d, tp, tn
-  )
+  df <- data.frame(N, d, tp, tn)
 
   if (isTRUE(keep_pars)) {
     df <- cbind(df, true_p, true_se, true_sp)
