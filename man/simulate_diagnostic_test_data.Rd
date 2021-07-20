@@ -10,7 +10,7 @@ simulate_diagnostic_test_data(
   true_p = 0.2,
   true_se = 0.9,
   true_sp = 0.9,
-  keep_pars = TRUE
+  keep_true_pars = TRUE
 )
 }
 \arguments{
@@ -23,6 +23,9 @@ simulate_diagnostic_test_data(
 \item{true_se}{Proportion indicating true sensitivity in each dataset.}
 
 \item{true_sp}{Proportion indicating true specificity in each dataset.}
+
+\item{keep_true_pars}{Logical indicating whether to keep true
+parameter values in the output dataframe.}
 }
 \value{
 A Bx7 data frame with simulated data and provided parameters.

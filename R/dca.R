@@ -29,6 +29,9 @@
   if (is.null(thresholds)) {
     thresholds <- 0
   }
+
+  thresholds <- pmin(thresholds, 0.999)  # odds(1) = Inf
+
   n_thresholds <- length(thresholds)
 
   standata <- list(
@@ -43,12 +46,14 @@
     thresholds = array(thresholds)
   )
 
-  if (model_type == "correlated") {
+  if (model_type %in% c("correlated", "c")) {
     .model <- stanmodels$dca_correlated
-  } else if (model_type == "independent") {
+  } else if (model_type %in% c("independent", "i")) {
     .model <- stanmodels$dca_independent
+  } else if (model_type %in% c("independent conjugate", "ic")) {
+    .model <- stanmodels$dca_independent_conjugate
   } else {
-    stop("Only 'correlated' or 'independent' models implemented so far.")
+    stop("Invalid `model_type`.")
   }
 
   stanfit <- rstan::sampling(.model,
@@ -180,7 +185,8 @@ plot.DiagTestDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
       ggplot2::geom_ribbon(ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`),
                            alpha = .5) +
       ggplot2::geom_line(ggplot2::aes(y = mean)) +
-      ggplot2::theme_bw()
+      ggplot2::theme_bw() +
+      ggplot2::ylim(-0.02, NA)
   } else if (type %in% c("p", "parameters")) {
     .p <- obj$model_parameters %>%
       ggplot2::ggplot(ggplot2::aes(x = par_name)) +

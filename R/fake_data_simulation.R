@@ -34,7 +34,7 @@ simulate_diagnostic_test_data <- function(B = 100,
 
   df <- data.frame(N, d, tp, tn)
 
-  if (isTRUE(keep_pars)) {
+  if (isTRUE(keep_true_pars)) {
     df <- cbind(df, true_p, true_se, true_sp)
   }
 
