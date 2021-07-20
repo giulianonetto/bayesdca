@@ -29,8 +29,8 @@ simulate_diagnostic_test_data <- function(B = 100,
                                           keep_true_pars = TRUE) {
 
   d <- rbinom(n = B, size = N, prob = true_p)
-  tp <- rbinom(n = B, size = fake_d, prob = true_se)
-  tn <- rbinom(n = B, size = N - fake_d, prob = true_sp)
+  tp <- rbinom(n = B, size = d, prob = true_se)
+  tn <- rbinom(n = B, size = N - d, prob = true_sp)
 
   df <- data.frame(
     N, d, tp, tn
