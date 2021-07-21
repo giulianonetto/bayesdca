@@ -7,3 +7,4 @@ src
 .config
 .local
 .bash_history
+*.html

@@ -101,7 +101,9 @@ dca_diagnostic_test <- function(N, d, tp, tn,
     ...
   )
 
-  fit_summary <- rstan::summary(fit)$summary %>%
+  fit_summary <- rstan::summary(
+    fit, probs = c(0.025, 0.1, .25, .75, 0.9, 0.975)
+  )$summary %>%
     data.frame(check.names = FALSE) %>%
     tibble::rownames_to_column("par_name") %>%
     tibble::as_tibble() %>%
@@ -111,7 +113,8 @@ dca_diagnostic_test <- function(N, d, tp, tn,
     dplyr::mutate(
       i = as.numeric(stringr::str_extract(par_name, "\\d+")),
       thr = thresholds[i]
-    )
+    ) %>%
+    dplyr::select(par_name, thr, dplyr::everything(), -i)
   model_parameters <- fit_summary %>%
     dplyr::filter(
       par_name %in% c("p", "Se", "Sp")
@@ -185,6 +188,10 @@ plot.DiagTestDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
       ggplot2::geom_ribbon(ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`),
                            alpha = .5) +
       ggplot2::geom_line(ggplot2::aes(y = mean)) +
+      ggplot2::geom_hline(
+        yintercept = 0, linetype = 'longdash',
+        color = 'gray30', lwd = 0.8
+      ) +
       ggplot2::theme_bw() +
       ggplot2::ylim(-0.02, NA)
   } else if (type %in% c("p", "parameters")) {
