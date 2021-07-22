@@ -108,6 +108,11 @@ dca_diagnostic_test <- function(N, d, tp, tn,
     tibble::rownames_to_column("par_name") %>%
     tibble::as_tibble() %>%
     dplyr::select(-se_mean)
+
+  model_parameters <- fit_summary %>%
+    dplyr::filter(
+      par_name %in% c("p", "Se", "Sp")
+    )
   net_benefit <- fit_summary %>%
     dplyr::filter(stringr::str_detect(par_name, "net_benefit")) %>%
     dplyr::mutate(
@@ -115,13 +120,17 @@ dca_diagnostic_test <- function(N, d, tp, tn,
       thr = thresholds[i]
     ) %>%
     dplyr::select(par_name, thr, dplyr::everything(), -i)
-  model_parameters <- fit_summary %>%
-    dplyr::filter(
-      par_name %in% c("p", "Se", "Sp")
-    )
+  treat_all <- fit_summary %>%
+    dplyr::filter(stringr::str_detect(par_name, "treat_all")) %>%
+    dplyr::mutate(
+      i = as.numeric(stringr::str_extract(par_name, "\\d+")),
+      thr = thresholds[i]
+    ) %>%
+    dplyr::select(par_name, thr, dplyr::everything(), -i)
 
   output_data <- list(
-    net_benefit = net_benefit, model_parameters = model_parameters,
+    model_parameters = model_parameters,
+    net_benefit = net_benefit, treat_all = treat_all,
     N = N, d = d, tp = tp, tn = tn,
     prior_p = prior_p, prior_se = prior_se, prior_sp = prior_sp,
     thresholds = thresholds,
@@ -192,8 +201,21 @@ plot.DiagTestDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
         yintercept = 0, linetype = 'longdash',
         color = 'gray30', lwd = 0.8
       ) +
+      ggplot2::geom_line(
+        data = obj$treat_all,
+        ggplot2::aes(thr, mean, color = "Treat all")
+      ) +
+      ggplot2::geom_ribbon(
+        data = obj$treat_all, alpha = .3, fill = "red",
+        ggplot2::aes(thr, ymax=`97.5%`, ymin=`2.5%`)
+      ) +
       ggplot2::theme_bw() +
-      ggplot2::ylim(-0.02, NA)
+      ggplot2::coord_cartesian(ylim = c(-0.02, NA)) +
+      ggplot2::scale_x_continuous(
+        labels = scales::percent_format(1)
+      ) +
+      ggplot2::labs(x = "Threshold", y = "Net Benefit",
+                    color = NULL)
   } else if (type %in% c("p", "parameters")) {
     .p <- obj$model_parameters %>%
       ggplot2::ggplot(ggplot2::aes(x = par_name)) +

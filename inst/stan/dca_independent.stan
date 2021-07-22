@@ -35,8 +35,11 @@ model {
 generated quantities{
 
   vector[n_thresholds] net_benefit;
-  for (i in 1:n_thresholds)
+  vector[n_thresholds] treat_all;
+  for (i in 1:n_thresholds) {
     net_benefit[i] = Se*p - (1-p)*(1-Sp)*(thresholds[i]/(1-thresholds[i]));
+    treat_all[i] = 1*p - (1-p)*(1-0)*(thresholds[i]/(1-thresholds[i]));
+  }
 
 }
 
