@@ -10,7 +10,7 @@ simulate_diagnostic_test_data(
   true_p = 0.2,
   true_se = 0.9,
   true_sp = 0.9,
-  keep_true_pars = TRUE
+  keep_true_pars = FALSE
 )
 }
 \arguments{
