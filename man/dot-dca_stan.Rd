@@ -11,7 +11,7 @@
   tn,
   B = NULL,
   thresholds = seq(0, 0.5, 0.01),
-  model_type = "mo",
+  model_type = "ic",
   prior_p = c(1, 1),
   prior_se = c(1, 1),
   prior_sp = c(1, 1),

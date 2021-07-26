@@ -11,7 +11,7 @@ dca_diagnostic_test(
   tn,
   thresholds = seq(0, 0.5, 0.01),
   keep_fit = FALSE,
-  model_type = "correlated",
+  model_type = "ic",
   prior_p = c(1, 1),
   prior_se = c(1, 1),
   prior_sp = c(1, 1),

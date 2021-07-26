@@ -20,7 +20,7 @@
 #'
 .dca_stan <- function(N, d, tp, tn, B = NULL,
                       thresholds = seq(0, 0.5, 0.01),
-                      model_type = "mo",
+                      model_type = "ic",
                       prior_p = c(1, 1),
                       prior_se = c(1, 1),
                       prior_sp = c(1, 1),
@@ -92,7 +92,7 @@
 dca_diagnostic_test <- function(N, d, tp, tn,
                                 thresholds = seq(0, 0.5, 0.01),
                                 keep_fit = FALSE,
-                                model_type = "correlated",
+                                model_type = "ic",
                                 prior_p = c(1, 1),
                                 prior_se = c(1, 1),
                                 prior_sp = c(1, 1),
@@ -363,6 +363,9 @@ plot.PredModelDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
       ggplot2::scale_x_continuous(
         labels = scales::percent_format(1)
       ) +
+      ggplot2::scale_y_continuous(
+        breaks = scales::pretty_breaks()
+      ) +
       ggplot2::labs(x = "Threshold", y = "Net Benefit",
                     color = NULL)
   } else if (type %in% c("p", "parameters")) {
@@ -380,6 +383,71 @@ plot.PredModelDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
                                   breaks = scales::pretty_breaks()) +
       ggplot2::labs(x = NULL, y = NULL)
   } else {
+    stop("Invalid 'type' argument.")
+  }
+
+  if (isTRUE(just_df)) return(.p$data)
+
+  return(.p)
+}
+
+#' @title Plot DCA list
+#'
+#' @param ... Fits to plot
+#' @param type Either "net benefit" (alias "nb" or "dca") or "parameters"
+#' (alias "p"). If net benefit, plots estimated net benefit against
+#' thresholds (DCA); if parameters, plots estimated prevalence,
+#' sensitivity, and specificity.
+#' @importFrom magrittr %>%
+#' @export
+plot_dca_list <- function(..., type = "nb", just_df=FALSE) {
+  if (type %in% c("nb", "net benefit")) {
+    fit_list <- list(...)
+
+    if (is.null(names(fit_list))) {
+      stop("Fits must have names.")
+    }
+
+    plot_data <- purrr::map(fit_list, ~ .x$net_benefit) %>%
+      dplyr::bind_rows(.id = "fit_name")
+
+    ref_fit <- names(fit_list)[1]
+    treat_all_data <- fit_list[[ref_fit]]$treat_all %>%
+      dplyr::mutate(fit_name = "treat all")
+
+    .colors <- paletteer::paletteer_d("RColorBrewer::Dark2", n = length(fit_list))
+    names(.colors) <- names(fit_list)
+    .colors <- c(.colors, "treat all" = "black", "treat none" = "gray60")
+
+    .p <- plot_data %>%
+      ggplot2::ggplot(ggplot2::aes(x = thr)) +
+      ggplot2::geom_ribbon(ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`,
+                                        fill = fit_name),
+                           alpha = 0.3) +
+      ggplot2::geom_ribbon(data = treat_all_data,
+                           ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`),
+                           alpha = 0.3) +
+      ggplot2::geom_line(ggplot2::aes(y = mean, color = fit_name)) +
+      ggplot2::geom_line(data = treat_all_data,
+                         ggplot2::aes(y = mean, color = fit_name)) +
+      ggplot2::geom_hline(
+        ggplot2::aes(color = "treat none", yintercept = 0),
+        linetype = 'longdash', lwd = 0.8
+      ) +
+      ggplot2::guides(fill = "none") +
+      ggplot2::theme_bw() +
+      ggplot2::coord_cartesian(ylim = c(-0.02, NA)) +
+      ggplot2::scale_x_continuous(
+        labels = scales::percent_format(1)
+      ) +
+      ggplot2::scale_y_continuous(
+        breaks = scales::pretty_breaks()
+      ) +
+      ggplot2::scale_color_manual(values = .colors) +
+      ggplot2::scale_fill_manual(values = .colors) +
+      ggplot2::labs(x = "Threshold", y = "Net Benefit",
+                    color = NULL)
+  }  else {
     stop("Invalid 'type' argument.")
   }
 
