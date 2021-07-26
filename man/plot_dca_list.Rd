@@ -2,12 +2,12 @@
 % Please edit documentation in R/dca.R
 \name{plot_dca_list}
 \alias{plot_dca_list}
-\title{Merge DCA Plots}
+\title{Plot DCA list}
 \usage{
 plot_dca_list(..., type = "nb", just_df = FALSE)
 }
 \arguments{
-\item{...}{DiagTestDCA object}
+\item{...}{Fits to plot}
 
 \item{type}{Either "net benefit" (alias "nb" or "dca") or "parameters"
 (alias "p"). If net benefit, plots estimated net benefit against
@@ -15,5 +15,5 @@ thresholds (DCA); if parameters, plots estimated prevalence,
 sensitivity, and specificity.}
 }
 \description{
-Merge DCA Plots
+Plot DCA list
 }

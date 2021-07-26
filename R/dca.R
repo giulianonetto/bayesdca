@@ -92,6 +92,7 @@
 dca_diagnostic_test <- function(N, d, tp, tn,
                                 thresholds = seq(0, 0.5, 0.01),
                                 keep_fit = FALSE,
+                                keep_draws = TRUE,
                                 model_type = "ic",
                                 prior_p = c(1, 1),
                                 prior_se = c(1, 1),
@@ -143,6 +144,10 @@ dca_diagnostic_test <- function(N, d, tp, tn,
 
   if (isTRUE(keep_fit)) {
     output_data[['fit']] <- fit
+  }
+
+  if(isTRUE(keep_draws)) {
+    output_data[['draws']] <- rstan::extract(fit)
   }
 
   .output <- structure(output_data, class = "DiagTestDCA")
@@ -483,4 +488,65 @@ get_thr_data <- function(df,
     tidyr::unnest_wider(col = thr_perf) %>%
     dplyr::select(N, d, tp, tn, thresholds)
   return(thr_data)
+}
+
+#' @title Plot Delta Net Benefit
+#' @importFrom magrittr %>%
+#' @import patchwork
+#' @export
+delta_nb <- function() {
+
+  d1 <- simulate_diagnostic_test_data(B = 1, N = 5000,
+                                      true_p = 0.1,
+                                      true_se = 0.95,
+                                      true_sp=0.7)
+  d2 <- simulate_diagnostic_test_data(B = 1, N = 5000,
+                                      true_p = 0.1,
+                                      true_se = 0.9,
+                                      true_sp=0.8)
+  fit1 <- dca_diagnostic_test(N = d1$N,
+                              d = d1$d,
+                              tp = d1$tp,
+                              tn = d1$tn)
+  fit2 <- dca_diagnostic_test(N = d2$N,
+                              d = d2$d,
+                              tp = d2$tp,
+                              tn = d2$tn)
+
+
+  true_nb1 <- sapply(fit1$thresholds,function(i) {
+    .1*.95 - (1-.1)*(1-.7)*(i/(1-i))
+  })
+  true_nb2 <- sapply(fit2$thresholds,function(i) {
+    .1*.9 - (1-.1)*(1-.8)*(i/(1-i))
+  })
+  true_delta <- purrr::map2_dbl(true_nb2, true_nb1, ~{
+    .x-.y
+  })
+
+  d <- fit2$draws$net_benefit - fit1$draws$net_benefit
+  q <- matrixStats::colQuantiles(d, probs = c(.025, .975))
+  dp <- tibble::tibble(
+    thr = fit1$thresholds,
+    mean = colMeans(d),
+    `2.5%` = q[,'2.5%'],
+    `97.5%` = q[,'97.5%']
+  ) %>%
+    ggplot(aes(thr, y=mean,ymin=`2.5%`, ymax=`97.5%`)) +
+    geom_ribbon(alpha=.3) +
+    geom_line() +
+    theme_bw() +
+    scale_x_continuous(
+      labels = scales::percent_format(1)
+    ) +
+    geom_line(
+      aes(y = true_delta), col='red'
+    ) +
+    ggplot2::geom_hline(
+      yintercept = 0, linetype = 'longdash',
+      color = 'gray30', lwd = 0.8
+    )
+  dca <- bayesDCA::plot_dca_list(test1 = fit1, test2 = fit2)
+
+  dca | dp
 }

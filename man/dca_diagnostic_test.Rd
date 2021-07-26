@@ -11,6 +11,7 @@ dca_diagnostic_test(
   tn,
   thresholds = seq(0, 0.5, 0.01),
   keep_fit = FALSE,
+  keep_draws = TRUE,
   model_type = "ic",
   prior_p = c(1, 1),
   prior_se = c(1, 1),
