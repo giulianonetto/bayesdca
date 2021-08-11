@@ -97,7 +97,10 @@ dca_diagnostic_test <- function(N, d, tp, tn,
                                 prior_p = c(1, 1),
                                 prior_se = c(1, 1),
                                 prior_sp = c(1, 1),
+                                summary_probs = c(0.025, 0.975),
                                 refresh = 0, ...) {
+
+  thresholds <- pmin(thresholds, 0.99)
 
   fit <- .dca_stan(
     N = N, d = d, tp = tp, tn = tn, model_type = model_type,
@@ -107,12 +110,13 @@ dca_diagnostic_test <- function(N, d, tp, tn,
   )
 
   fit_summary <- rstan::summary(
-    fit, probs = c(0.025, 0.1, .25, .75, 0.9, 0.975)
+    fit, probs = summary_probs
   )$summary %>%
     data.frame(check.names = FALSE) %>%
     tibble::rownames_to_column("par_name") %>%
     tibble::as_tibble() %>%
-    dplyr::select(-se_mean)
+    dplyr::select(-se_mean) %>%
+    dplyr::rename(estimate := mean)
 
   model_parameters <- fit_summary %>%
     dplyr::filter(
@@ -183,6 +187,7 @@ dca_predictive_model <- function(df,
                                  prior_p = c(1, 1),
                                  prior_se = c(1, 1),
                                  prior_sp = c(1, 1),
+                                 summary_probs = c(0.025, 0.975),
                                  refresh = 0, ...) {
 
   f <- function(i, n) lapply(i, function(k) rep(k, n))
@@ -198,12 +203,13 @@ dca_predictive_model <- function(df,
   )
 
   fit_summary <- rstan::summary(
-    fit, probs = c(0.025, 0.1, .25, .75, 0.9, 0.975)
+    fit, probs = summary_probs
   )$summary %>%
     data.frame(check.names = FALSE) %>%
     tibble::rownames_to_column("par_name") %>%
     tibble::as_tibble() %>%
-    dplyr::select(-se_mean)
+    dplyr::select(-se_mean) %>%
+    dplyr::rename(estimate := mean)
 
   model_parameters <- fit_summary %>%
     dplyr::filter(
@@ -252,7 +258,7 @@ print.DiagTestDCA <- function(obj, ...) {
       dplyr::filter(par_name == .param)
     paste0(
       .param, ": ",
-      round(info$mean*100, 1), "% [",
+      round(info$estimate*100, 1), "% [",
       round(info$`2.5%`*100, 1), "% \u2014 ",
       round(info$`97.5%`*100, 1), "%]"
     )
@@ -292,14 +298,14 @@ plot.DiagTestDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
       ggplot2::ggplot(ggplot2::aes(thr)) +
       ggplot2::geom_ribbon(ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`),
                            alpha = .5) +
-      ggplot2::geom_line(ggplot2::aes(y = mean)) +
+      ggplot2::geom_line(ggplot2::aes(y = estimate)) +
       ggplot2::geom_hline(
         yintercept = 0, linetype = 'longdash',
         color = 'gray30', lwd = 0.8
       ) +
       ggplot2::geom_line(
         data = obj$treat_all,
-        ggplot2::aes(thr, mean, color = "Treat all")
+        ggplot2::aes(thr, estimate, color = "Treat all")
       ) +
       ggplot2::geom_ribbon(
         data = obj$treat_all, alpha = .3, fill = "red",
@@ -317,7 +323,7 @@ plot.DiagTestDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
       ggplot2::ggplot(ggplot2::aes(x = par_name)) +
       ggplot2::geom_pointrange(
         ggplot2::aes(
-          y = mean,
+          y = estimate,
           ymin = `2.5%`, ymax = `97.5%`
         )
       ) +
@@ -405,7 +411,7 @@ plot.PredModelDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
 #' sensitivity, and specificity.
 #' @importFrom magrittr %>%
 #' @export
-plot_dca_list <- function(..., type = "nb", just_df=FALSE) {
+plot_dca_list <- function(..., type = "nb", data_only=FALSE) {
   if (type %in% c("nb", "net benefit")) {
     fit_list <- list(...)
 
@@ -432,9 +438,9 @@ plot_dca_list <- function(..., type = "nb", just_df=FALSE) {
       ggplot2::geom_ribbon(data = treat_all_data,
                            ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`),
                            alpha = 0.3) +
-      ggplot2::geom_line(ggplot2::aes(y = mean, color = fit_name)) +
+      ggplot2::geom_line(ggplot2::aes(y = estimate, color = fit_name)) +
       ggplot2::geom_line(data = treat_all_data,
-                         ggplot2::aes(y = mean, color = fit_name)) +
+                         ggplot2::aes(y = estimate, color = fit_name)) +
       ggplot2::geom_hline(
         ggplot2::aes(color = "treat none", yintercept = 0),
         linetype = 'longdash', lwd = 0.8
@@ -448,15 +454,21 @@ plot_dca_list <- function(..., type = "nb", just_df=FALSE) {
       ggplot2::scale_y_continuous(
         breaks = scales::pretty_breaks()
       ) +
-      ggplot2::scale_color_manual(values = .colors) +
-      ggplot2::scale_fill_manual(values = .colors) +
+      ggplot2::scale_color_manual(
+        values = .colors,
+        breaks = names(.colors)
+      ) +
+      ggplot2::scale_fill_manual(
+        values = .colors,
+        breaks = names(.colors)
+      ) +
       ggplot2::labs(x = "Threshold", y = "Net Benefit",
                     color = NULL)
   }  else {
     stop("Invalid 'type' argument.")
   }
 
-  if (isTRUE(just_df)) return(.p$data)
+  if (isTRUE(data_only)) return(.p$data)
 
   return(.p)
 }
@@ -494,7 +506,9 @@ get_thr_data <- function(df,
 #' @importFrom magrittr %>%
 #' @import patchwork
 #' @export
-delta_nb <- function() {
+example_delta_nb <- function() {
+
+  as_list = FALSE
 
   d1 <- simulate_diagnostic_test_data(B = 1, N = 5000,
                                       true_p = 0.1,
@@ -528,11 +542,11 @@ delta_nb <- function() {
   q <- matrixStats::colQuantiles(d, probs = c(.025, .975))
   dp <- tibble::tibble(
     thr = fit1$thresholds,
-    mean = colMeans(d),
+    estimate = colMeans(d),
     `2.5%` = q[,'2.5%'],
     `97.5%` = q[,'97.5%']
   ) %>%
-    ggplot(aes(thr, y=mean,ymin=`2.5%`, ymax=`97.5%`)) +
+    ggplot(aes(thr, y=estimate,ymin=`2.5%`, ymax=`97.5%`)) +
     geom_ribbon(alpha=.3) +
     geom_line() +
     theme_bw() +
@@ -545,8 +559,110 @@ delta_nb <- function() {
     ggplot2::geom_hline(
       yintercept = 0, linetype = 'longdash',
       color = 'gray30', lwd = 0.8
-    )
+    ) +
+    ggplot2::labs(x = "Threshold", y = "NB2 - NB1")
+
+  prob_better <- tibble::tibble(
+    thr = fit1$thresholds,
+    estimate = colMeans(d > 0)
+  ) %>%
+    ggplot(aes(thr, y=estimate)) +
+    geom_line() +
+    theme_bw() +
+    scale_x_continuous(
+      labels = scales::percent_format(1)
+    ) +
+    scale_y_continuous(
+      labels = scales::percent_format(1),
+      breaks = scales::pretty_breaks(10)
+    ) +
+    ggplot2::labs(x = "Threshold", y = "Pr(NB2 > NB1)")
+
   dca <- bayesDCA::plot_dca_list(test1 = fit1, test2 = fit2)
 
+  if (isTRUE(as_list)) {
+    return(list(dca = dca, delta = dp))
+  }
+
   dca | dp
+}
+
+
+#' @title Compare Net Benefit
+#' @param ... Pass two bayesDCA fit objects with names as they should appear in plots'
+#' legends (e.g. "Test one" = fit1, test2 = fit2).
+#' @param as_plot_list If TRUE, returns list of ggplot2 plots (default is FALSE).
+#' @return A figure of multiple plots
+#' ([`patchwork`](https://patchwork.data-imaginist.com/) object).
+#' @examples
+#'
+#'# Test 1: more specificity
+#'data1 <- simulate_diagnostic_test_data(B = 1, N = 5000,
+#'                                       true_p = 0.1, true_se = 0.9, true_sp = 0.8)
+#'# Test 2: more sensitivity
+#'data2 <- simulate_diagnostic_test_data(B = 1, N = 5000,
+#'                                       true_p = 0.1, true_se = 0.95, true_sp = 0.7)
+#'
+#'fit1 <- dca_diagnostic_test(N = data1$N, d = data1$d, tp = data1$tp, tn = data1$tn)
+#'fit2 <- dca_diagnostic_test(N = data2$N, d = data2$d, tp = data2$tp, tn = data2$tn)
+#'compare_net_benefit("More Spec" = fit1, "More Sens" = fit2)
+#'
+#' @importFrom magrittr %>%
+#' @import patchwork
+#' @export
+
+compare_net_benefit <- function(..., as_plot_list = FALSE) {
+
+  dots <- list(...)
+  d <- dots[[1]]$draws$net_benefit - dots[[2]]$draws$net_benefit
+  q <- matrixStats::colQuantiles(d, probs = c(.025, .975))
+  dp <- tibble::tibble(
+    thr = dots[[1]]$thresholds,
+    estimate = colMeans(d),
+    `2.5%` = q[,'2.5%'],
+    `97.5%` = q[,'97.5%']
+  ) %>%
+    ggplot2::ggplot(ggplot2::aes(thr, y=estimate,ymin=`2.5%`, ymax=`97.5%`)) +
+    ggplot2::geom_ribbon(alpha=.3) +
+    ggplot2::geom_line() +
+    ggplot2::theme_bw() +
+    ggplot2::scale_x_continuous(
+      labels = scales::percent_format(1)
+    ) +
+    ggplot2::geom_hline(
+      yintercept = 0, linetype = 'longdash',
+      color = 'gray30', lwd = 0.8
+    ) +
+    ggplot2::labs(
+      x = "Threshold",
+      y = '\u0394 NB',
+      subtitle = paste0(names(dots)[1], ' \u2212 ', names(dots)[2])
+    )
+
+  prob_better <- tibble::tibble(
+    thr = dots[[1]]$thresholds,
+    estimate = colMeans(d > 0)
+  ) %>%
+    ggplot2::ggplot(ggplot2::aes(thr, y = estimate)) +
+    ggplot2::geom_line() +
+    ggplot2::theme_bw() +
+    ggplot2::scale_x_continuous(
+      labels = scales::percent_format(1)
+    ) +
+    ggplot2::scale_y_continuous(
+      labels = scales::percent_format(1),
+      breaks = scales::pretty_breaks(10)
+    ) +
+    ggplot2::labs(
+      x = "Threshold", y = NULL,
+      subtitle = paste0("Pr( ", names(dots)[1], " > ", names(dots)[2], " )")
+    )
+
+  dca <- bayesDCA::plot_dca_list(...)
+
+  if (isTRUE(as_plot_list)) {
+    return(list(dca = dca, delta = dp, prob_better = prob_better))
+  }
+
+  dca / (dp | prob_better)
 }

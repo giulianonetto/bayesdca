@@ -4,7 +4,7 @@
 \alias{plot_dca_list}
 \title{Plot DCA list}
 \usage{
-plot_dca_list(..., type = "nb", just_df = FALSE)
+plot_dca_list(..., type = "nb", data_only = FALSE)
 }
 \arguments{
 \item{...}{Fits to plot}

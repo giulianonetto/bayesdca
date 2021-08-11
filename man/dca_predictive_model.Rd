@@ -11,6 +11,7 @@ dca_predictive_model(
   prior_p = c(1, 1),
   prior_se = c(1, 1),
   prior_sp = c(1, 1),
+  summary_probs = c(0.025, 0.975),
   refresh = 0,
   ...
 )

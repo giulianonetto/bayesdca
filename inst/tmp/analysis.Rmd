@@ -85,6 +85,10 @@ We load the `bayesDCA` package and simulate a single example dataset according t
 
 ```{r paged.print=FALSE}
 library(bayesDCA)
+library(tidyverse)
+library(patchwork)
+library(furrr)
+theme_set(theme_bw())  # for pretty plots
 
 data <- simulate_diagnostic_test_data(
   B = 1,  # number of simulated datasets
@@ -99,55 +103,17 @@ print(data)
 The `dca_diagnostic_test` runs the DCA, which we do for both the independent model and the correlated model. We use default uniform priors and plot the results for a range of thresholds between 0 and 50%. We focus on this range as would not be reasonable to demand more than 50% to make a positive call.
 
 ```{r fig.width=8, fig.height=4}
-library(patchwork)  # for combining plots
 
-fit1 <- dca_diagnostic_test(
-  N = data$N, d = data$d, tp = data$tp, tn = data$tn,
-  model_type = "independent",
-  keep_fit = TRUE  # to access the draws later
-)
-fit2 <- dca_diagnostic_test(
-  N = data$N, d = data$d, tp = data$tp, tn = data$tn,
-  model_type = "correlated",
-  keep_fit = TRUE  # to access the draws later
-)
+fit <- dca_diagnostic_test(N = data$N,
+                           d = data$d,
+                           tp = data$tp,
+                           tn = data$tn,
+                           thresholds = seq(0, 1, .01))
 
-plot(fit1) + plot(fit2)
+
+plot(fit)
 ```
 
-The two methods mostly agree, although the correlated model yields wider credible bands. This is not unintentional, as it is propagating through the uncertainty in the outcome proportion, whereas the independent model is ignoring it for the estimation of sensitivity and specificity. We can observe the impact of the correlation in the joint posterior distributions. 
-
-The independent model generates independent posteriors:
-
-```{r}
-theme_set(theme_bw())  # for pretty plots :)
-
-draws1 <- rstan::extract(fit1$fit)
-
-GGally::ggpairs(
-  data.frame(
-    prevalence = draws1$p,
-    sensitivity = draws1$Se,
-    specificity = draws1$Sp
-  )
-)
-```
-
-The correlated model generates correlated posteriors:
-
-```{r}
-draws2 <- rstan::extract(fit2$fit)
-
-GGally::ggpairs(
-  data.frame(
-    prevalence = draws2$p,
-    sensitivity = draws2$Se,
-    specificity = draws2$Sp
-  )
-)
-```
-
-In this case, there are strong correlations across prevalence (or outcome proportion), sensitivity, and specificity.
 
 # Frequentist properties 
 
@@ -155,24 +121,69 @@ Because we simulated the data, we can compute the true NB, the empirical coverag
 
 ## Empiral Coverage
 
-We will simulate and analyze $B = 5000$ datasets using both models. For each simulation, we will check whether the estimated intervals cover the true NB curve in each threshold. The average gives the empirical coverage. We assume default values for the true parameters ($N=500$, $p=0.2$, $Se=0.9$, $Sp=0.9$).
-
-```{r}
-datasets <- simulate_diagnostic_test_data(B = 5000)
-```
+We will simulate and analyze $B = 500$ datasets using both models. For each simulation, we will check whether the estimated intervals cover the true NB curve in each threshold. The average gives the empirical coverage. We assume default values for the true parameters ($N=500$, $p=0.2$, $Se=0.9$, $Sp=0.9$).
 
 
 ```{r paged.print=FALSE}
-library(tidyverse)
 
-datasets <- datasets[1:5, ] %>% 
+datasets <- simulate_diagnostic_test_data(B = 500)
+
+plan(multisession, workers = 7)
+datasets <- datasets %>% 
   as_tibble() %>% 
   mutate(
-    correlatd_models = pmap(list(N, d, tp, tn), dca_diagnostic_test),
-    independent_models = pmap(list(N, d, tp, tn), dca_diagnostic_test, model_type = "independent")
+    simulation = paste0("Sim ", 1:nrow(.)),
+    models = future_pmap(
+      list(N, d, tp, tn),
+      function(N, d, tp, tn, ...) {
+        dca <- dca_diagnostic_test(N = N, d = d, tp = tp, tn = tn,
+                            thresholds = seq(0, 1, .02))
+        dca$net_benefit %>% 
+          dplyr::select(thr, estimate = mean, `2.5%`, `97.5%`)
+      },
+      .options = furrr_options(seed = 123)
+    )
   )
+plan(sequential)
 
 head(datasets)
 ```
 
-The `correlated_models` and `independent_models` columns store the `DiagTestDCA` objects containing the analyses.
+The `models` column store the analyses.
+
+```{r}
+df <- bind_rows(datasets$models, .id='simulation')
+
+df %>% 
+    group_by(thr) %>% 
+    summarise(
+        avg = mean(estimate),
+        q97.5 = quantile(estimate, .975),
+        q2.5 = quantile(estimate, .025)
+    ) %>% 
+    mutate(
+        true_nb = 0.2*0.9 - (1-0.2)*(1-0.9)*(thr/(1-thr))
+    ) %>% 
+    ggplot(aes(thr, avg)) +
+    geom_ribbon(aes(ymin=q2.5, ymax=q97.5), alpha = 0.2) +
+    geom_line() +
+    geom_line(aes(y=true_nb), col='red', linetype = "dashed") +
+    coord_cartesian(ylim = c(-0.5, 0.3))
+```
+
+```{r}
+df %>% 
+    mutate(
+        true_nb = 0.2*0.9 - (1-0.2)*(1-0.9)*(thr/(1-thr))
+    ) %>% 
+    group_by(thr) %>% 
+    summarise(
+      cov = mean(true_nb >= `2.5%` & true_nb <= `97.5%`)
+    ) %>% 
+    ggplot(aes(thr, cov)) +
+    geom_line() +
+    geom_hline(yintercept = .95, alpha = .3,linetype = 'longdash') +
+    coord_cartesian(ylim = c(0.9,1)) +
+    scale_y_continuous(labels = scales::percent)
+```
+
