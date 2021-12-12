@@ -4,7 +4,7 @@
 \alias{plot.PredModelDCA}
 \title{Plot PredModelDCA}
 \usage{
-\method{plot}{PredModelDCA}(obj, type = "nb", just_df = FALSE, ...)
+\method{plot}{PredModelDCA}(obj, type = "nb", data_only = FALSE, ...)
 }
 \arguments{
 \item{obj}{PredModelDCA object}

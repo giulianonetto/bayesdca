@@ -4,7 +4,7 @@
 \alias{plot.DiagTestDCA}
 \title{Plot DiagTestDCA}
 \usage{
-\method{plot}{DiagTestDCA}(obj, type = "nb", just_df = FALSE, ...)
+\method{plot}{DiagTestDCA}(obj, type = "nb", data_only = FALSE, ...)
 }
 \arguments{
 \item{obj}{DiagTestDCA object}

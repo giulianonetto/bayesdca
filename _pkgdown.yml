@@ -1,0 +1,9 @@
+development:
+  destination: dev
+  version_label: info
+  version_tooltip: "Experimental package"
+template:
+  package: preferably
+authors:
+  Giuliano Netto Flores Cruz:
+    href: "https://giulianonetto.netlify.app"

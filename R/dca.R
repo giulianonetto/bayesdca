@@ -292,7 +292,7 @@ print.DiagTestDCA <- function(obj, ...) {
 #' sensitivity, and specificity.
 #' @importFrom magrittr %>%
 #' @export
-plot.DiagTestDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
+plot.DiagTestDCA <- function(obj, type = "nb", data_only=FALSE, ...) {
   if (type %in% c("nb", "net benefit")) {
     .p <- obj$net_benefit %>%
       ggplot2::ggplot(ggplot2::aes(thr)) +
@@ -336,7 +336,7 @@ plot.DiagTestDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
     stop("Invalid 'type' argument.")
   }
 
-  if (isTRUE(just_df)) return(.p$data)
+  if (isTRUE(data_only)) return(.p$data)
 
   return(.p)
 }
@@ -350,20 +350,20 @@ plot.DiagTestDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
 #' sensitivity, and specificity.
 #' @importFrom magrittr %>%
 #' @export
-plot.PredModelDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
+plot.PredModelDCA <- function(obj, type = "nb", data_only=FALSE, ...) {
   if (type %in% c("nb", "net benefit")) {
     .p <- obj$net_benefit %>%
       ggplot2::ggplot(ggplot2::aes(thr)) +
       ggplot2::geom_ribbon(ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`),
                            alpha = .5) +
-      ggplot2::geom_line(ggplot2::aes(y = mean)) +
+      ggplot2::geom_line(ggplot2::aes(y = estimate)) +
       ggplot2::geom_hline(
         yintercept = 0, linetype = 'longdash',
         color = 'gray30', lwd = 0.8
       ) +
       ggplot2::geom_line(
         data = obj$treat_all,
-        ggplot2::aes(thr, mean, color = "Treat all")
+        ggplot2::aes(thr, estimate, color = "Treat all")
       ) +
       ggplot2::geom_ribbon(
         data = obj$treat_all, alpha = .3, fill = "red",
@@ -384,7 +384,7 @@ plot.PredModelDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
       ggplot2::ggplot(ggplot2::aes(x = par_name)) +
       ggplot2::geom_pointrange(
         ggplot2::aes(
-          y = mean,
+          y = estimate,
           ymin = `2.5%`, ymax = `97.5%`
         )
       ) +
@@ -397,7 +397,7 @@ plot.PredModelDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
     stop("Invalid 'type' argument.")
   }
 
-  if (isTRUE(just_df)) return(.p$data)
+  if (isTRUE(data_only)) return(.p$data)
 
   return(.p)
 }
@@ -411,7 +411,7 @@ plot.PredModelDCA <- function(obj, type = "nb", just_df=FALSE, ...) {
 #' sensitivity, and specificity.
 #' @importFrom magrittr %>%
 #' @export
-plot_dca_list <- function(..., type = "nb", data_only=FALSE) {
+plot_dca_list <- function(..., type = "nb", data_only = FALSE) {
   if (type %in% c("nb", "net benefit")) {
     fit_list <- list(...)
 
