@@ -13,10 +13,10 @@ Perform Bayesian Decision Curve Analysis for clinical prediction models
 and diagnostic tests.
 
 When validating a clinical prediction model, you may end up with AUC
-0.82 and reasonable calibration. How do you know if that is enough for
-you model to be clinically useful? The same question can be asked if you
-have a diagnostic test with sensitivity of 75% and specificity of 68%.
-Decision Curve Analysis helps us find an answer.
+0.79 and a slight miscalibration. How do you know if that is good enough
+for your model to be clinically useful? The same question can be asked
+if you have a diagnostic test with sensitivity of 75% and specificity of
+68%. Decision Curve Analysis helps us find an answer.
 
 # Installation
 
