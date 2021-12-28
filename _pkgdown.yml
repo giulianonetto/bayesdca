@@ -4,6 +4,7 @@ development:
   version_tooltip: "Experimental package"
 template:
   package: preferably
+  bootstrap: 5
 authors:
   Giuliano Netto Flores Cruz:
     href: "https://giulianonetto.netlify.app"
