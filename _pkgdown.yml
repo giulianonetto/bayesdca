@@ -5,6 +5,25 @@ development:
 template:
   package: preferably
   bootstrap: 5
+  params:
+    toggle: manual
 authors:
   Giuliano Netto Flores Cruz:
     href: "https://giulianonetto.netlify.app"
+reference:
+- title: "Main"
+  contents:
+  - dca_predictive_model
+  - dca_diagnostic_test
+  - compare_net_benefit
+- title: "Auxiliary"
+  contents:
+  - get_thr_data
+  - simulate_diagnostic_test_data
+- title: "Plotting"
+  contents:
+  - matches("plot")
+- title: "Other"
+  contents:
+  - matches("print")
+  

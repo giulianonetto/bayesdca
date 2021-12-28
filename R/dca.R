@@ -1,6 +1,5 @@
 #' Fit Bayesian Decision Curve Analysis using Stan
 #'
-#' @export
 #' @param N Integer specifying total number of samples (i.e., participants).
 #' @param d Diseased: integer specifying total number of diseased persons.
 #' @param tp True Positives: integer specifying total number of diseased persons correctly
@@ -505,7 +504,6 @@ get_thr_data <- function(df,
 #' @title Plot Delta Net Benefit
 #' @importFrom magrittr %>%
 #' @import patchwork
-#' @export
 example_delta_nb <- function() {
 
   as_list = FALSE
