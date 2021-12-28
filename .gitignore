@@ -8,4 +8,6 @@ src
 .local
 .bash_history
 *.html
-
+!docs/*.html
+!docs/*/*.html
+!docs/*/*/*.html
