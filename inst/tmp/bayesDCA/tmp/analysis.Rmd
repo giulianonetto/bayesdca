@@ -1,0 +1,189 @@
+---
+title: <br>Bayesian Decision Curve Analysis with `BayesDCA`
+author: Giuliano Netto Flores Cruz
+output: 
+  html_notebook:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+> "Unlike traditional measures of predictive performance, the net benefit incorporates the consequences of using the test/model to
+guide clinical decision making." ([Wynants et al., 2018](https://doi.org/10.1002/sim.7653))
+
+When assessing a diagnostic test or a clinical prediction model, it is of interest to consider the consequences of the clinical decisions based on these tools. Decision Curve Analysis (DCA) plots the net benefit (NB) of a test or model against the probability thresholds used to consider a patient positive for the predicted condition. A range of probability thresholds reflects the relative weights attributed to false-negative and false-positive results. The NB is computed as the fraction of true positives ($TP$) subtracted by the fraction of false positives ($FP$) weighted by the ratio of the costs of false positives to false negatives $w$.
+
+$$
+NB = (TP - wFP)/n
+$$
+Turns out the ratio $w$ is equivalent to the odds of the chosen probability threshold $\text{thr}$.
+
+$$
+w = C_{FN}/C_{FP} = \frac{\text{thr}}{1-\text{thr}}
+$$
+
+Whereas for prediction models each value of $\text{thr}$ implies different numbers of $TP$ and $FP$, for diagnostic tests these rates remain the same for all thresholds. 
+
+Here, we employ a Bayesian approach to estimate NB and produce DCA plots with appropriate uncertainty quantification.
+
+# DCA for diagnostic tests
+
+## Data generation process
+
+We simulate data for diagnostic tests according to the following mechanism. From $N$ patients, we observe $D$ diseased persons as sampled from a Binomial distribution with parameter $p$, the prevalence or outcome proportion for the studied disease. Then, from $D$ diseased persons, we observe $TP$ true positives. Similarly, from $N - D$ non-diseased persons, we observe $TN$ true negatives. The parameters of the above binomial variables represent the sensitivity $Se$ and the specificity $Sp$ of the diagnostic test, respectively.
+
+<center>
+$\begin{equation}
+D \sim Binomial(N,\ p) \\
+TP \sim Binomial(D,\ Se) \\
+TN \sim Binomial(N-D,\ Sp)
+\end{equation}$
+</center>
+
+## Parameter estimation
+
+From the above model, it should be noted that the number of diseased patients $D$ is a random variable. Nonetheless, the most common way diagnostic tests are evaluated ignores this uncertainty and estimates $p$, $Se$, and $Sp$ independently --- pretending $d$ is just a number, as opposed to a realization of $D$.
+
+This "independent" formulation can be modeled using the beta-binomial conjugate model, so that the posterior distribution of all parameters can be computed in closed form. Once we sample from their joint posterior distribution, however, we can compute the NB as
+
+$$
+NB = Se \cdot p - (1-Sp) \cdot (1-p) \cdot w
+$$
+
+for each posterior draw and naturally generate credible intervals for NB.
+
+## The correlated model
+
+Estimating the parameters independently is simple and effective, but it has a fundamental flaw. For instance, given a certain number of observed true positives, if we draw a relatively large value of prevalence, we must draw a relatively low value for sensitivity in order to keep consistency with the data. Hence, it makes sense for the joint posterior distribution to carry correlations between parameters.
+
+An alternative model that captures this correlation avoids directly considering $d$ whatsoever, once we note that we can model $TP$ and $TN$ as binomials of size $N$.
+
+<center>
+$\begin{equation}
+D \sim Binomial(N,\ p) \\
+TP \sim Binomial(N,\ p \cdot Se) \\
+TN \sim Binomial(N,\ (1-p) \cdot Sp)
+\end{equation}$
+</center>
+
+<br>
+
+In this case, we must use Stan to sample from the (now correlated) joint posterior distribution. The `bayesDCA` package allows for both the independent and the correlated formulations. In both cases, we use the posterior samples to compute the NB point estimate and uncertainty intervals.
+
+# Basic example
+
+We load the `bayesDCA` package and simulate a single example dataset according to the proposed data generation process.
+
+```{r paged.print=FALSE}
+library(bayesDCA)
+library(tidyverse)
+library(patchwork)
+library(furrr)
+theme_set(theme_bw())  # for pretty plots
+
+data <- simulate_diagnostic_test_data(
+  B = 1,  # number of simulated datasets
+  N = 500, 
+  true_p = 0.2,
+  true_se = 0.9,
+  true_sp = 0.9
+)
+print(data)
+```
+
+The `dca_diagnostic_test` runs the DCA, which we do for both the independent model and the correlated model. We use default uniform priors and plot the results for a range of thresholds between 0 and 50%. We focus on this range as would not be reasonable to demand more than 50% to make a positive call.
+
+```{r fig.width=8, fig.height=4}
+
+fit <- dca_diagnostic_test(N = data$N,
+                           d = data$d,
+                           tp = data$tp,
+                           tn = data$tn,
+                           thresholds = seq(0, 1, .01))
+
+
+plot(fit)
+```
+
+
+# Frequentist properties 
+
+Because we simulated the data, we can compute the true NB, the empirical coverage of our credible intervals, and the distribution of the estimators (posterior means).
+
+## Empiral Coverage
+
+We will simulate and analyze $B = 500$ datasets using both models. For each simulation, we will check whether the estimated intervals cover the true NB curve in each threshold. The average gives the empirical coverage. We assume default values for the true parameters ($N=500$, $p=0.2$, $Se=0.9$, $Sp=0.9$).
+
+
+```{r paged.print=FALSE}
+
+datasets <- simulate_diagnostic_test_data(B = 500)
+
+plan(multisession, workers = 7)
+datasets <- datasets %>% 
+  as_tibble() %>% 
+  mutate(
+    simulation = paste0("Sim ", 1:nrow(.)),
+    models = future_pmap(
+      list(N, d, tp, tn),
+      function(N, d, tp, tn, ...) {
+        dca <- dca_diagnostic_test(N = N, d = d, tp = tp, tn = tn,
+                            thresholds = seq(0, 1, .02))
+        dca$net_benefit %>% 
+          dplyr::select(thr, estimate = mean, `2.5%`, `97.5%`)
+      },
+      .options = furrr_options(seed = 123)
+    )
+  )
+plan(sequential)
+
+head(datasets)
+```
+
+The `models` column store the analyses.
+
+```{r}
+df <- bind_rows(datasets$models, .id='simulation')
+
+df %>% 
+    group_by(thr) %>% 
+    summarise(
+        avg = mean(estimate),
+        q97.5 = quantile(estimate, .975),
+        q2.5 = quantile(estimate, .025)
+    ) %>% 
+    mutate(
+        true_nb = 0.2*0.9 - (1-0.2)*(1-0.9)*(thr/(1-thr))
+    ) %>% 
+    ggplot(aes(thr, avg)) +
+    geom_ribbon(aes(ymin=q2.5, ymax=q97.5), alpha = 0.2) +
+    geom_line() +
+    geom_line(aes(y=true_nb), col='red', linetype = "dashed") +
+    coord_cartesian(ylim = c(-0.5, 0.3))
+```
+
+```{r}
+df %>% 
+    mutate(
+        true_nb = 0.2*0.9 - (1-0.2)*(1-0.9)*(thr/(1-thr))
+    ) %>% 
+    group_by(thr) %>% 
+    summarise(
+      cov = mean(true_nb >= `2.5%` & true_nb <= `97.5%`)
+    ) %>% 
+    ggplot(aes(thr, cov)) +
+    geom_line() +
+    geom_hline(yintercept = .95, alpha = .3,linetype = 'longdash') +
+    coord_cartesian(ylim = c(0.9,1)) +
+    scale_y_continuous(labels = scales::percent)
+```
+
