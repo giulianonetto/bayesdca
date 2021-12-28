@@ -11,3 +11,4 @@ src
 !docs/*.html
 !docs/*/*.html
 !docs/*/*/*.html
+inst/tmp/bayesDCA
