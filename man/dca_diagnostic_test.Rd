@@ -27,10 +27,10 @@ dca_diagnostic_test(
 \item{d}{Diseased: integer specifying total number of diseased persons.}
 
 \item{tp}{True Positives: integer specifying total number of diseased persons correctly
-identified as such by the diagnostic test of prediction model.}
+identified as such by the diagnostic test or prediction model.}
 
-\item{tn}{True Negatives: integer specifying total number of diseased persons correctly
-identified as such by the diagnostic test of prediction model.}
+\item{tn}{True Negatives: integer specifying total number of non-diseased persons correctly
+identified as such by the diagnostic test or prediction model.}
 
 \item{thresholds}{Numeric vector with probability thresholds with which
 the net benefit should be computed (default is \code{seq(0, 0.5, 0.01)}).}

@@ -72,9 +72,9 @@
 #' @param N Integer specifying total number of samples (i.e., participants).
 #' @param d Diseased: integer specifying total number of diseased persons.
 #' @param tp True Positives: integer specifying total number of diseased persons correctly
-#' identified as such by the diagnostic test of prediction model.
-#' @param tn True Negatives: integer specifying total number of diseased persons correctly
-#' identified as such by the diagnostic test of prediction model.
+#' identified as such by the diagnostic test or prediction model.
+#' @param tn True Negatives: integer specifying total number of non-diseased persons correctly
+#' identified as such by the diagnostic test or prediction model.
 #' @param thresholds Numeric vector with probability thresholds with which
 #' the net benefit should be computed (default is `seq(0, 0.5, 0.01)`).
 #' @param keep_fit Logical indicating whether to keep `stanfit` in
@@ -164,9 +164,9 @@ dca_diagnostic_test <- function(N, d, tp, tn,
 #' @param N Integer specifying total number of samples (i.e., participants).
 #' @param d Diseased: integer specifying total number of diseased persons.
 #' @param tp True Positives: integer specifying total number of diseased persons correctly
-#' identified as such by the diagnostic test of prediction model.
-#' @param tn True Negatives: integer specifying total number of diseased persons correctly
-#' identified as such by the diagnostic test of prediction model.
+#' identified as such by the diagnostic test or prediction model.
+#' @param tn True Negatives: integer specifying total number of non-diseased persons correctly
+#' identified as such by the diagnostic test or prediction model.
 #' @param thresholds Numeric vector with probability thresholds with which
 #' the net benefit should be computed (default is `seq(0, 0.5, 0.01)`).
 #' @param keep_fit Logical indicating whether to keep `stanfit` in
@@ -546,15 +546,15 @@ example_delta_nb <- function() {
     `2.5%` = q[,'2.5%'],
     `97.5%` = q[,'97.5%']
   ) %>%
-    ggplot(aes(thr, y=estimate,ymin=`2.5%`, ymax=`97.5%`)) +
-    geom_ribbon(alpha=.3) +
-    geom_line() +
-    theme_bw() +
-    scale_x_continuous(
+    ggplot2::ggplot(ggplot2::aes(thr, y=estimate,ymin=`2.5%`, ymax=`97.5%`)) +
+    ggplot2::geom_ribbon(alpha=.3) +
+    ggplot2::geom_line() +
+    ggplot2::theme_bw() +
+    ggplot2::scale_x_continuous(
       labels = scales::percent_format(1)
     ) +
-    geom_line(
-      aes(y = true_delta), col='red'
+    ggplot2::geom_line(
+      ggplot2::aes(y = true_delta), col='red'
     ) +
     ggplot2::geom_hline(
       yintercept = 0, linetype = 'longdash',
@@ -566,13 +566,13 @@ example_delta_nb <- function() {
     thr = fit1$thresholds,
     estimate = colMeans(d > 0)
   ) %>%
-    ggplot(aes(thr, y=estimate)) +
-    geom_line() +
-    theme_bw() +
-    scale_x_continuous(
+    ggplot2::ggplot(ggplot2::aes(thr, y=estimate)) +
+    ggplot2::geom_line() +
+    ggplot2::theme_bw() +
+    ggplot2::scale_x_continuous(
       labels = scales::percent_format(1)
     ) +
-    scale_y_continuous(
+    ggplot2::scale_y_continuous(
       labels = scales::percent_format(1),
       breaks = scales::pretty_breaks(10)
     ) +
