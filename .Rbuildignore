@@ -1,5 +1,6 @@
 ^bayesDCA\.Rproj$
 ^\.Rproj\.user$
+^\.local\.share$
 ^LICENSE\.md$
 ^_pkgdown\.yml$
 ^docs$

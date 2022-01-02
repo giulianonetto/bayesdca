@@ -4,15 +4,14 @@
 \alias{plot.PredModelDCA}
 \title{Plot PredModelDCA}
 \usage{
-\method{plot}{PredModelDCA}(obj, type = "nb", data_only = FALSE, ...)
+\method{plot}{PredModelDCA}(obj, data_only = FALSE, .color = "#E41A1CFF", ...)
 }
 \arguments{
 \item{obj}{PredModelDCA object}
 
-\item{type}{Either "net benefit" (alias "nb" or "dca") or "parameters"
-(alias "p"). If net benefit, plots estimated net benefit against
-thresholds (DCA); if parameters, plots estimated prevalence,
-sensitivity, and specificity.}
+\item{data_only}{If TRUE, returns data for ggplot objects (default is FALSE).}
+
+\item{.color}{Model curve color. Default is "#E41A1CFF" (red).}
 }
 \description{
 Plot PredModelDCA

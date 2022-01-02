@@ -13,10 +13,19 @@
     <loc>/index.html</loc>
   </url>
   <url>
+    <loc>/reference/PredModelData.html</loc>
+  </url>
+  <url>
     <loc>/reference/bayesDCA-package.html</loc>
   </url>
   <url>
+    <loc>/reference/compare_dca.html</loc>
+  </url>
+  <url>
     <loc>/reference/compare_net_benefit.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dca_binary_test.html</loc>
   </url>
   <url>
     <loc>/reference/dca_diagnostic_test.html</loc>
@@ -47,6 +56,9 @@
   </url>
   <url>
     <loc>/reference/print.DiagTestDCA.html</loc>
+  </url>
+  <url>
+    <loc>/reference/print.PredModelDCA.html</loc>
   </url>
   <url>
     <loc>/reference/simulate_diagnostic_test_data.html</loc>

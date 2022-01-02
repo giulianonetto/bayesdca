@@ -5,9 +5,9 @@
 \title{Bayesian Decision Curve Analysis for Predictive Model}
 \usage{
 dca_predictive_model(
-  df,
+  outcomes,
+  predictions,
   keep_fit = FALSE,
-  model_type = "mo",
   prior_p = c(1, 1),
   prior_se = c(1, 1),
   prior_sp = c(1, 1),
@@ -17,11 +17,12 @@ dca_predictive_model(
 )
 }
 \arguments{
+\item{outcomes}{Integer vector with outcome events for each individual (0 or 1).}
+
+\item{predictions}{Numeric vector with predicted probabilities.}
+
 \item{keep_fit}{Logical indicating whether to keep \code{stanfit} in
 the output (default FALSE).}
-
-\item{model_type}{Character indicating model type. Either "correlated"
-(default) or "independent".}
 
 \item{prior_p, prior_se, prior_sp}{Numeric vector with shapes for
 Beta(alpha, beta) prior used for p, Se, and Sp. Default is c(1, 1) for all.}
@@ -30,16 +31,6 @@ Beta(alpha, beta) prior used for p, Se, and Sp. Default is c(1, 1) for all.}
 page for details).}
 
 \item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter, chains).}
-
-\item{N}{Integer specifying total number of samples (i.e., participants).}
-
-\item{d}{Diseased: integer specifying total number of diseased persons.}
-
-\item{tp}{True Positives: integer specifying total number of diseased persons correctly
-identified as such by the diagnostic test or prediction model.}
-
-\item{tn}{True Negatives: integer specifying total number of non-diseased persons correctly
-identified as such by the diagnostic test or prediction model.}
 
 \item{thresholds}{Numeric vector with probability thresholds with which
 the net benefit should be computed (default is \code{seq(0, 0.5, 0.01)}).}

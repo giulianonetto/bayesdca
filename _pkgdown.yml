@@ -14,16 +14,16 @@ reference:
 - title: "Main"
   contents:
   - dca_predictive_model
-  - dca_diagnostic_test
-  - compare_net_benefit
+  - dca_binary_test
+  - plot_dca_list
+  - compare_dca
 - title: "Auxiliary"
   contents:
   - get_thr_data
   - simulate_diagnostic_test_data
-- title: "Plotting"
-  contents:
-  - matches("plot")
 - title: "Other"
   contents:
+  - plot.DiagTestDCA
+  - plot.PredModelDCA
   - matches("print")
-  
+

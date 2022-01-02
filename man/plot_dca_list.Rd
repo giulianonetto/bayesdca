@@ -4,15 +4,14 @@
 \alias{plot_dca_list}
 \title{Plot DCA list}
 \usage{
-plot_dca_list(..., type = "nb", data_only = FALSE)
+plot_dca_list(..., data_only = FALSE, .colors = NULL)
 }
 \arguments{
 \item{...}{Fits to plot}
 
-\item{type}{Either "net benefit" (alias "nb" or "dca") or "parameters"
-(alias "p"). If net benefit, plots estimated net benefit against
-thresholds (DCA); if parameters, plots estimated prevalence,
-sensitivity, and specificity.}
+\item{data_only}{If TRUE, returns data for ggplot objects (default is FALSE).}
+
+\item{.colors}{Char vector with colors for each fit object.}
 }
 \description{
 Plot DCA list

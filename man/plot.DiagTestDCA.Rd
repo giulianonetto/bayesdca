@@ -4,15 +4,14 @@
 \alias{plot.DiagTestDCA}
 \title{Plot DiagTestDCA}
 \usage{
-\method{plot}{DiagTestDCA}(obj, type = "nb", data_only = FALSE, ...)
+\method{plot}{DiagTestDCA}(obj, data_only = FALSE, .color = "#4DAF4AFF", ...)
 }
 \arguments{
 \item{obj}{DiagTestDCA object}
 
-\item{type}{Either "net benefit" (alias "nb" or "dca") or "parameters"
-(alias "p"). If net benefit, plots estimated net benefit against
-thresholds (DCA); if parameters, plots estimated prevalence,
-sensitivity, and specificity.}
+\item{data_only}{If TRUE, returns data for ggplot objects (default is FALSE).}
+
+\item{.color}{Test curve color. Default is "#4DAF4AFF" (green).}
 }
 \description{
 Plot DiagTestDCA
