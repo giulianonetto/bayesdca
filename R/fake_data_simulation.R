@@ -21,6 +21,13 @@
 #' correctly detected as such is the specificity.
 #' @importFrom magrittr %>%
 #' @export
+#' @examples
+#' d <- simulate_diagnostic_test_data(B = 2,
+#'                                    N = 1000,
+#'                                    true_p = 0.2,
+#'                                    true_se = 0.9,
+#'                                    true_sp = 0.9)
+#' head(d)
 simulate_diagnostic_test_data <- function(B = 100,
                                           N = 500,
                                           true_p = 0.2,

@@ -46,3 +46,11 @@ the expected proportion of diseased persons correctly detected as
 such is the sensitivity, and the number of non-diseased persons
 correctly detected as such is the specificity.
 }
+\examples{
+d <- simulate_diagnostic_test_data(B = 2,
+                                   N = 1000,
+                                   true_p = 0.2,
+                                   true_se = 0.9,
+                                   true_sp = 0.9)
+head(d)
+}

@@ -87,30 +87,38 @@
 <dd><p>Diseased: integer specifying total number of diseased persons or outcome cases.</p></dd>
 <dt>tp</dt>
 <dd><p>True Positives: integer specifying total number of diseased persons or cases correctly
-identified as such by the diagnostic test or prediction model. <code>tp</code> must be at most <code>d</code>.</p></dd>
+identified as such by the binary test (positive tests among cases). <code>tp</code> must be at most <code>d</code>.</p></dd>
 <dt>tn</dt>
 <dd><p>True Negatives: integer specifying total number of non-diseased persons or non-cases correctly
-identified as such by the diagnostic test or prediction model. <code>tn</code> must be at most <code>N - d</code>.</p></dd>
+identified as such by the diagnostic test or prediction model (negative tests among non-cases). <code>tn</code> must be at most <code>N - d</code>.</p></dd>
 <dt>thresholds</dt>
 <dd><p>Numeric vector with probability thresholds with which
 the decision curve should be computed (default is <code>seq(0, 0.5, 0.01)</code>).</p></dd>
 <dt>keep_fit</dt>
-<dd><p>Logical indicating whether to keep <code>stanfit</code> object in
+<dd><p>Logical indicating whether to keep <a href="https://mc-stan.org/rstan/reference/stanfit-class.html" class="external-link"><code>stanfit</code></a> object in
 the output (default FALSE).</p></dd>
 <dt>prior_p, prior_se, prior_sp</dt>
 <dd><p>Numeric vector with shapes for
 Beta(alpha, beta) prior used for p, Se, and Sp. Default is c(1, 1) for all.</p></dd>
 <dt>refresh</dt>
-<dd><p>Control verbosity of <code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling</a></code> (check its help
+<dd><p>Control verbosity of <a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link"><code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling</a></code></a> (check its help
 page for details).</p></dd>
 <dt>...</dt>
-<dd><p>Arguments passed to <code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling</a></code> (e.g. iter, chains).</p></dd>
+<dd><p>Arguments passed to <a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link"><code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling</a></code></a> (e.g. iter, chains).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>DiagTestDCA</code></p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
+<span class="r-in"><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">dca_binary_test</span><span class="op">(</span>N <span class="op">=</span> <span class="fl">500</span>, d <span class="op">=</span> <span class="fl">83</span>, tp <span class="op">=</span> <span class="fl">77</span>, tn <span class="op">=</span> <span class="fl">378</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span class="r-plt img"><img src="dca_binary_test-1.png" alt="" width="700" height="433"></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -86,7 +86,10 @@ legends (e.g. "Test one" = fit1, test2 = fit2).</p></dd>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
 <span class="r-in"><span class="co"># Test 1: more specificity</span></span>
 <span class="r-in"><span class="va">data1</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate_diagnostic_test_data.html">simulate_diagnostic_test_data</a></span><span class="op">(</span>B <span class="op">=</span> <span class="fl">1</span>, N <span class="op">=</span> <span class="fl">5000</span>,</span>
-<span class="r-in">                                      true_p <span class="op">=</span> <span class="fl">0.1</span>, true_se <span class="op">=</span> <span class="fl">0.9</span>, true_sp <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
+<span class="r-in">                                      true_p <span class="op">=</span> <span class="fl">0.1</span>, true_se <span class="op">=</span> <span class="fl">0.8</span>, true_sp <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">data1</span><span class="op">)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      N   d  tp   tn</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 5000 496 401 3606</span>
 <span class="r-in"><span class="co"># Test 2: more sensitivity</span></span>
 <span class="r-in"><span class="va">data2</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate_diagnostic_test_data.html">simulate_diagnostic_test_data</a></span><span class="op">(</span>B <span class="op">=</span> <span class="fl">1</span>, N <span class="op">=</span> <span class="fl">5000</span>,</span>
 <span class="r-in">                                      true_p <span class="op">=</span> <span class="fl">0.1</span>, true_se <span class="op">=</span> <span class="fl">0.95</span>, true_sp <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span>

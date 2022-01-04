@@ -16,3 +16,10 @@
 \description{
 Plot PredModelDCA
 }
+\examples{
+data(PredModelData)
+head(PredModelData)
+fit <- dca_predictive_model(outcomes = PredModelData$outcomes,
+                            predictions = PredModelData$predictions)
+plot(fit)
+}

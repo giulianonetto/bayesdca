@@ -83,7 +83,7 @@
 <!-- badges: start -->
 
 <p>Perform Bayesian Decision Curve Analysis for clinical prediction models and diagnostic tests.</p>
-<p>When validating a clinical prediction model, you may end up with AUC 0.79 and a slight miscalibration. How do you know if that is good enough for your model to be clinically useful? The same question can be asked if you have a diagnostic test with sensitivity of 75% and specificity of 68%. Decision Curve Analysis helps us find an answer - see <a href="https://diagnprognres.biomedcentral.com/articles/10.1186/s41512-019-0064-7" class="external-link">Vickers, van Calster &amp; Steyerberg, 2019</a> for an introduction to DCA. Here, we use Bayesian methods to accurately quantify uncertainty in our decisions curves.</p>
+<p>When validating a clinical prediction model, you may end up with AUC 0.79 and a slight miscalibration. How do you know if that is good enough for your model to be clinically useful? The same question can be asked if you have a diagnostic test with sensitivity of 75% and specificity of 68%. Decision Curve Analysis helps us find an answer - see <a href="https://diagnprognres.biomedcentral.com/articles/10.1186/s41512-019-0064-7" class="external-link">Vickers, van Calster &amp; Steyerberg, 2019</a> for an introduction to DCA. Here, we use Bayesian methods to accurately quantify uncertainty in our decisions curves - powered by <a href="https://mc-stan.org/" class="external-link">Stan</a>.</p>
 </div>
 <div class="section level1">
 <h1 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -152,7 +152,11 @@
 <p>If you want to compare the decision curves from two models and/or tests, you can provide the <code>fit</code> objects to the <code>compare_dca</code> function.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">bayesDCA</span><span class="op">)</span>
+
+<span class="co"># Test A: Se = 66%, Sp = 91%</span>
 <span class="va">fit1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dca_binary_test.html">dca_binary_test</a></span><span class="op">(</span>N <span class="op">=</span> <span class="fl">1000</span>, d <span class="op">=</span> <span class="fl">120</span>, tp <span class="op">=</span> <span class="fl">80</span>, tn <span class="op">=</span> <span class="fl">800</span><span class="op">)</span>
+
+<span class="co"># Test B: Se = 90%, Sp = 70%</span>
 <span class="va">fit2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dca_binary_test.html">dca_binary_test</a></span><span class="op">(</span>N <span class="op">=</span> <span class="fl">1000</span>, d <span class="op">=</span> <span class="fl">120</span>, tp <span class="op">=</span> <span class="fl">108</span>, tn <span class="op">=</span> <span class="fl">616</span><span class="op">)</span>
 <span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="st">"Test A"</span> <span class="op">=</span> <span class="va">fit1</span>, <span class="st">"Test B"</span> <span class="op">=</span> <span class="va">fit2</span><span class="op">)</span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-7-1.png" width="100%"></p>

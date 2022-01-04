@@ -16,3 +16,7 @@
 \description{
 Plot DiagTestDCA
 }
+\examples{
+fit <- dca_binary_test(N = 500, d = 83, tp = 77, tn = 378)
+plot(fit)
+}

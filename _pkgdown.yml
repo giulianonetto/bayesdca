@@ -17,13 +17,10 @@ reference:
   - dca_binary_test
   - plot_dca_list
   - compare_dca
-- title: "Auxiliary"
-  contents:
-  - get_thr_data
-  - simulate_diagnostic_test_data
 - title: "Other"
   contents:
   - plot.DiagTestDCA
   - plot.PredModelDCA
   - matches("print")
+  - simulate_diagnostic_test_data
 

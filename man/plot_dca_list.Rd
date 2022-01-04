@@ -18,3 +18,22 @@ plot_dca_list(..., data_only = FALSE, .colors = NULL, .names = NULL)
 \description{
 Plot DCA list
 }
+\examples{
+data(PredModelData)
+head(PredModelData)
+# binary tests
+fit1 <- dca_binary_test(N = 1000, d = 120, tp = 80, tn = 800)
+fit2 <- dca_binary_test(N = 1000, d = 120, tp = 108, tn = 616)
+# predictive model
+data(PredModelData)
+fit3 <- dca_predictive_model(outcomes = PredModelData$outcomes,
+                             predictions = PredModelData$predictions)
+# plot decision curves
+plot_dca_list("test A" = fit1, "test B" = fit2, "model" = fit3)
+
+# names without quotes
+plot_dca_list(test = fit1, another_test = fit2, model = fit3)
+
+# no names (use var names)
+plot_dca_list(fit1, fit2, fit3)
+}

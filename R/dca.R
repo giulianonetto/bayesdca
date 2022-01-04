@@ -1,21 +1,20 @@
 #' Fit Bayesian Decision Curve Analysis using Stan
 #'
 #' @param N Integer specifying total number of samples (i.e., participants).
-#' @param d Diseased: integer specifying total number of diseased persons.
+#' @param d Diseased: integer specifying total number of diseased persons or events.
 #' @param tp True Positives: integer specifying total number of diseased persons correctly
-#' identified as such by the diagnostic test of prediction model.
+#' identified as such by the diagnostic test of prediction model (positive count among cases).
 #' @param tn True Negatives: integer specifying total number of diseased persons correctly
-#' identified as such by the diagnostic test of prediction model.
+#' identified as such by the diagnostic test of prediction model (negative count among non-cases).
 #' @param thresholds Numeric vector with probability thresholds with which
 #' the net benefit should be computed (default is `seq(0, 0.5, 0.01)`).
-#' @param model_type Character indicating model type. Either "correlated"
-#' (default) or "independent".
-#' @param prior_p,prior_se,prior_sp Numeric vector with shapes for
-#' Beta(alpha, beta) prior used for p, Se, and Sp. Default is c(1, 1) for all.
-#' @param refresh Control verbosity of `rstan::sampling` (check its help
-#' page for details).
-#' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
-#' @return An object of class `stanfit` returned by `rstan::sampling`
+#' @param model_type Character indicating model type. Either "ic"
+#' ("independent conjugate", default) or "mo" ("multiple observations").
+#' @param prior_p,prior_se,prior_sp Numeric vectors with shapes for
+#' Beta(alpha, beta) priors used for p, Se, and Sp, respectively. Default is c(1, 1) for all (uniform prior).
+#' @param refresh Control verbosity of [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).
+#' @param ... Arguments passed to [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).
+#' @return An object of class [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)
 #'
 .dca_stan <- function(N, d, tp, tn, B = NULL,
                       thresholds = seq(0, 0.5, 0.01),
@@ -71,21 +70,24 @@
 #' @param N Integer specifying total number of samples (i.e., number of participants).
 #' @param d Diseased: integer specifying total number of diseased persons or outcome cases.
 #' @param tp True Positives: integer specifying total number of diseased persons or cases correctly
-#' identified as such by the diagnostic test or prediction model. `tp` must be at most `d`.
+#' identified as such by the binary test (positive tests among cases). `tp` must be at most `d`.
 #' @param tn True Negatives: integer specifying total number of non-diseased persons or non-cases correctly
-#' identified as such by the diagnostic test or prediction model. `tn` must be at most `N - d`.
+#' identified as such by the diagnostic test or prediction model (negative tests among non-cases). `tn` must be at most `N - d`.
 #' @param thresholds Numeric vector with probability thresholds with which
 #' the decision curve should be computed (default is `seq(0, 0.5, 0.01)`).
-#' @param keep_fit Logical indicating whether to keep `stanfit` object in
+#' @param keep_fit Logical indicating whether to keep [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) object in
 #' the output (default FALSE).
 #' @param prior_p,prior_se,prior_sp Numeric vector with shapes for
 #' Beta(alpha, beta) prior used for p, Se, and Sp. Default is c(1, 1) for all.
-#' @param refresh Control verbosity of `rstan::sampling` (check its help
+#' @param refresh Control verbosity of [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (check its help
 #' page for details).
-#' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
+#' @param ... Arguments passed to [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).
 #' @return An object of class `DiagTestDCA`
 #' @importFrom magrittr %>%
+#' @examples
 #'
+#' fit <- dca_binary_test(N = 500, d = 83, tp = 77, tn = 378)
+#' plot(fit)
 dca_binary_test <- function(N, d, tp, tn,
                             thresholds = seq(0, 0.5, 0.01),
                             keep_fit = FALSE,
@@ -163,13 +165,18 @@ dca_binary_test <- function(N, d, tp, tn,
 #' @param keep_fit Logical indicating whether to keep `stanfit` in
 #' the output (default FALSE).
 #' @param prior_p,prior_se,prior_sp Numeric vector with shapes for
-#' Beta(alpha, beta) prior used for p, Se, and Sp. Default is c(1, 1) for all.
+#' Beta(alpha, beta) priors used for p, Se, and Sp, respectively. Default is c(1, 1) for all (uniform prior).
 #' @param refresh Control verbosity of `rstan::sampling` (check its help
 #' page for details).
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
 #' @return An object of class `DiagTestDCA`
 #' @importFrom magrittr %>%
-#'
+#' @examples
+#' data(PredModelData)
+#' head(PredModelData)
+#' fit <- dca_predictive_model(outcomes = PredModelData$outcomes,
+#'                             predictions = PredModelData$predictions)
+#' plot(fit)
 dca_predictive_model <- function(outcomes,
                                  predictions,
                                  keep_fit = FALSE,
@@ -312,6 +319,9 @@ print.PredModelDCA <- function(obj, ...) {
 #' @param .color Test curve color. Default is "#4DAF4AFF" (green).
 #' @importFrom magrittr %>%
 #' @export
+#' @examples
+#' fit <- dca_binary_test(N = 500, d = 83, tp = 77, tn = 378)
+#' plot(fit)
 plot.DiagTestDCA <- function(obj, data_only = FALSE, .color = "#4DAF4AFF", ...) {
   .colors <- c("Test" = .color,
                "Treat all" = "black", "Treat none" = "gray60")
@@ -366,6 +376,12 @@ plot.DiagTestDCA <- function(obj, data_only = FALSE, .color = "#4DAF4AFF", ...) 
 #' @param .color Model curve color. Default is "#E41A1CFF" (red).
 #' @importFrom magrittr %>%
 #' @export
+#' @examples
+#' data(PredModelData)
+#' head(PredModelData)
+#' fit <- dca_predictive_model(outcomes = PredModelData$outcomes,
+#'                             predictions = PredModelData$predictions)
+#' plot(fit)
 plot.PredModelDCA <- function(obj, data_only = FALSE, .color = "#E41A1CFF", ...) {
 
   .colors <- c("Model" = .color,
@@ -422,6 +438,24 @@ plot.PredModelDCA <- function(obj, data_only = FALSE, .color = "#E41A1CFF", ...)
 #' @param .names Optional character vector with names for objects (mostly for internal use).
 #' @importFrom magrittr %>%
 #' @export
+#' @examples
+#' data(PredModelData)
+#' head(PredModelData)
+#' # binary tests
+#' fit1 <- dca_binary_test(N = 1000, d = 120, tp = 80, tn = 800)
+#' fit2 <- dca_binary_test(N = 1000, d = 120, tp = 108, tn = 616)
+#' # predictive model
+#' data(PredModelData)
+#' fit3 <- dca_predictive_model(outcomes = PredModelData$outcomes,
+#'                              predictions = PredModelData$predictions)
+#' # plot decision curves
+#' plot_dca_list("test A" = fit1, "test B" = fit2, "model" = fit3)
+#'
+#' # names without quotes
+#' plot_dca_list(test = fit1, another_test = fit2, model = fit3)
+#'
+#' # no names (use var names)
+#' plot_dca_list(fit1, fit2, fit3)
 plot_dca_list <- function(..., data_only = FALSE, .colors = NULL, .names = NULL) {
   fit_list <- list(...)
   if (!is.null(.names)) {
@@ -495,7 +529,6 @@ plot_dca_list <- function(..., data_only = FALSE, .colors = NULL, .names = NULL)
 #' @param outcomes Integer vector (0 or 1) with binary outcomes.
 #' @param predictions Numeric vector with predicted probabilities.
 #' @importFrom magrittr %>%
-#' @export
 get_thr_data <- function(outcomes,
                          predictions,
                          thresholds = seq(0, 0.5, 0.02)) {
@@ -613,7 +646,9 @@ example_delta_nb <- function() {
 #'
 #'# Test 1: more specificity
 #'data1 <- simulate_diagnostic_test_data(B = 1, N = 5000,
-#'                                       true_p = 0.1, true_se = 0.9, true_sp = 0.8)
+#'                                       true_p = 0.1, true_se = 0.8, true_sp = 0.8)
+#'head(data1)
+#'
 #'# Test 2: more sensitivity
 #'data2 <- simulate_diagnostic_test_data(B = 1, N = 5000,
 #'                                       true_p = 0.1, true_se = 0.95, true_sp = 0.7)
@@ -658,7 +693,6 @@ compare_dca <- function(..., as_plot_list = FALSE, .names = NULL) {
 #' @param .delta Optional pre-computed delta net benefit (mostly for internal use).
 #' @param .names Optional character vector with names for objects (mostly for internal use).
 #' @return A ggplot object.
-#' @export
 
 plot_delta_nb <- function(..., .delta = NULL, .names = NULL) {
   dots <- list(...)
@@ -710,7 +744,6 @@ plot_delta_nb <- function(..., .delta = NULL, .names = NULL) {
 #' @param .delta Optional pre-computed delta net benefit (mostly for internal use).
 #' @param .names Optional character vector with names for objects (mostly for internal use).
 #' @return A ggplot object.
-#' @export
 plot_prob_better <- function(..., .delta = NULL, .names = NULL) {
   dots <- list(...)
   if (!is.null(.names)) {

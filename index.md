@@ -20,7 +20,8 @@ if you have a diagnostic test with sensitivity of 75% and specificity of
 Calster & Steyerberg,
 2019](https://diagnprognres.biomedcentral.com/articles/10.1186/s41512-019-0064-7)
 for an introduction to DCA. Here, we use Bayesian methods to accurately
-quantify uncertainty in our decisions curves.
+quantify uncertainty in our decisions curves - powered by
+[Stan](https://mc-stan.org/).
 
 # Installation
 
@@ -117,7 +118,11 @@ you can provide the `fit` objects to the `compare_dca` function.
 
 ``` r
 library(bayesDCA)
+
+# Test A: Se = 66%, Sp = 91%
 fit1 <- dca_binary_test(N = 1000, d = 120, tp = 80, tn = 800)
+
+# Test B: Se = 90%, Sp = 70%
 fit2 <- dca_binary_test(N = 1000, d = 120, tp = 108, tn = 616)
 compare_dca("Test A" = fit1, "Test B" = fit2)
 ```

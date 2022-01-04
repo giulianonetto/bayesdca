@@ -76,6 +76,23 @@
 <dd><p>Model curve color. Default is "#E41A1CFF" (red).</p></dd>
 </dl></div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">PredModelData</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">PredModelData</span><span class="op">)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   outcomes predictions</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1        0  0.01280653</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2        0  0.13981948</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3        0  0.03566458</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4        0  0.02351731</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5        0  0.00863298</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6        0  0.00959754</span>
+<span class="r-in"><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="dca_predictive_model.html">dca_predictive_model</a></span><span class="op">(</span>outcomes <span class="op">=</span> <span class="va">PredModelData</span><span class="op">$</span><span class="va">outcomes</span>,</span>
+<span class="r-in">                            predictions <span class="op">=</span> <span class="va">PredModelData</span><span class="op">$</span><span class="va">predictions</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span class="r-plt img"><img src="plot.PredModelDCA-1.png" alt="" width="700" height="433"></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -22,30 +22,29 @@
 \arguments{
 \item{N}{Integer specifying total number of samples (i.e., participants).}
 
-\item{d}{Diseased: integer specifying total number of diseased persons.}
+\item{d}{Diseased: integer specifying total number of diseased persons or events.}
 
 \item{tp}{True Positives: integer specifying total number of diseased persons correctly
-identified as such by the diagnostic test of prediction model.}
+identified as such by the diagnostic test of prediction model (positive count among cases).}
 
 \item{tn}{True Negatives: integer specifying total number of diseased persons correctly
-identified as such by the diagnostic test of prediction model.}
+identified as such by the diagnostic test of prediction model (negative count among non-cases).}
 
 \item{thresholds}{Numeric vector with probability thresholds with which
 the net benefit should be computed (default is \code{seq(0, 0.5, 0.01)}).}
 
-\item{model_type}{Character indicating model type. Either "correlated"
-(default) or "independent".}
+\item{model_type}{Character indicating model type. Either "ic"
+("independent conjugate", default) or "mo" ("multiple observations").}
 
-\item{prior_p, prior_se, prior_sp}{Numeric vector with shapes for
-Beta(alpha, beta) prior used for p, Se, and Sp. Default is c(1, 1) for all.}
+\item{prior_p, prior_se, prior_sp}{Numeric vectors with shapes for
+Beta(alpha, beta) priors used for p, Se, and Sp, respectively. Default is c(1, 1) for all (uniform prior).}
 
-\item{refresh}{Control verbosity of \code{rstan::sampling} (check its help
-page for details).}
+\item{refresh}{Control verbosity of \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.}
 
-\item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter, chains).}
+\item{...}{Arguments passed to \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains).}
 }
 \value{
-An object of class \code{stanfit} returned by \code{rstan::sampling}
+An object of class \href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} returned by \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains)
 }
 \description{
 Fit Bayesian Decision Curve Analysis using Stan

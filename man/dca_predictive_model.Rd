@@ -25,7 +25,7 @@ dca_predictive_model(
 the output (default FALSE).}
 
 \item{prior_p, prior_se, prior_sp}{Numeric vector with shapes for
-Beta(alpha, beta) prior used for p, Se, and Sp. Default is c(1, 1) for all.}
+Beta(alpha, beta) priors used for p, Se, and Sp, respectively. Default is c(1, 1) for all (uniform prior).}
 
 \item{refresh}{Control verbosity of \code{rstan::sampling} (check its help
 page for details).}
@@ -40,4 +40,11 @@ An object of class \code{DiagTestDCA}
 }
 \description{
 Bayesian Decision Curve Analysis for Predictive Model
+}
+\examples{
+data(PredModelData)
+head(PredModelData)
+fit <- dca_predictive_model(outcomes = PredModelData$outcomes,
+                            predictions = PredModelData$predictions)
+plot(fit)
 }

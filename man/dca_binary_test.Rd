@@ -26,28 +26,33 @@ dca_binary_test(
 \item{d}{Diseased: integer specifying total number of diseased persons or outcome cases.}
 
 \item{tp}{True Positives: integer specifying total number of diseased persons or cases correctly
-identified as such by the diagnostic test or prediction model. \code{tp} must be at most \code{d}.}
+identified as such by the binary test (positive tests among cases). \code{tp} must be at most \code{d}.}
 
 \item{tn}{True Negatives: integer specifying total number of non-diseased persons or non-cases correctly
-identified as such by the diagnostic test or prediction model. \code{tn} must be at most \code{N - d}.}
+identified as such by the diagnostic test or prediction model (negative tests among non-cases). \code{tn} must be at most \code{N - d}.}
 
 \item{thresholds}{Numeric vector with probability thresholds with which
 the decision curve should be computed (default is \code{seq(0, 0.5, 0.01)}).}
 
-\item{keep_fit}{Logical indicating whether to keep \code{stanfit} object in
+\item{keep_fit}{Logical indicating whether to keep \href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} object in
 the output (default FALSE).}
 
 \item{prior_p, prior_se, prior_sp}{Numeric vector with shapes for
 Beta(alpha, beta) prior used for p, Se, and Sp. Default is c(1, 1) for all.}
 
-\item{refresh}{Control verbosity of \code{rstan::sampling} (check its help
+\item{refresh}{Control verbosity of \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (check its help
 page for details).}
 
-\item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter, chains).}
+\item{...}{Arguments passed to \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains).}
 }
 \value{
 An object of class \code{DiagTestDCA}
 }
 \description{
 Bayesian Decision Curve Analysis for Binary Test
+}
+\examples{
+
+fit <- dca_binary_test(N = 500, d = 83, tp = 77, tn = 378)
+plot(fit)
 }

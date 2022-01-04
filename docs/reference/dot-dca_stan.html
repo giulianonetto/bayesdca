@@ -83,31 +83,30 @@
     <dl><dt>N</dt>
 <dd><p>Integer specifying total number of samples (i.e., participants).</p></dd>
 <dt>d</dt>
-<dd><p>Diseased: integer specifying total number of diseased persons.</p></dd>
+<dd><p>Diseased: integer specifying total number of diseased persons or events.</p></dd>
 <dt>tp</dt>
 <dd><p>True Positives: integer specifying total number of diseased persons correctly
-identified as such by the diagnostic test of prediction model.</p></dd>
+identified as such by the diagnostic test of prediction model (positive count among cases).</p></dd>
 <dt>tn</dt>
 <dd><p>True Negatives: integer specifying total number of diseased persons correctly
-identified as such by the diagnostic test of prediction model.</p></dd>
+identified as such by the diagnostic test of prediction model (negative count among non-cases).</p></dd>
 <dt>thresholds</dt>
 <dd><p>Numeric vector with probability thresholds with which
 the net benefit should be computed (default is <code>seq(0, 0.5, 0.01)</code>).</p></dd>
 <dt>model_type</dt>
-<dd><p>Character indicating model type. Either "correlated"
-(default) or "independent".</p></dd>
+<dd><p>Character indicating model type. Either "ic"
+("independent conjugate", default) or "mo" ("multiple observations").</p></dd>
 <dt>prior_p, prior_se, prior_sp</dt>
-<dd><p>Numeric vector with shapes for
-Beta(alpha, beta) prior used for p, Se, and Sp. Default is c(1, 1) for all.</p></dd>
+<dd><p>Numeric vectors with shapes for
+Beta(alpha, beta) priors used for p, Se, and Sp, respectively. Default is c(1, 1) for all (uniform prior).</p></dd>
 <dt>refresh</dt>
-<dd><p>Control verbosity of <code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling</a></code> (check its help
-page for details).</p></dd>
+<dd><p>Control verbosity of <a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link"><code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling</a></code></a>.</p></dd>
 <dt>...</dt>
-<dd><p>Arguments passed to <code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling</a></code> (e.g. iter, chains).</p></dd>
+<dd><p>Arguments passed to <a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link"><code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling</a></code></a> (e.g. iter, chains).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An object of class <code>stanfit</code> returned by <code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling</a></code></p>
+    <p>An object of class <a href="https://mc-stan.org/rstan/reference/stanfit-class.html" class="external-link"><code>stanfit</code></a> returned by <a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link"><code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling</a></code></a> (e.g. iter, chains)</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>

@@ -107,6 +107,19 @@ such is the sensitivity, and the number of non-diseased persons
 correctly detected as such is the specificity.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu">simulate_diagnostic_test_data</span><span class="op">(</span>B <span class="op">=</span> <span class="fl">2</span>,</span>
+<span class="r-in">                                   N <span class="op">=</span> <span class="fl">1000</span>,</span>
+<span class="r-in">                                   true_p <span class="op">=</span> <span class="fl">0.2</span>,</span>
+<span class="r-in">                                   true_se <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span class="r-in">                                   true_sp <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      N   d  tp  tn</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 1000 192 176 729</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 1000 229 202 680</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>
 
