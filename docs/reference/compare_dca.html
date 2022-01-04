@@ -36,7 +36,15 @@
       </ul><form class="form-inline my-2 my-lg-0" role="search">
         <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="../search.json" id="search-input" placeholder="Search for" autocomplete="off"></form>
 
-      <ul class="navbar-nav"><li>
+      <ul class="navbar-nav"><li class="nav-item">
+  <a class="external-link nav-link" href="https://github.com/giulianonetto/bayesdca/" aria-label="github">
+    <span class="fab fa fab fa-github fa-lg"></span>
+     
+  </a>
+</li>
+
+        
+        <li>
           <a class="external-link nav-link" id="css-toggle-btn" aria-label="github">
             <span class="fas fa fas fa-adjust fa-lg"></span>
           </a>
@@ -52,7 +60,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Compare DCA</h1>
-      
+      <small class="dont-index">Source: <a href="https://github.com/giulianonetto/bayesdca/R/dca.R" class="external-link"><code>R/dca.R</code></a></small>
       <div class="d-none name"><code>compare_dca.Rd</code></div>
     </div>
 
@@ -89,7 +97,8 @@ legends (e.g. "Test one" = fit1, test2 = fit2).</p></dd>
 <span class="r-in">                                      true_p <span class="op">=</span> <span class="fl">0.1</span>, true_se <span class="op">=</span> <span class="fl">0.8</span>, true_sp <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">data1</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      N   d  tp   tn</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 5000 496 401 3606</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 5000 478 391 3636</span>
+<span class="r-in"></span>
 <span class="r-in"><span class="co"># Test 2: more sensitivity</span></span>
 <span class="r-in"><span class="va">data2</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate_diagnostic_test_data.html">simulate_diagnostic_test_data</a></span><span class="op">(</span>B <span class="op">=</span> <span class="fl">1</span>, N <span class="op">=</span> <span class="fl">5000</span>,</span>
 <span class="r-in">                                      true_p <span class="op">=</span> <span class="fl">0.1</span>, true_se <span class="op">=</span> <span class="fl">0.95</span>, true_sp <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span>

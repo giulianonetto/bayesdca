@@ -27,6 +27,7 @@ Compare DCA
 data1 <- simulate_diagnostic_test_data(B = 1, N = 5000,
                                       true_p = 0.1, true_se = 0.8, true_sp = 0.8)
 head(data1)
+
 # Test 2: more sensitivity
 data2 <- simulate_diagnostic_test_data(B = 1, N = 5000,
                                       true_p = 0.1, true_se = 0.95, true_sp = 0.7)

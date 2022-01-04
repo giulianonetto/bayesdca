@@ -10,6 +10,19 @@ template:
 authors:
   Giuliano Netto Flores Cruz:
     href: "https://giulianonetto.netlify.app"
+repo:
+  url:
+    home: https://github.com/giulianonetto/bayesdca/
+    source: https://github.com/giulianonetto/bayesdca/
+    issue: https://github.com/giulianonetto/bayesdca/issues/
+    user: https://github.com/giulianonetto/
+  branch: main
+
+navbar:
+  structure:
+    left:  [home, reference]
+    right: [github]
+
 reference:
 - title: "Main"
   contents:
