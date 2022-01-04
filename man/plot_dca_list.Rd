@@ -4,14 +4,16 @@
 \alias{plot_dca_list}
 \title{Plot DCA list}
 \usage{
-plot_dca_list(..., data_only = FALSE, .colors = NULL)
+plot_dca_list(..., data_only = FALSE, .colors = NULL, .names = NULL)
 }
 \arguments{
 \item{...}{Fits to plot}
 
 \item{data_only}{If TRUE, returns data for ggplot objects (default is FALSE).}
 
-\item{.colors}{Char vector with colors for each fit object.}
+\item{.colors}{Character vector with colors for each fit object.}
+
+\item{.names}{Optional character vector with names for objects (mostly for internal use).}
 }
 \description{
 Plot DCA list

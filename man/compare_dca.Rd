@@ -4,13 +4,15 @@
 \alias{compare_dca}
 \title{Compare DCA}
 \usage{
-compare_dca(..., as_plot_list = FALSE)
+compare_dca(..., as_plot_list = FALSE, .names = NULL)
 }
 \arguments{
 \item{...}{Pass two bayesDCA fit objects with names as they should appear in plots'
 legends (e.g. "Test one" = fit1, test2 = fit2).}
 
 \item{as_plot_list}{If TRUE, returns list of ggplot2 plots (default is FALSE).}
+
+\item{.names}{Optional character vector with names for objects (mostly for internal use).}
 }
 \value{
 A figure of multiple plots
