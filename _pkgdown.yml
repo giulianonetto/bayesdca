@@ -20,8 +20,14 @@ repo:
 
 navbar:
   structure:
-    left:  [home, reference]
+    left:  [home, reference, articles]
     right: [github]
+  components:
+    articles:
+      text: Does it work?
+      menu:
+      - text: Clincal Prediction Models
+        href: articles/performance-cpm.html
 
 reference:
 - title: "Main"
