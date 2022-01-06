@@ -179,6 +179,7 @@ dca_binary_test <- function(N, d, tp, tn,
 #' plot(fit)
 dca_predictive_model <- function(outcomes,
                                  predictions,
+                                 keep_draws = TRUE,
                                  keep_fit = FALSE,
                                  prior_p = c(1, 1),
                                  prior_se = c(1, 1),
@@ -238,6 +239,10 @@ dca_predictive_model <- function(outcomes,
 
   if (isTRUE(keep_fit)) {
     output_data[['fit']] <- fit
+  }
+
+  if(isTRUE(keep_draws)) {
+    output_data[['draws']] <- rstan::extract(fit)
   }
 
   .output <- structure(output_data, class = "PredModelDCA")
@@ -673,10 +678,8 @@ compare_dca <- function(..., as_plot_list = FALSE, .names = NULL) {
     }
   }
 
-  d <- dots[[1]]$draws$net_benefit - dots[[2]]$draws$net_benefit
-
-  dp <- plot_delta_nb(..., .delta = d, .names = names(dots))
-  prob_better <- plot_prob_better(..., .delta = d, .names = names(dots))
+  dp <- plot_delta_nb(..., .names = names(dots))
+  prob_better <- plot_prob_better(..., .names = names(dots))
   dca <- plot_dca_list(..., .names = names(dots))
 
   if (isTRUE(as_plot_list)) {
@@ -690,12 +693,14 @@ compare_dca <- function(..., as_plot_list = FALSE, .names = NULL) {
 #' @title Plot delta net benefit
 #' @param ... Pass two bayesDCA fit objects with names as they should appear in plots'
 #' legends (e.g. "Test one" = fit1, test2 = fit2).
+#' @param data_only If TRUE, returns data for ggplot objects (default is FALSE).
 #' @param .delta Optional pre-computed delta net benefit (mostly for internal use).
 #' @param .names Optional character vector with names for objects (mostly for internal use).
 #' @return A ggplot object.
 
-plot_delta_nb <- function(..., .delta = NULL, .names = NULL) {
+plot_delta_nb <- function(..., data_only = FALSE, .delta = NULL, .names = NULL) {
   dots <- list(...)
+  n_dots <- length(dots)
   if (!is.null(.names)) {
     names(dots) <- .names
   } else {
@@ -707,14 +712,27 @@ plot_delta_nb <- function(..., .delta = NULL, .names = NULL) {
   }
 
   if (is.null(.delta)) {
-    .delta <- dots[[1]]$draws$net_benefit - dots[[2]]$draws$net_benefit
+    if (n_dots == 1) {
+      .delta <- dots[[1]]$draws$delta
+    } else if (n_dots == 2) {
+      .delta <- dots[[1]]$draws$net_benefit - dots[[2]]$draws$net_benefit
+    } else {
+      stop("Cannot plot more than two objects.")
+    }
+
   }
 
-  q <- matrixStats::colQuantiles(.delta, probs = c(.025, .975))
+  q <- matrixStats::colQuantiles(.delta, probs = c(.025, .5, .975))
+
+  .subtitle <- ifelse(
+    n_dots == 1,
+    paste0(names(dots)[1], ' \u2212 Treat all/none'),
+    paste0(names(dots)[1], ' \u2212 ', names(dots)[2])
+  )
 
   .plot <- tibble::tibble(
     thr = dots[[1]]$thresholds,
-    estimate = matrixStats::colMedians(.delta),
+    estimate = q[,'50%'],
     `2.5%` = q[,'2.5%'],
     `97.5%` = q[,'97.5%']
   ) %>%
@@ -732,8 +750,10 @@ plot_delta_nb <- function(..., .delta = NULL, .names = NULL) {
     ggplot2::labs(
       x = "Threshold",
       y = '\u0394 NB',
-      subtitle = paste0(names(dots)[1], ' \u2212 ', names(dots)[2])
+      subtitle = .subtitle
     )
+
+  if (isTRUE(data_only)) return(.plot$data)
 
   return(.plot)
 }
@@ -741,11 +761,13 @@ plot_delta_nb <- function(..., .delta = NULL, .names = NULL) {
 #' @title Plot probability of better net benefit between two models or tests
 #' @param ... Pass two bayesDCA fit objects with names as they should appear in plots'
 #' legends (e.g. "Test one" = fit1, test2 = fit2).
+#' @param data_only If TRUE, returns data for ggplot objects (default is FALSE).
 #' @param .delta Optional pre-computed delta net benefit (mostly for internal use).
 #' @param .names Optional character vector with names for objects (mostly for internal use).
 #' @return A ggplot object.
-plot_prob_better <- function(..., .delta = NULL, .names = NULL) {
+plot_prob_better <- function(..., data_only = FALSE, .delta = NULL, .names = NULL) {
   dots <- list(...)
+  n_dots <- length(dots)
   if (!is.null(.names)) {
     names(dots) <- .names
   } else {
@@ -757,8 +779,20 @@ plot_prob_better <- function(..., .delta = NULL, .names = NULL) {
   }
 
   if (is.null(.delta)) {
-    .delta <- dots[[1]]$draws$net_benefit - dots[[2]]$draws$net_benefit
+    if (n_dots == 1) {
+      .delta <- dots[[1]]$draws$delta
+    } else if (n_dots == 2) {
+      .delta <- dots[[1]]$draws$net_benefit - dots[[2]]$draws$net_benefit
+    } else {
+      stop("Cannot plot more than two objects.")
+    }
   }
+
+  .subtitle <- ifelse(
+    n_dots == 1,
+    paste0("Pr( ", names(dots)[1], " > Treat all/none", " )"),
+    paste0("Pr( ", names(dots)[1], " > ", names(dots)[2], " )")
+  )
 
   .plot <- tibble::tibble(
     thr = dots[[1]]$thresholds,
@@ -776,8 +810,65 @@ plot_prob_better <- function(..., .delta = NULL, .names = NULL) {
     ) +
     ggplot2::labs(
       x = "Threshold", y = NULL,
-      subtitle = paste0("Pr( ", names(dots)[1], " > ", names(dots)[2], " )")
+      subtitle = .subtitle
     )
+
+  if (isTRUE(data_only)) return(.plot$data)
+
+  return(.plot)
+}
+
+#' @title Compare posterior distributions at specific thresholds
+#' @param ... Pass up to two bayesDCA fit objects with names as they should appear in plots'
+#' legends (e.g. "Test one" = fit1, test2 = fit2). First object appears in y axis.
+#' @param thr Threshold to use - should have been computed in the first object.
+#' @param .names Optional character vector with names for objects (mostly for internal use).
+#' @param data_only If TRUE, returns data for ggplot objects (default is FALSE).
+#' @return A ggplot object.
+compare_threshold_posterior <- function(..., thr, .names = NULL, data_only = FALSE) {
+  dots <- list(...)
+  n_dots <- length(dots)
+  if (!is.null(.names)) {
+    names(dots) <- .names
+  } else {
+    if (is.null(names(dots))) {
+      .dots <- match.call(expand.dots = FALSE)$...
+      .dots <- .dots[sapply(.dots, is.name)]
+      names(dots) <- sapply(.dots, deparse)
+    }
+  }
+  thr_ix <- which(dplyr::near(dots[[1]]$thresholds, thr))[1]
+  if (is.na(thr_ix)) {
+    stop("There seems to have no such threshold available.")
+  }
+
+  yvalues <- dots[[1]]$draws$net_benefit[, thr_ix]
+  if (n_dots == 1) {
+    xvalues <- dots[[1]]$draws$treat_all[, thr_ix]
+    xlab <- "Treat all"
+  } else if (n_dots == 2) {
+    xvalues <- dots[[2]]$draws$net_benefit[, thr_ix]
+    xlab <- names(dots)[2]
+  } else {
+    stop("Cannot plot more than two objects.")
+  }
+
+  diff_prob <- round(mean(yvalues > xvalues)*100, 2)
+  .subtitle <- paste0("Pr( ", names(dots)[1], " > ", xlab, " ) = ", diff_prob, "%")
+  .plot <- data.frame(xvalues, yvalues) %>%
+    ggplot2::ggplot(ggplot2::aes(xvalues, yvalues)) +
+    ggplot2::geom_point(alpha = 0.3) +
+    ggplot2::geom_abline(slope = 1, intercept = 0,
+                         color = "red", linetype = "longdash") +
+    ggplot2::theme_bw() +
+    ggplot2::labs(
+      x = xlab,
+      y = names(dots)[1],
+      title = paste0("Threshold: ", thr),
+      subtitle = .subtitle
+    )
+
+  if (isTRUE(data_only)) return(.plot$data)
 
   return(.plot)
 }

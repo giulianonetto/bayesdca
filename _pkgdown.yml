@@ -24,9 +24,9 @@ navbar:
     right: [github]
   components:
     articles:
-      text: Does it work?
+      text: Articles
       menu:
-      - text: Clincal Prediction Models
+      - text: Does it work?
         href: articles/performance-cpm.html
 
 reference:

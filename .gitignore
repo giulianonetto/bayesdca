@@ -12,3 +12,4 @@ src
 !docs/*/*.html
 !docs/*/*/*.html
 inst/tmp/bayesDCA
+inst/tmp/localsonly

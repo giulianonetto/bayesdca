@@ -4,11 +4,13 @@
 \alias{plot_prob_better}
 \title{Plot probability of better net benefit between two models or tests}
 \usage{
-plot_prob_better(..., .delta = NULL, .names = NULL)
+plot_prob_better(..., data_only = FALSE, .delta = NULL, .names = NULL)
 }
 \arguments{
 \item{...}{Pass two bayesDCA fit objects with names as they should appear in plots'
 legends (e.g. "Test one" = fit1, test2 = fit2).}
+
+\item{data_only}{If TRUE, returns data for ggplot objects (default is FALSE).}
 
 \item{.delta}{Optional pre-computed delta net benefit (mostly for internal use).}
 

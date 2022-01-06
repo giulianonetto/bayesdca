@@ -80,7 +80,7 @@ fit3 <- dca_predictive_model(outcomes = PredModelData$outcomes,
 plot_dca_list("test A" = fit1, "test B" = fit2, "model" = fit3)
 ```
 
-In this example, the predictive model doesn't seem to add much over the diagnostic tests for most thresholds, although it might overcome the tests for very high thresholds (e.g. aove 40%). If the model requires multiple predictors, then one migh prefer to use simple binary tests - depending on the application, of course. In that case, one may wonder which test to pick.
+In this example, the predictive model doesn't seem to add much over the diagnostic tests for most thresholds, although it might overcome the tests for very high thresholds (e.g. above 40%). If the model requires multiple predictors, then one might prefer to use simple binary tests - depending on the application, of course. In that case, one may wonder which test to pick.
 
 ## Compare DCA
 

@@ -4,11 +4,13 @@
 \alias{plot_delta_nb}
 \title{Plot delta net benefit}
 \usage{
-plot_delta_nb(..., .delta = NULL, .names = NULL)
+plot_delta_nb(..., data_only = FALSE, .delta = NULL, .names = NULL)
 }
 \arguments{
 \item{...}{Pass two bayesDCA fit objects with names as they should appear in plots'
 legends (e.g. "Test one" = fit1, test2 = fit2).}
+
+\item{data_only}{If TRUE, returns data for ggplot objects (default is FALSE).}
 
 \item{.delta}{Optional pre-computed delta net benefit (mostly for internal use).}
 
