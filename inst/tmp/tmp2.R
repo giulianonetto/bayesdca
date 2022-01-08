@@ -40,3 +40,89 @@ ggplot(d, aes(thr)) +
   geom_hline(yintercept = c(0,.1),
              linetype = "dashed") +
   theme_bw()
+
+# DCA pair fitting
+model <- rstan::stan_model("inst/tmp/dca_predictive_model_pair.stan")
+b <- sample(c(-1, 1), nrow(PredModelData), replace = T)
+PredModelData2 <- PredModelData %>% dplyr::mutate(
+  predictions = plogis(log(predictions/(1-predictions)) + rnorm(nrow(.), sd=.5))
+  )
+thresholds = seq(0, .5, .01)
+names(thresholds) <- thresholds
+m1_data <- get_thr_data(PredModelData$outcomes,
+                        PredModelData$predictions,
+                        thresholds = thresholds)
+m2_data <- get_thr_data(PredModelData2$outcomes,
+                        PredModelData2$predictions,
+                        thresholds = thresholds)
+n_thr <- length(thresholds)
+.data <- list(
+  n_thr = n_thr,
+  N = m1_data$N,
+  tp_m1 = m1_data$tp,
+  tp_m2 = m2_data$tp,
+  tn_m1 = m1_data$tn,
+  tn_m2 = m2_data$tn,
+  d = m1_data$d,
+  thresholds = thresholds,
+  prior_p1 = 1,
+  prior_p2 = 1,
+  prior_Se1_m1 = rep(1, n_thr),
+  prior_Se2_m1 = rep(1, n_thr),
+  prior_Se1_m2 = rep(1, n_thr),
+  prior_Se2_m2 = rep(1, n_thr),
+  prior_Sp1_m1 = rep(1, n_thr),
+  prior_Sp2_m1 = rep(1, n_thr),
+  prior_Sp1_m2 = rep(1, n_thr),
+  prior_Sp2_m2 = rep(1, n_thr)
+)
+fit <- sampling(model, data=.data, refresh=0, cores = 4)
+s <- rstan::summary(fit)$summary %>%
+  data.frame(check.names = FALSE) %>%
+  tibble::rownames_to_column("par_name")
+d <- rstan::extract(fit)
+j = 20; plot(d$net_benefit_m1[,j], d$net_benefit_m2[,j], main = thresholds[j]);  cor(d$net_benefit_m1[,j], d$net_benefit_m2[,j])
+plot(
+  thresholds,
+  sapply(1:51, function(i) {
+    cor(
+      d$net_benefit_m1[,i],
+      d$net_benefit_m2[,i]
+    )
+  })
+)
+
+# DCA list fitting
+
+model2 <- rstan::stan_model("inst/tmp/dca_predictive_model_list.stan")
+
+.data2 <- list(
+  n_thr = n_thr,
+  n_models = 2,
+  N = m1_data$N,
+  d = m1_data$d,
+  tp = cbind(m1_data$tp, m2_data$tp),
+  tn = cbind(m1_data$tn, m2_data$tn),
+  thresholds = thresholds,
+  prior_p1 = 1,
+  prior_p2 = 1,
+  prior_Se1 = cbind(rep(1, n_thr), rep(1, n_thr)),
+  prior_Se2 = cbind(rep(1, n_thr), rep(1, n_thr)),
+  prior_Sp1 = cbind(rep(1, n_thr), rep(1, n_thr)),
+  prior_Sp2 = cbind(rep(1, n_thr), rep(1, n_thr))
+)
+fit2 <- sampling(model2, data=.data2, cores = 4)
+s <- rstan::summary(fit)$summary %>%
+  data.frame(check.names = FALSE) %>%
+  tibble::rownames_to_column("par_name")
+d <- rstan::extract(fit)
+j = 20; plot(d$net_benefit_m1[,j], d$net_benefit_m2[,j], main = thresholds[j]);  cor(d$net_benefit_m1[,j], d$net_benefit_m2[,j])
+plot(
+  thresholds,
+  sapply(1:51, function(i) {
+    cor(
+      d$net_benefit_m1[,i],
+      d$net_benefit_m2[,i]
+    )
+  })
+)
