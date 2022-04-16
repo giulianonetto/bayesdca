@@ -1,12 +1,15 @@
 #' Predictive Model Evaluation Data.
 #'
-#' A dataset containing the outcomes (0 or 1) and predictions (probabilities)
-#' for an example model. Based on `rmda::dcaData`.
+#' A dataset containing the outcomes (0 or 1), probability predictions
+#' for an example model, and results from an example binary test.
+#' Binary test generated using sensitivity
+#' and specificity of 80%. Based on `rmda::dcaData`.
 #'
-#' @format A data frame with 500 rows and 2 variables:
+#' @format A data frame with 500 rows and 3 variables:
 #' \describe{
 #'   \item{outcomes}{binary outcomes (0 or 1, int.)}
 #'   \item{predictions}{predicted probabilities (num.)}
+#'   \item{binary_test}{binary test results (0 or 1, int.)}
 #'   ...
 #' }
 #' @source \url{https://giulianonetto.github.io/bayesdca/}

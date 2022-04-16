@@ -7,7 +7,9 @@
 dca_predictive_model(
   outcomes,
   predictions,
+  keep_draws = TRUE,
   keep_fit = FALSE,
+  thresholds = seq(0.01, 0.5, 0.01),
   prior_p = c(1, 1),
   prior_se = c(1, 1),
   prior_sp = c(1, 1),
@@ -24,6 +26,9 @@ dca_predictive_model(
 \item{keep_fit}{Logical indicating whether to keep \code{stanfit} in
 the output (default FALSE).}
 
+\item{thresholds}{Numeric vector with probability thresholds with which
+the net benefit should be computed (default is \code{seq(0, 0.5, 0.01)}).}
+
 \item{prior_p, prior_se, prior_sp}{Numeric vector with shapes for
 Beta(alpha, beta) priors used for p, Se, and Sp, respectively. Default is c(1, 1) for all (uniform prior).}
 
@@ -31,9 +36,6 @@ Beta(alpha, beta) priors used for p, Se, and Sp, respectively. Default is c(1, 1
 page for details).}
 
 \item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter, chains).}
-
-\item{thresholds}{Numeric vector with probability thresholds with which
-the net benefit should be computed (default is \code{seq(0, 0.5, 0.01)}).}
 }
 \value{
 An object of class \code{DiagTestDCA}

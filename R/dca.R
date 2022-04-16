@@ -17,21 +17,21 @@
 #' @return An object of class [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)
 #'
 .dca_stan <- function(N, d, tp, tn, B = NULL,
-                      thresholds = seq(0, 0.5, 0.01),
+                      thresholds = seq(0.01, 0.5, 0.01),
                       model_type = "ic",
                       prior_p = c(1, 1),
                       prior_se = c(1, 1),
                       prior_sp = c(1, 1),
                       refresh = 0, ...) {
-  
+
   if (is.null(thresholds)) {
     thresholds <- 0
   }
-  
+
   thresholds <- pmin(thresholds, 0.999)  # odds(1) = Inf
-  
+
   n_thresholds <- length(thresholds)
-  
+
   standata <- list(
     # input data
     N = N, d = d, tp = tp, tn = tn, B = B,
@@ -43,7 +43,7 @@
     n_thresholds = n_thresholds,
     thresholds = array(thresholds)
   )
-  
+
   if (model_type %in% c("correlated", "c")) {
     .model <- stanmodels$dca_correlated
   } else if (model_type %in% c("independent", "i")) {
@@ -57,7 +57,7 @@
   } else {
     stop("Invalid `model_type`.")
   }
-  
+
   stanfit <- rstan::sampling(.model,
                              data = standata,
                              refresh = refresh, ...)
@@ -89,7 +89,7 @@
 #' fit <- dca_binary_test(N = 500, d = 83, tp = 77, tn = 378)
 #' plot(fit)
 dca_binary_test <- function(N, d, tp, tn,
-                            thresholds = seq(0, 0.5, 0.01),
+                            thresholds = seq(0.01, 0.5, 0.01),
                             keep_fit = FALSE,
                             keep_draws = TRUE,
                             prior_p = c(1, 1),
@@ -97,16 +97,16 @@ dca_binary_test <- function(N, d, tp, tn,
                             prior_sp = c(1, 1),
                             summary_probs = c(0.025, 0.975),
                             refresh = 0, ...) {
-  
+
   thresholds <- pmin(thresholds, 0.99)
-  
+
   fit <- .dca_stan(
     N = N, d = d, tp = tp, tn = tn, model_type = "ic",
     prior_p = prior_p, prior_se = prior_se, prior_sp = prior_sp,
     thresholds = thresholds, refresh = refresh,
     ...
   )
-  
+
   fit_summary <- rstan::summary(
     fit, probs = summary_probs
   )$summary %>%
@@ -115,7 +115,7 @@ dca_binary_test <- function(N, d, tp, tn,
     tibble::as_tibble() %>%
     dplyr::select(-se_mean) %>%
     dplyr::rename(estimate := mean)
-  
+
   model_parameters <- fit_summary %>%
     dplyr::filter(
       stringr::str_detect(par_name, "p|Sp|Se")
@@ -134,7 +134,7 @@ dca_binary_test <- function(N, d, tp, tn,
       thr = thresholds[i]
     ) %>%
     dplyr::select(par_name, thr, dplyr::everything(), -i)
-  
+
   output_data <- list(
     model_parameters = model_parameters,
     net_benefit = net_benefit, treat_all = treat_all,
@@ -142,15 +142,15 @@ dca_binary_test <- function(N, d, tp, tn,
     prior_p = prior_p, prior_se = prior_se, prior_sp = prior_sp,
     thresholds = thresholds
   )
-  
+
   if (isTRUE(keep_fit)) {
     output_data[['fit']] <- fit
   }
-  
+
   if(isTRUE(keep_draws)) {
     output_data[['draws']] <- rstan::extract(fit)
   }
-  
+
   .output <- structure(output_data, class = "DiagTestDCA")
   return(.output)
 }
@@ -181,18 +181,20 @@ dca_predictive_model <- function(outcomes,
                                  predictions,
                                  keep_draws = TRUE,
                                  keep_fit = FALSE,
+                                 thresholds = seq(0.01, 0.5, 0.01),
                                  prior_p = c(1, 1),
                                  prior_se = c(1, 1),
                                  prior_sp = c(1, 1),
                                  summary_probs = c(0.025, 0.975),
                                  refresh = 0, ...) {
-  
+
   df <- get_thr_data(outcomes = outcomes,
-                     predictions = predictions)
+                     predictions = predictions,
+                     thresholds = thresholds)
   f <- function(i, n) lapply(i, function(k) rep(k, n))
   prior_se <- f(prior_se, nrow(df))
   prior_sp <- f(prior_sp, nrow(df))
-  
+
   fit <- .dca_stan(
     N = df$N, d = df$d, tp = df$tp, tn = df$tn, B = nrow(df),
     thresholds = df$thresholds, model_type = "mo",
@@ -200,7 +202,7 @@ dca_predictive_model <- function(outcomes,
     refresh = refresh,
     ...
   )
-  
+
   fit_summary <- rstan::summary(
     fit, probs = summary_probs
   )$summary %>%
@@ -209,7 +211,7 @@ dca_predictive_model <- function(outcomes,
     tibble::as_tibble() %>%
     dplyr::select(-se_mean) %>%
     dplyr::rename(estimate := mean)
-  
+
   model_parameters <- fit_summary %>%
     dplyr::filter(
       stringr::str_detect(par_name, "p|Sp|Se")
@@ -228,7 +230,7 @@ dca_predictive_model <- function(outcomes,
       thr = df$thresholds[i]
     ) %>%
     dplyr::select(par_name, thr, dplyr::everything(), -i)
-  
+
   output_data <- list(
     model_parameters = model_parameters,
     net_benefit = net_benefit, treat_all = treat_all,
@@ -236,15 +238,15 @@ dca_predictive_model <- function(outcomes,
     prior_p = prior_p, prior_se = prior_se, prior_sp = prior_sp,
     thresholds = df$thresholds
   )
-  
+
   if (isTRUE(keep_fit)) {
     output_data[['fit']] <- fit
   }
-  
+
   if(isTRUE(keep_draws)) {
     output_data[['draws']] <- rstan::extract(fit)
   }
-  
+
   .output <- structure(output_data, class = "PredModelDCA")
   return(.output)
 }
@@ -330,7 +332,7 @@ print.PredModelDCA <- function(obj, ...) {
 plot.DiagTestDCA <- function(obj, data_only = FALSE, .color = "#4DAF4AFF", ...) {
   .colors <- c("Test" = .color,
                "Treat all" = "black", "Treat none" = "gray60")
-  
+
   .p <- obj$net_benefit %>%
     ggplot2::ggplot(ggplot2::aes(thr)) +
     ggplot2::geom_ribbon(ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`,
@@ -368,9 +370,9 @@ plot.DiagTestDCA <- function(obj, data_only = FALSE, .color = "#4DAF4AFF", ...) 
     ggplot2::labs(x = "Threshold", y = "Net Benefit",
                   color = NULL) +
     ggplot2::guides(fill = 'none')
-  
+
   if (isTRUE(data_only)) return(.p$data)
-  
+
   return(.p)
 }
 
@@ -388,7 +390,7 @@ plot.DiagTestDCA <- function(obj, data_only = FALSE, .color = "#4DAF4AFF", ...) 
 #'                             predictions = PredModelData$predictions)
 #' plot(fit)
 plot.PredModelDCA <- function(obj, data_only = FALSE, .color = "#E41A1CFF", ...) {
-  
+
   .colors <- c("Model" = .color,
                "Treat all" = "black", "Treat none" = "gray60")
   .p <- obj$net_benefit %>%
@@ -428,10 +430,10 @@ plot.PredModelDCA <- function(obj, data_only = FALSE, .color = "#E41A1CFF", ...)
     ggplot2::labs(x = "Threshold", y = "Net Benefit",
                   color = NULL) +
     ggplot2::guides(fill = 'none')
-  
-  
+
+
   if (isTRUE(data_only)) return(.p$data)
-  
+
   return(.p)
 }
 
@@ -472,14 +474,14 @@ plot_dca_list <- function(..., data_only = FALSE, .colors = NULL, .names = NULL)
       names(fit_list) <- sapply(.dots, deparse)
     }
   }
-  
+
   plot_data <- purrr::map(fit_list, ~ .x$net_benefit) %>%
     dplyr::bind_rows(.id = "fit_name")
-  
+
   ref_fit <- names(fit_list)[1]
   treat_all_data <- fit_list[[ref_fit]]$treat_all %>%
     dplyr::mutate(fit_name = "treat all")
-  
+
   if (is.null(.colors)) {
     n_fits <- length(fit_list)
     .colors <- grDevices:::colorRampPalette(
@@ -488,7 +490,7 @@ plot_dca_list <- function(..., data_only = FALSE, .colors = NULL, .names = NULL)
   }
   names(.colors) <- names(fit_list)
   .colors <- c(.colors, "treat all" = "black", "treat none" = "gray60")
-  
+
   .p <- plot_data %>%
     ggplot2::ggplot(ggplot2::aes(x = thr)) +
     ggplot2::geom_ribbon(ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`,
@@ -523,9 +525,9 @@ plot_dca_list <- function(..., data_only = FALSE, .colors = NULL, .names = NULL)
     ) +
     ggplot2::labs(x = "Threshold", y = "Net Benefit",
                   color = NULL)
-  
+
   if (isTRUE(data_only)) return(.p$data)
-  
+
   return(.p)
 }
 
@@ -536,8 +538,8 @@ plot_dca_list <- function(..., data_only = FALSE, .colors = NULL, .names = NULL)
 #' @importFrom magrittr %>%
 get_thr_data <- function(outcomes,
                          predictions,
-                         thresholds = seq(0, 0.5, 0.02)) {
-  
+                         thresholds = seq(0.01, 0.5, 0.01)) {
+
   thr_data <- tibble::tibble(
     N = length(outcomes),
     d = sum(outcomes),
@@ -559,9 +561,9 @@ get_thr_data <- function(outcomes,
 #' @importFrom magrittr %>%
 #' @import patchwork
 example_delta_nb <- function() {
-  
+
   as_list = FALSE
-  
+
   d1 <- simulate_diagnostic_test_data(B = 1, N = 5000,
                                       true_p = 0.1,
                                       true_se = 0.95,
@@ -578,8 +580,8 @@ example_delta_nb <- function() {
                           d = d2$d,
                           tp = d2$tp,
                           tn = d2$tn)
-  
-  
+
+
   true_nb1 <- sapply(fit1$thresholds,function(i) {
     .1*.95 - (1-.1)*(1-.7)*(i/(1-i))
   })
@@ -589,7 +591,7 @@ example_delta_nb <- function() {
   true_delta <- purrr::map2_dbl(true_nb2, true_nb1, ~{
     .x-.y
   })
-  
+
   d <- fit2$draws$net_benefit - fit1$draws$net_benefit
   q <- matrixStats::colQuantiles(d, probs = c(.025, .975))
   dp <- tibble::tibble(
@@ -613,7 +615,7 @@ example_delta_nb <- function() {
       color = 'gray30', lwd = 0.8
     ) +
     ggplot2::labs(x = "Threshold", y = "NB2 - NB1")
-  
+
   prob_better <- tibble::tibble(
     thr = fit1$thresholds,
     estimate = colMeans(d > 0)
@@ -629,13 +631,13 @@ example_delta_nb <- function() {
       breaks = scales::pretty_breaks(10)
     ) +
     ggplot2::labs(x = "Threshold", y = "Pr(NB2 > NB1)")
-  
+
   dca <- bayesDCA::plot_dca_list(test1 = fit1, test2 = fit2)
-  
+
   if (isTRUE(as_list)) {
     return(list(dca = dca, delta = dp))
   }
-  
+
   dca | dp
 }
 
@@ -677,15 +679,15 @@ compare_dca <- function(..., as_plot_list = FALSE, .names = NULL) {
       names(dots) <- sapply(.dots, deparse)
     }
   }
-  
+
   dp <- plot_delta_nb(..., .names = names(dots))
   prob_better <- plot_prob_better(..., .names = names(dots))
   dca <- plot_dca_list(..., .names = names(dots))
-  
+
   if (isTRUE(as_plot_list)) {
     return(list(dca = dca, delta = dp, prob_better = prob_better))
   }
-  
+
   dca / (dp | prob_better)
 }
 
@@ -710,7 +712,7 @@ plot_delta_nb <- function(..., data_only = FALSE, .delta = NULL, .names = NULL) 
       names(dots) <- sapply(.dots, deparse)
     }
   }
-  
+
   if (is.null(.delta)) {
     if (n_dots == 1) {
       .delta <- dots[[1]]$draws$delta
@@ -719,17 +721,17 @@ plot_delta_nb <- function(..., data_only = FALSE, .delta = NULL, .names = NULL) 
     } else {
       stop("Cannot plot more than two objects.")
     }
-    
+
   }
-  
+
   q <- matrixStats::colQuantiles(.delta, probs = c(.025, .5, .975))
-  
+
   .subtitle <- ifelse(
     n_dots == 1,
     paste0(names(dots)[1], ' \u2212 Treat all/none'),
     paste0(names(dots)[1], ' \u2212 ', names(dots)[2])
   )
-  
+
   .plot <- tibble::tibble(
     thr = dots[[1]]$thresholds,
     estimate = q[,'50%'],
@@ -752,9 +754,9 @@ plot_delta_nb <- function(..., data_only = FALSE, .delta = NULL, .names = NULL) 
       y = '\u0394 NB',
       subtitle = .subtitle
     )
-  
+
   if (isTRUE(data_only)) return(.plot$data)
-  
+
   return(.plot)
 }
 
@@ -777,7 +779,7 @@ plot_prob_better <- function(..., data_only = FALSE, .delta = NULL, .names = NUL
       names(dots) <- sapply(.dots, deparse)
     }
   }
-  
+
   if (is.null(.delta)) {
     if (n_dots == 1) {
       .delta <- dots[[1]]$draws$delta
@@ -787,13 +789,13 @@ plot_prob_better <- function(..., data_only = FALSE, .delta = NULL, .names = NUL
       stop("Cannot plot more than two objects.")
     }
   }
-  
+
   .subtitle <- ifelse(
     n_dots == 1,
     paste0("Pr( ", names(dots)[1], " > Treat all/none", " )"),
     paste0("Pr( ", names(dots)[1], " > ", names(dots)[2], " )")
   )
-  
+
   .plot <- tibble::tibble(
     thr = dots[[1]]$thresholds,
     estimate = colMeans(.delta > 0)
@@ -812,9 +814,9 @@ plot_prob_better <- function(..., data_only = FALSE, .delta = NULL, .names = NUL
       x = "Threshold", y = NULL,
       subtitle = .subtitle
     )
-  
+
   if (isTRUE(data_only)) return(.plot$data)
-  
+
   return(.plot)
 }
 
@@ -841,7 +843,7 @@ compare_threshold_posterior <- function(..., thr, .names = NULL, data_only = FAL
   if (is.na(thr_ix)) {
     stop("There seems to have no such threshold available.")
   }
-  
+
   yvalues <- dots[[1]]$draws$net_benefit[, thr_ix]
   if (n_dots == 1) {
     xvalues <- dots[[1]]$draws$treat_all[, thr_ix]
@@ -852,7 +854,7 @@ compare_threshold_posterior <- function(..., thr, .names = NULL, data_only = FAL
   } else {
     stop("Cannot plot more than two objects.")
   }
-  
+
   diff_prob <- round(mean(yvalues > xvalues)*100, 2)
   .subtitle <- paste0("Pr( ", names(dots)[1], " > ", xlab, " ) = ", diff_prob, "%")
   .plot <- data.frame(xvalues, yvalues) %>%
@@ -867,8 +869,8 @@ compare_threshold_posterior <- function(..., thr, .names = NULL, data_only = FAL
       title = paste0("Threshold: ", thr),
       subtitle = .subtitle
     )
-  
+
   if (isTRUE(data_only)) return(.plot$data)
-  
+
   return(.plot)
 }

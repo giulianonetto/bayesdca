@@ -2,10 +2,12 @@
 
 S3method(plot,DiagTestDCA)
 S3method(plot,PredModelDCA)
+S3method(print,BayesDCAList)
 S3method(print,DiagTestDCA)
 S3method(print,PredModelDCA)
 export(compare_dca)
 export(dca_binary_test)
+export(dca_list)
 export(dca_predictive_model)
 export(plot_dca_list)
 export(simulate_diagnostic_test_data)

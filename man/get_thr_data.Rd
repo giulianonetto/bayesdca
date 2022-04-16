@@ -4,7 +4,7 @@
 \alias{get_thr_data}
 \title{Get Threshold Performance Data}
 \usage{
-get_thr_data(outcomes, predictions, thresholds = seq(0, 0.5, 0.02))
+get_thr_data(outcomes, predictions, thresholds = seq(0.01, 0.5, 0.01))
 }
 \arguments{
 \item{outcomes}{Integer vector (0 or 1) with binary outcomes.}

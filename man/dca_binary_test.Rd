@@ -9,7 +9,7 @@ dca_binary_test(
   d,
   tp,
   tn,
-  thresholds = seq(0, 0.5, 0.01),
+  thresholds = seq(0.01, 0.5, 0.01),
   keep_fit = FALSE,
   keep_draws = TRUE,
   prior_p = c(1, 1),
