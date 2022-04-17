@@ -313,8 +313,7 @@ extract_dca_list_summary <- function(fit,
       treat_all = treat_all,
       prevalence = prevalence,
       sensitivity = sensitivity,
-      specificity = specificity,
-      model_or_test_names = model_or_test_names
+      specificity = specificity
     ), class = "BayesDCASummary"
   )
   return(.summary)
@@ -371,4 +370,110 @@ print.BayesDCAList <- function(obj, ...) {
       collapse = "\n"
     )
   )
+}
+
+#' @title Plot BayesDCAList
+#'
+#' @param obj BayesDCAList object
+#' @param colors Named vector with color for each model or test. If provided
+#' for a subset of models or tests, only that subset will be plotted.
+#' @param labels Named vector with label for each model or test.
+#' @importFrom magrittr %>%
+#' @export
+#' @examples
+#' fit <- dca_list(PredModelData, cores = 4)
+#' my_colors <- list("predictions" = "red", 
+#'                   "binary_test" = "#4DAF4AFF")
+#' plot(fit, color = my_colors)
+plot.BayesDCAList <- function(obj, colors = NULL, labels = NULL, ...) {
+  
+  # pick color palette for ggplot
+  color_values <- c(
+    "Treat all" = "black", "Treat none" = "gray60"
+  )
+  n_colors <- length(obj$model_or_test_names)
+  if (n_colors < 9) {
+    palette <- RColorBrewer:::brewer.pal(max(c(n_colors, 3)), 'Dark2')
+  } else {
+    palette <- grDevices::colorRampPalette(
+      RColorBrewer:::brewer.pal(n_colors, 'Set2')
+    )(n_colors)
+  }
+  # set actual color values to use in scale_color_manual
+  for (i in seq_len(n_colors)) {
+    model_or_test <- obj$model_or_test_names[i]
+    if (!is.null(colors) & model_or_test %in% names(colors)) {
+      color_values[[model_or_test]] <- colors[[model_or_test]]
+    } else {
+      color_values[[model_or_test]] <- palette[i]
+    }
+  }
+  # define color and label scales
+  if (is.null(labels)) {
+    colors_and_labels <- list(
+      ggplot2::scale_color_manual(
+        values = color_values
+      ),
+      ggplot2::scale_fill_manual(
+        values = color_values
+      )
+    )
+  } else {
+    colors_and_labels <- list(
+      ggplot2::scale_color_manual(
+        labels = labels, values = color_values
+      ),
+      ggplot2::scale_fill_manual(
+        labels = labels, values = color_values
+      )
+    )
+  }
+
+  .p <- ggplot2::ggplot() +
+    # set x axis
+    ggplot2::aes(x = threshold) +
+    # add color/fill/label scheme
+    colors_and_labels +
+    # add net benefit curves
+    ggplot2::geom_ribbon(
+      data = obj$summary$net_benefit,
+      ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`,
+                   fill = model_or_test_name),
+      alpha = 0.3
+    ) +
+    ggplot2::geom_line(
+      data = obj$summary$net_benefit,
+      ggplot2::aes(y = estimate,
+                   color = model_or_test_name)
+    ) +
+    # add treat none curve
+    ggplot2::geom_hline(
+      ggplot2::aes(color = "Treat none", yintercept = 0),
+      linetype = 'longdash', lwd = 0.8
+    ) +
+    # add treat all curve
+    ggplot2::geom_ribbon(
+      data = obj$summary$treat_all,
+      ggplot2::aes(ymax = `97.5%`, ymin = `2.5%`,
+                   fill = "Treat all"),
+      alpha = 0.3
+    ) +
+    ggplot2::geom_line(
+      data = obj$summary$treat_all,
+      ggplot2::aes(y = estimate, color = "Treat all")
+    ) +
+    # make it pretty
+    ggplot2::theme_bw(base_size = 12) +
+    ggplot2::coord_cartesian(ylim = c(-0.02, NA)) +
+    ggplot2::scale_x_continuous(
+      labels = scales::percent_format(1)
+    ) +
+    ggplot2::scale_y_continuous(
+      breaks = scales::pretty_breaks()
+    ) +
+    ggplot2::labs(x = "Threshold", y = "Net Benefit",
+                  color = NULL) +
+    ggplot2::guides(fill = 'none')
+
+  return(.p)
 }

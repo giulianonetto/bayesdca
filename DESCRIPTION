@@ -26,7 +26,8 @@ Imports:
     ggplot2 (>= 3.3.5),
     dplyr (>= 1.0.7),
     purrr (>= 0.3.4),
-    tidyr (>= 1.1.4)
+    tidyr (>= 1.1.4),
+    RColorBrewer (>= 1.1.2)
 LinkingTo: 
     BH (>= 1.66.0),
     Rcpp (>= 0.12.0),
