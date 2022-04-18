@@ -4,7 +4,14 @@
 \alias{compare_dca2}
 \title{Plot BayesDCAList comparison}
 \usage{
-compare_dca2(obj, models_or_tests, colors = NULL, labels = NULL, ...)
+compare_dca2(
+  obj,
+  models_or_tests,
+  colors = NULL,
+  labels = NULL,
+  plot_list = FALSE,
+  ...
+)
 }
 \arguments{
 \item{obj}{BayesDCAList object}
@@ -13,6 +20,11 @@ compare_dca2(obj, models_or_tests, colors = NULL, labels = NULL, ...)
 for a subset of models or tests, only that subset will be plotted.}
 
 \item{labels}{Named vector with label for each model or test.}
+
+\item{plot_list}{If TRUE, returns a list of separate ggplot objects.}
+}
+\value{
+A patchwork/ggplot object or a list of ggplot objects.
 }
 \description{
 Plot BayesDCAList comparison

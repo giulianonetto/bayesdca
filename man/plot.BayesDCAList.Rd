@@ -22,7 +22,7 @@ Plot BayesDCAList
 }
 \examples{
 fit <- dca_list(PredModelData, cores = 4)
-my_colors <- list("predictions" = "red",
-                  "binary_test" = "#4DAF4AFF")
-plot(fit, color = my_colors)
+my_colors <- c("predictions" = "red",
+               "binary_test" = "#4DAF4AFF")
+plot(fit, colors = my_colors)
 }

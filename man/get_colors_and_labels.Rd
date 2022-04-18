@@ -4,7 +4,12 @@
 \alias{get_colors_and_labels}
 \title{Get colors and labels for BayesDCA plots}
 \usage{
-get_colors_and_labels(obj, colors = NULL, labels = NULL)
+get_colors_and_labels(
+  obj,
+  colors = NULL,
+  labels = NULL,
+  models_or_tests = NULL
+)
 }
 \arguments{
 \item{obj}{BayesDCAList object}
