@@ -22,26 +22,15 @@ navbar:
   structure:
     left:  [home, reference, articles]
     right: [github]
-  components:
-    articles:
-      text: Articles
-      menu:
-      - text: Does it work?
-        href: articles/performance-cpm.html
-
 reference:
 - title: "Main"
   contents:
-  - dca_predictive_model
-  - dca_binary_test
-  - plot_dca_list
+  - dca
   - compare_dca
 - title: "Other"
   contents:
-  - plot.DiagTestDCA
-  - plot.PredModelDCA
+  - matches("plot")
   - matches("print")
-  - simulate_diagnostic_test_data
 
 figures:
   dev: ragg::agg_png

@@ -2,23 +2,26 @@
 % Please edit documentation in R/dca.R
 \name{plot_delta_nb}
 \alias{plot_delta_nb}
-\title{Plot delta net benefit}
+\title{Plot BayesDCAList delta}
 \usage{
-plot_delta_nb(..., data_only = FALSE, .delta = NULL, .names = NULL)
+plot_delta_nb(obj, models_or_tests, labels = NULL)
 }
 \arguments{
-\item{...}{Pass two bayesDCA fit objects with names as they should appear in plots'
-legends (e.g. "Test one" = fit1, test2 = fit2).}
+\item{obj}{BayesDCAList object}
 
-\item{data_only}{If TRUE, returns data for ggplot objects (default is FALSE).}
+\item{labels}{Named vector with label for each model or test.}
 
-\item{.delta}{Optional pre-computed delta net benefit (mostly for internal use).}
-
-\item{.names}{Optional character vector with names for objects (mostly for internal use).}
+\item{colors}{Named vector with color for each model or test. If provided
+for a subset of models or tests, only that subset will be plotted.}
 }
 \value{
 A ggplot object.
 }
 \description{
-Plot delta net benefit
+Plot BayesDCAList delta
+}
+\examples{
+data(PredModelData)
+fit <- dca(PredModelData, cores = 4)
+plot_delta_nb(fit)
 }

@@ -16,8 +16,8 @@ When validating a clinical prediction model, you may end up with AUC
 0.79 and a slight miscalibration. How do you know if that is good enough
 for your model to be clinically useful? The same question can be asked
 if you have a diagnostic test with sensitivity of 75% and specificity of
-68%. Decision Curve Analysis helps us find an answer - see [Vickers, van
-Calster & Steyerberg,
+68%, for instance. Decision Curve Analysis helps us find an answer - see
+[Vickers, van Calster & Steyerberg,
 2019](https://diagnprognres.biomedcentral.com/articles/10.1186/s41512-019-0064-7)
 for an introduction to DCA. Here, we use Bayesian methods to accurately
 quantify uncertainty in our decisions curves - powered by
@@ -33,101 +33,69 @@ You can install the development version of bayesDCA from
 devtools::install_github("giulianonetto/bayesdca")
 ```
 
-# Examples
+# Running Bayesian DCA
 
 You can use `bayesDCA` to evaluate predictive models as well as binary
-and continuous tests - either diagnostic or prognostic. All plots are
-either [`ggplot2`](https://ggplot2.tidyverse.org/) or
-[`patchwork`](https://patchwork.data-imaginist.com/) objects. All
-plotting functions have a `data_only` argument with which one can access
-raw plotting data.
+tests. See the [last section](#continuous) for information on continuous
+tests.
 
-## Clinical prediction model
-
-For your clinical prediction model (CPM), you only need the patients’
-`outcomes` (0 or 1) and the corresponding `predictions` (predicted
-probabilities).
+All you need is a `data.frame` with a column named `outcomes` (0 or 1)
+and one column for each model or test being evaluated. In the example
+below, the `PredModelData` includes the probability predictions from a
+model and the results from a binary test. The names of these columns
+don’t matter (except for the `outcomes` column).
 
 ``` r
 library(bayesDCA)
 data(PredModelData)
 head(PredModelData)
-#>   outcomes predictions
-#> 1        0  0.01280653
-#> 2        0  0.13981948
-#> 3        0  0.03566458
-#> 4        0  0.02351731
-#> 5        0  0.00863298
-#> 6        0  0.00959754
+#>   outcomes predictions binary_test
+#> 1        0  0.01280653           0
+#> 2        0  0.13981948           0
+#> 3        0  0.03566458           0
+#> 4        0  0.02351731           0
+#> 5        0  0.00863298           0
+#> 6        0  0.00959754           0
 ```
 
+We set `cores = 4` to speed up MCMC sampling with
+[Stan](https://mc-stan.org/).
+
 ``` r
-fit <- dca_predictive_model(outcomes = PredModelData$outcomes,
-                            predictions = PredModelData$predictions)
+fit <- dca(PredModelData, cores = 4)
 plot(fit)
 ```
 
 <img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
 
-## Binary test
+## Comparing two decision strategies
 
-If you have a binary test, either diagnostic or prognostic, you just
-need to specify the sample size (`N`), the number of diseased patients
-or events (`d`), the number of true positives (`tp`), and the number of
-true negatives (`tn`).
+Say you want to infer whether the predictions from the model yield a
+better decision strategy than the binary test – i.e., you want to
+compare their decision curves. Then:
 
 ``` r
-library(bayesDCA)
-fit <- dca_binary_test(N = 500, d = 83, tp = 77, tn = 378)
-plot(fit)
+compare_dca(fit, 
+            models_or_tests = c("predictions", "binary_test"))
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
 
-## Plotting multiple tests and/or models
+## Comparing against default stratefies
 
-You can use `plot_dca_list` to visualize multiple tests or models
-simultaneously.
+Default strategies include treating all patients and treating no
+patients. If the decision threshold is above the prevalence of the
+disease, treating no patient is better than treating all patients. If
+you run `compare_dca` and specify only one decision strategy, `bayesDCA`
+will compare this strategy against the the appropriate default for each
+decision threshold.
 
 ``` r
-library(bayesDCA)
-# binary tests
-fit1 <- dca_binary_test(N = 1000, d = 120, tp = 80, tn = 800)
-fit2 <- dca_binary_test(N = 1000, d = 120, tp = 108, tn = 616)
-# predictive model
-data(PredModelData)
-fit3 <- dca_predictive_model(outcomes = PredModelData$outcomes,
-                             predictions = PredModelData$predictions)
-# plot decision curves
-plot_dca_list("test A" = fit1, "test B" = fit2, "model" = fit3)
+compare_dca(fit, 
+            models_or_tests = "predictions")
 ```
 
 <img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
-
-In this example, the predictive model doesn’t seem to add much over the
-diagnostic tests for most thresholds, although it might overcome the
-tests for very high thresholds (e.g. aove 40%). If the model requires
-multiple predictors, then one migh prefer to use simple binary tests -
-depending on the application, of course. In that case, one may wonder
-which test to pick.
-
-## Compare DCA
-
-If you want to compare the decision curves from two models and/or tests,
-you can provide the `fit` objects to the `compare_dca` function.
-
-``` r
-library(bayesDCA)
-
-# Test A: Se = 66%, Sp = 91%
-fit1 <- dca_binary_test(N = 1000, d = 120, tp = 80, tn = 800)
-
-# Test B: Se = 90%, Sp = 70%
-fit2 <- dca_binary_test(N = 1000, d = 120, tp = 108, tn = 616)
-compare_dca("Test A" = fit1, "Test B" = fit2)
-```
-
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
 
 ## Continuous tests, scores, gene signatures, etc.
 

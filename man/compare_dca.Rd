@@ -2,38 +2,35 @@
 % Please edit documentation in R/dca.R
 \name{compare_dca}
 \alias{compare_dca}
-\title{Compare DCA}
+\title{Plot BayesDCAList comparison}
 \usage{
-compare_dca(..., as_plot_list = FALSE, .names = NULL)
+compare_dca(
+  obj,
+  models_or_tests,
+  colors = NULL,
+  labels = NULL,
+  plot_list = FALSE,
+  ...
+)
 }
 \arguments{
-\item{...}{Pass two bayesDCA fit objects with names as they should appear in plots'
-legends (e.g. "Test one" = fit1, test2 = fit2).}
+\item{obj}{BayesDCAList object}
 
-\item{as_plot_list}{If TRUE, returns list of ggplot2 plots (default is FALSE).}
+\item{colors}{Named vector with color for each model or test. If provided
+for a subset of models or tests, only that subset will be plotted.}
 
-\item{.names}{Optional character vector with names for objects (mostly for internal use).}
+\item{labels}{Named vector with label for each model or test.}
+
+\item{plot_list}{If TRUE, returns a list of separate ggplot objects.}
 }
 \value{
-A figure of multiple plots
-(\href{https://patchwork.data-imaginist.com/}{\code{patchwork}} object).
+A patchwork/ggplot object or a list of ggplot objects.
 }
 \description{
-Compare DCA
+Plot BayesDCAList comparison
 }
 \examples{
-
-# Test 1: more specificity
-data1 <- simulate_diagnostic_test_data(B = 1, N = 5000,
-                                      true_p = 0.1, true_se = 0.8, true_sp = 0.8)
-head(data1)
-
-# Test 2: more sensitivity
-data2 <- simulate_diagnostic_test_data(B = 1, N = 5000,
-                                      true_p = 0.1, true_se = 0.95, true_sp = 0.7)
-
-fit1 <- dca_binary_test(N = data1$N, d = data1$d, tp = data1$tp, tn = data1$tn)
-fit2 <- dca_binary_test(N = data2$N, d = data2$d, tp = data2$tp, tn = data2$tn)
-compare_dca("More Spec" = fit1, "More Sens" = fit2)
-
+data(PredModelData)
+fit <- dca(PredModelData, cores = 4)
+compare_dca(fit)
 }
