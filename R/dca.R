@@ -506,6 +506,12 @@ plot.BayesDCAList <- function(obj, colors = NULL,
                                              labels = labels,
                                              models_or_tests = models_or_tests)
 
+  .ymin <- ifelse(
+    max(obj$summary$treat_all$estimate) > 0.02,
+    -0.02,
+    -max(obj$summary$treat_all$estimate)
+  )
+
   .p <- ggplot2::ggplot() +
     # set x axis
     ggplot2::aes(x = threshold) +
@@ -541,9 +547,9 @@ plot.BayesDCAList <- function(obj, colors = NULL,
     ) +
     # make it pretty
     ggplot2::theme_bw(base_size = 12) +
-    ggplot2::coord_cartesian(ylim = c(-0.02, NA)) +
+    ggplot2::coord_cartesian(ylim = c(.ymin, NA)) +
     ggplot2::scale_x_continuous(
-      labels = scales::percent_format(1)
+      labels = scales::percent
     ) +
     ggplot2::scale_y_continuous(
       breaks = scales::pretty_breaks()
