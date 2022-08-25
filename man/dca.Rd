@@ -13,6 +13,7 @@ dca(
   prior_se = NULL,
   prior_sp = NULL,
   summary_probs = c(0.025, 0.975),
+  external_prevalence_data = NULL,
   refresh = 0,
   ...
 )
@@ -37,13 +38,19 @@ Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
 Default is uniform prior for all parameters - Beta(1, 1).
 A single vector of the form \code{c(a, b)} can be provided for each.}
 
+\item{summary_probs}{Probabilities used to compute credible intervals (defaults to a 95\% Cr.I.).}
+
+\item{external_prevalence_data}{Vector with two positive integers giving number of diseased and
+non-diseased individuals, respectively, from external data (e.g., if analyzing nested case-control data,
+this is the number of cases and non-cases in the source population).}
+
 \item{refresh}{Control verbosity of \code{rstan::sampling} (check its help
 page for details).}
 
 \item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter, chains).}
 }
 \value{
-An object of class \code{DCAList}
+An object of class \code{BayesDCAList}
 }
 \description{
 Estimate decision curves for a list of predictive models and/or

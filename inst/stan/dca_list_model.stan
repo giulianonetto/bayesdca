@@ -6,6 +6,8 @@ data {
   matrix<lower = 0>[n_thr, n_models] tp; // true positives for each threshold, each model
   matrix<lower = 0>[n_thr, n_models] tn; // true negatives for each threshold, each model
   vector<lower = 0>[n_thr] d;  // diseased persons or outcome cases (same for each threshold)
+  vector<lower = 0>[n_thr] d_ext;  // diseased persons or outcome cases from external dataset used for prevalence adjustment (same for each threshold)
+  vector<lower = 0>[n_thr] N_ext;  // sample size from external dataset used for prevalence adjustment (same for each threshold)
   vector<lower = 0, upper = 1>[n_thr] thresholds;
   // Prior parameters for prevalence
   real<lower = 0> prior_p1;
@@ -28,8 +30,13 @@ transformed data {
   matrix<lower = 0>[n_thr, n_models] post_Sp1;
   matrix<lower = 0>[n_thr, n_models] post_Sp2;
   // Analytical posterior parameters for prevalence
-  post_p1 = d[1] + prior_p1;
-  post_p2 = N[1] - d[1] + prior_p2;
+  if (N_ext[1] >= 1) { // it means there's external information for prevalence
+    post_p1 = d_ext[1] + prior_p1;
+    post_p2 = N_ext[1] - d_ext[1] + prior_p2;
+  } else {
+    post_p1 = d[1] + prior_p1;
+    post_p2 = N[1] - d[1] + prior_p2;
+  }
   // Analytical posterior parameters for Sens/Spec at threshold i, model j
   for (thr_i in 1:n_thr) {
     for (model_j in 1:n_models) {

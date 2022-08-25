@@ -4,7 +4,15 @@
 \alias{plot.BayesDCAList}
 \title{Plot BayesDCAList}
 \usage{
-\method{plot}{BayesDCAList}(obj, colors = NULL, labels = NULL, models_or_tests = NULL, ...)
+\method{plot}{BayesDCAList}(
+  obj,
+  colors = NULL,
+  labels = NULL,
+  models_or_tests = NULL,
+  raw_values = NULL,
+  raw_values_label = "Biomarker threshold",
+  ...
+)
 }
 \arguments{
 \item{obj}{BayesDCAList object}
@@ -14,8 +22,7 @@ for a subset of models or tests, only that subset will be plotted.}
 
 \item{labels}{Named vector with label for each model or test.}
 
-\item{models_or_tests}{Character vector specifying subset of models
-or tests to be plotted.}
+\item{models_or_tests}{Character vector with models or tests to compare. If null, compares either first two in \code{obj$model_or_test_names} or the first one against Treat all/none (if only one available).}
 }
 \description{
 Plot BayesDCAList

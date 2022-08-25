@@ -18,6 +18,8 @@
   prior_Se2,
   prior_Sp1,
   prior_Sp2,
+  N_ext,
+  d_ext,
   refresh = 0,
   ...
 )
@@ -39,6 +41,8 @@ identified as such by the diagnostic test of prediction model (matrix of integer
 
 \item{thresholds}{Numeric vector with probability thresholds with which
 the net benefit should be computed (default is \code{seq(0.01, 0.5, 0.01)}).}
+
+\item{N_ext, d_ext}{External sample size and number of diseased individuals (or cases), respectively, used to adjust prevalence.}
 
 \item{refresh}{Control verbosity of \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.}
 

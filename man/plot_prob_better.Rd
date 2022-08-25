@@ -4,10 +4,12 @@
 \alias{plot_prob_better}
 \title{Plot probability of better net benefit between two models or tests}
 \usage{
-plot_prob_better(obj, models_or_tests, labels = NULL)
+plot_prob_better(obj, models_or_tests = NULL, labels = NULL)
 }
 \arguments{
 \item{obj}{BayesDCAList object}
+
+\item{models_or_tests}{Character vector with models or tests to compare. If null, compares either first two in \code{obj$model_or_test_names} or the first one against Treat all/none (if only one available).}
 
 \item{labels}{Named vector with label for each model or test.}
 
