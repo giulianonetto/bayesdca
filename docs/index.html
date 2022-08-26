@@ -91,7 +91,7 @@
 <!-- badges: start -->
 
 <p>Perform Bayesian Decision Curve Analysis for clinical prediction models and diagnostic tests.</p>
-<p>When validating a clinical prediction model, you may end up with AUC 0.79 and a slight miscalibration. How do you know if that is good enough for your model to be clinically useful? The same question can be asked if you have a diagnostic test with sensitivity of 75% and specificity of 68%, for instance. Decision Curve Analysis helps us find an answer - see <a href="https://diagnprognres.biomedcentral.com/articles/10.1186/s41512-019-0064-7" class="external-link">Vickers, van Calster &amp; Steyerberg, 2019</a> for an introduction to DCA. Here, we use Bayesian methods to accurately quantify uncertainty in our decisions curves - powered by <a href="https://mc-stan.org/" class="external-link">Stan</a>.</p>
+<p>When validating a clinical prediction model, you may end up with AUC 0.79 and a slight miscalibration. How do you know if that is good enough for your model to be clinically useful? The same question can be asked if you have, for instance, a binary diagnostic test with sensitivity of 75% and specificity of 68%. Decision Curve Analysis helps us find an answer - see <a href="https://diagnprognres.biomedcentral.com/articles/10.1186/s41512-019-0064-7" class="external-link">Vickers, van Calster &amp; Steyerberg, 2019</a> for an introduction to DCA. Here, we use Bayesian methods to accurately quantify uncertainty in our decisions curves - powered by <a href="https://mc-stan.org/" class="external-link">Stan</a>.</p>
 </div>
 <div class="section level1">
 <h1 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -104,8 +104,8 @@
 <div class="section level1">
 <h1 id="running-bayesian-dca">Running Bayesian DCA<a class="anchor" aria-label="anchor" href="#running-bayesian-dca"></a>
 </h1>
-<p>You can use <code>bayesDCA</code> to evaluate predictive models as well as binary tests. See the <a href="#continuous">last section</a> for information on continuous tests.</p>
-<p>All you need is a <code>data.frame</code> with a column named <code>outcomes</code> (0 or 1) and one column for each model or test being evaluated. In the example below, the <code>PredModelData</code> includes the probability predictions from a model and the results from a binary test. The names of these columns don’t matter (except for the <code>outcomes</code> column).</p>
+<p>You can use <code>bayesDCA</code> to evaluate predictive models as well as binary tests.</p>
+<p>All you need is a <code>data.frame</code> with a column named <code>outcomes</code> (0 or 1) and one column for each model or test being evaluated. In the example below, the <code>PredModelData</code> includes the probability predictions from a model (<code>"predictions" column</code>) and the results from a binary test (<code>"binary_test"</code> column). The names of these columns don’t matter (except for the <code>outcomes</code> column, which should always be present).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">bayesDCA</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">PredModelData</span><span class="op">)</span>
@@ -121,32 +121,34 @@
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dca.html">dca</a></span><span class="op">(</span><span class="va">PredModelData</span>, cores <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-4-1.png" width="100%"></p>
+<p><img src="reference/figures/README-unnamed-chunk-4-1.png" width="100%" height="50%"></p>
 <div class="section level2">
 <h2 id="comparing-two-decision-strategies">Comparing two decision strategies<a class="anchor" aria-label="anchor" href="#comparing-two-decision-strategies"></a>
 </h2>
 <p>Say you want to infer whether the predictions from the model yield a better decision strategy than the binary test – i.e., you want to compare their decision curves. Then:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span>, 
-            models_or_tests <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"predictions"</span>, <span class="st">"binary_test"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-5-1.png" width="100%"></p>
+<code class="sourceCode R"><span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-5-1.png" width="100%" height="50%"></p>
 </div>
 <div class="section level2">
-<h2 id="comparing-against-default-stratefies">Comparing against default stratefies<a class="anchor" aria-label="anchor" href="#comparing-against-default-stratefies"></a>
+<h2 id="comparing-against-default-strategies">Comparing against default strategies<a class="anchor" aria-label="anchor" href="#comparing-against-default-strategies"></a>
 </h2>
-<p>Default strategies include treating all patients and treating no patients. If the decision threshold is above the prevalence of the disease, treating no patient is better than treating all patients. If you run <code>compare_dca</code> and specify only one decision strategy, <code>bayesDCA</code> will compare this strategy against the the appropriate default for each decision threshold.</p>
+<p>Default strategies include treating all patients and treating no patients. If you run <code>compare_dca</code> and specify only one decision strategy, <code>bayesDCA</code> will compare this strategy against the the appropriate default for each decision threshold.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span>, 
-            models_or_tests <span class="op">=</span> <span class="st">"predictions"</span><span class="op">)</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-6-1.png" width="100%"></p>
+<code class="sourceCode R"><span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span>, models_or_tests <span class="op">=</span> <span class="st">"binary_test"</span><span class="op">)</span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-6-1.png" width="100%" height="50%"></p>
 </div>
 <div class="section level2">
-<h2 id="continuous-tests-scores-gene-signatures-etc">Continuous tests, scores, gene signatures, etc.<a class="anchor" aria-label="anchor" href="#continuous-tests-scores-gene-signatures-etc"></a>
+<h2 id="using-external-information-to-estimate-prevalence">Using external information to estimate prevalence<a class="anchor" aria-label="anchor" href="#using-external-information-to-estimate-prevalence"></a>
 </h2>
-<p><a href="https://www.prognosisresearch.com/videos-categorisation" class="external-link">Categorization of continuous predictors is strongly discouraged</a>, and continuous tests are no different. This also applies to prognostic or diagnostic scores, expression signatures, and all of the like. As decisions are often categorical, it’s better to categorize outcome probabilities and then map probability thresholds back to corresponding test values. You end up with a test cutoff either way, but only one is clinically motivated - see <a href="https://bmcmedicine.biomedcentral.com/articles/10.1186/s12916-019-1425-3#Sec3" class="external-link">Myth 2</a> in <a href="https://bmcmedicine.biomedcentral.com/articles/10.1186/s12916-019-1425-3" class="external-link">Wynants et al, 2019</a>. This risk stratification procedure can be applied seamlessly by fitting single-predictor models (e.g. <code>Disease ~ test_value</code>). This leads to clinically-informed test cutoffs as opposed to observed-data arbitrariness (e.g. categorizing by quantile of the score, which yields arbitrary risk distributions in the score strata).</p>
-<p>Notice that choosing an appropriate risk threshold for your continuous test properly balances your requirements for sensitivity and specificity according to the clinical context - the cost of each correct or incorrect decision. Whereas one may wish to maximize sensitivity and specificity simultaneously (e.g. pick the “elbow” in a ROC curve), that procedure effectively assumes that false positives have the same costs as false negatives, which is usually dramatically incorrect. For instance, a screening test surely should penalize false negatives way more heavily than false positives, while for a confirmatory test the cost of false positives would be more important. Hence, the resulting test cutoff should be optimized by clinical reasoning, not by data-driven artifacts.</p>
-<p>Once you have your test cutoff, you can compute <code>tp</code> and <code>tn</code> and proceed with <code>dca_binary_test</code> as usual. Of course, a likely better approach would be to use your model to take advantage of the (non-linear) relationship between test values and outcome probability, but that turns your diagnostic/prognostic test study into a predictive model study - you would use <code>dca_predictive_model</code> in that case.</p>
-<p>Future versions of <code>bayesDCA</code> should include an easy API for this task.</p>
+<p>Say you are validating tests using a nested case-control study, so the prevalence parameter must come from the larger sample from which cases and controls were selected. Another example is when you want to use an external estimate of prevalence (say from a large prospective cross-sectional study). You can do so by passing the <code>external_prevalence_data</code> argument to <code>dca</code>. Notice that you may want to adjust the default <code>thresholds</code> argument as well: in the example below, the prevalence is around 60/20,000 = 0.3%, so we use pretty low thresholds.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dca.html">dca</a></span><span class="op">(</span><span class="va">PredModelData</span>, cores <span class="op">=</span> <span class="fl">4</span>,
+           external_prevalence_data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">60</span>,<span class="fl">20000</span><span class="op">)</span>,
+           thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.01</span>, <span class="fl">0.001</span><span class="op">)</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-7-1.png" width="100%" height="50%"></p>
+<p>Notice also that the <code>external_prevalence_data</code> information is used only to estimate the prevalence, which is then used in the net benefit calculation. Sensitivity and specificity use the original information in <code>PredModelData</code>.</p>
 </div>
 </div>
 
