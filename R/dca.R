@@ -222,9 +222,21 @@ dca <- function(.data,
     ) %>%
       dplyr:::mutate(
         thr_perf = purrr::map(thresholds, function(.thr) {
+
+          # # TODO: does the commented code below make sense?
+          # if (.thr > 0.0) {
+          #   # for binary tests, this gives the same tp/tn for all thresholds
+          #   tp <- sum(.predictions[outcomes == 1] >= .thr)
+          #   tn <- sum(.predictions[outcomes == 0] < .thr)
+          # } else {
+          #   tp <- sum(outcomes == 1)
+          #   tn <- 0
+          # }
+
           # for binary tests, this gives the same tp/tn for all thresholds
           tp <- sum(.predictions[outcomes == 1] >= .thr)
           tn <- sum(.predictions[outcomes == 0] < .thr)
+
           return(list(tp = tp, tn = tn))
         })
       ) %>%
