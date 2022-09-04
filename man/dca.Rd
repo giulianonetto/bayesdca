@@ -6,7 +6,7 @@
 \usage{
 dca(
   .data,
-  thresholds = seq(0.01, 0.5, 0.01),
+  thresholds = seq(0.01, 0.5, 0.02),
   keep_draws = TRUE,
   keep_fit = FALSE,
   prior_p = NULL,
@@ -25,7 +25,7 @@ of predictive models, or with 0 or 1 indicator from each of desired list of
 binary tests.}
 
 \item{thresholds}{Numeric vector with probability thresholds with which
-the net benefit should be computed (default is \code{seq(0, 0.5, 0.01)}).}
+the net benefit should be computed (default is \code{seq(0.01, 0.5, 0.02)}).}
 
 \item{keep_draws}{Logical indicating whether to keep posterior
 draws from \code{stanfit} object (default is TRUE).}

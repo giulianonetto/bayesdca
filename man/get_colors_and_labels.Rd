@@ -6,9 +6,9 @@
 \usage{
 get_colors_and_labels(
   obj,
+  models_or_tests = NULL,
   colors = NULL,
-  labels = NULL,
-  models_or_tests = NULL
+  labels = NULL
 )
 }
 \arguments{

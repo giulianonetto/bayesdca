@@ -69,7 +69,7 @@
 #' of predictive models, or with 0 or 1 indicator from each of desired list of
 #' binary tests.
 #' @param thresholds Numeric vector with probability thresholds with which
-#' the net benefit should be computed (default is `seq(0, 0.5, 0.01)`).
+#' the net benefit should be computed (default is `seq(0.01, 0.5, 0.02)`).
 #' @param keep_fit Logical indicating whether to keep `stanfit` in
 #' the output (default is FALSE).
 #' @param keep_draws Logical indicating whether to keep posterior
@@ -92,7 +92,7 @@
 #' fit <- dca(PredModelData, cores = 4)
 #' plot(fit)
 dca <- function(.data,
-                thresholds = seq(0.01, 0.5, 0.01),
+                thresholds = seq(0.01, 0.5, 0.02),
                 keep_draws = TRUE,
                 keep_fit = FALSE,
                 prior_p = NULL,
@@ -412,7 +412,7 @@ print.BayesDCAList <- function(obj, ...) {
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
-get_colors_and_labels <- function(obj, colors = NULL, labels = NULL, models_or_tests = NULL) {
+get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, labels = NULL) {
   # decide which models/tests to include
   if (is.null(models_or_tests)) {
     model_or_test_names <- obj$model_or_test_names
@@ -478,8 +478,10 @@ get_colors_and_labels <- function(obj, colors = NULL, labels = NULL, models_or_t
 #' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
 #' @importFrom magrittr %>%
 #' @export
-plot.BayesDCAList <- function(obj, colors = NULL,
-                              labels = NULL, models_or_tests = NULL,
+plot.BayesDCAList <- function(obj,
+                              models_or_tests = NULL,
+                              colors = NULL,
+                              labels = NULL,
                               raw_values = NULL,
                               raw_values_label = "Biomarker threshold", ...) {
 
