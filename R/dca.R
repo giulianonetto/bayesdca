@@ -806,7 +806,8 @@ plot_prob_better <- function(obj, models_or_tests = NULL, labels = NULL) {
     ) +
     ggplot2::scale_y_continuous(
       labels = scales::percent_format(1),
-      breaks = scales::pretty_breaks(10)
+      breaks = scales::pretty_breaks(10),
+      limits = c(0, 1)
     ) +
     ggplot2::labs(
       x = "Decision threshold", y = NULL,
@@ -842,3 +843,30 @@ get_thr_data <- function(outcomes,
   return(thr_data)
 }
 
+#' @title Plot Expected Value of Perfect Information (EVPI)
+#'
+#' @param obj BayesDCAList object
+#' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
+#' @param labels Named vector with label for each model or test.
+#' @importFrom magrittr %>%
+plot_evpi <- function(obj, models_or_tests = NULL, labels = NULL) {
+  data.frame(
+    .threhsolds = obj$thresholds,
+    .evpi = evpi(obj, models_or_tests = models_or_tests)
+  ) %>%
+    ggplot2::ggplot(aes(.threhsolds, .evpi)) +
+    ggplot2::geom_line() +
+    ggplot2::theme_bw() +
+    ggplot2::scale_x_continuous(
+      labels = scales::percent_format(1)
+    ) +
+    ggplot2::scale_y_continuous(
+      labels = scales::percent_format(1),
+      breaks = scales::pretty_breaks(10),
+      limits = c(0, 1)
+    ) +
+    ggplot2::labs(
+      x = "Decision threshold", y = NULL,
+      subtitle = .subtitle
+    )
+}

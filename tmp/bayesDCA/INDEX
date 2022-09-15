@@ -1,0 +1,24 @@
+.dca_stan_list          Fit Bayesian Decision Curve Analysis using Stan
+                        for list of models or binary tests
+.extract_dca_draws      Get posterior draws from DCA stanfit
+.extract_dca_summary    Get summary from BayesDCA fit
+.get_prior_parameters   Get prior parameters formated for Stan model
+.get_thr_data_list      Get Threshold Performance Data for DCA list
+Docking2021Data         Survival data from Docking, 2021 - Figures
+                        3B-3E
+PredModelData           Predictive Model Evaluation Data.
+bayesDCA-package        The 'bayesDCA' package.
+compare_dca             Plot BayesDCAList comparison
+dca                     Bayesian Decision Curve Analysis for Predictive
+                        Models and Binary tests
+evpi                    Compute Expected Value of Perfect Information
+                        (EVPI)
+get_colors_and_labels   Get colors and labels for BayesDCA plots
+get_thr_data            Get Threshold Performance Data
+plot.BayesDCAList       Plot BayesDCAList
+plot_delta_nb           Plot BayesDCAList delta
+plot_prob_better        Plot probability of better net benefit between
+                        two models or tests
+print.BayesDCAList      Print BayesDCAList
+simulate_diagnostic_test_data
+                        Simulate Diagnostic Test Data

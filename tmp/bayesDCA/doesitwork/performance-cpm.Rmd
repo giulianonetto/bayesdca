@@ -1,0 +1,271 @@
+---
+title: "Does it work? (CPMs)"
+output: rmarkdown::html_vignette
+description: >
+  Simulation-based evaluation of {bayesDCA} for Clinical Prediction Models (CPMs).
+vignette: >
+  %\VignetteIndexEntry{Does it work? (CPMs)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  dpi = 300, fig.width = 7
+)
+```
+
+As a simple demonstration, let's simulate ground truth data from a "super-population" of 2M patients, each with a pre-determined probability of disease. We'll use samples from this population to estimate the decision curves using `bayesDCA`, and then check for bias in the estimation and empirical coverage of the uncertainty intervals.
+
+## Simulate super-population
+
+Let's simulate a population in which the probability of disease is determined by a linear combination of two independent normal random variables (plus an intercept).
+
+```{r}
+N_pop <- 1e6
+X <- cbind(
+  1, rnorm(N_pop), rnorm(N_pop)
+)
+beta <- c(-2.5, 3, -3)
+prob_disease <- plogis(X %*% beta)
+hist(
+  prob_disease,
+  main = "Distribution of the true probabilities of disease\nin the super-population"
+)
+```
+
+In practice these probabilities are not observable, so we must simulate the actual binary outcomes as well. A logistic regression models recovers the parameters perfectly given our huge sample size and simple setting.
+
+```{r}
+df_pop <- data.frame(
+  y = rbinom(N_pop, 1, prob_disease), 
+  X[,-1]
+)
+model <- glm(y ~ X1 + X2, data = df_pop, family = 'binomial')
+print(model)
+```
+
+As expected, the predicted probabilities match the true probabilities of disease.
+
+```{r}
+predicted_prob_disease <- predict(model, type = 'response')
+ix <- sample(1:N_pop, 1e3) # select patients to plot fast
+plot(
+  predicted_prob_disease[ix],
+  prob_disease[ix],
+  xlab = "Predicted probabilties",
+  ylab = "True probabilities"
+)
+abline(0, 1, col = 'red', lwd = 2)
+```
+
+Let's use these accurate predictions to make a reference decision curve, which we will use as ground truth. In order to do that, we'll use the `bayesDCA:::get_thr_data` function, which `bayesDCA` uses under the hood to compute true positive/negative calls for each probability threshold, given a series of outcomes and predictions.
+
+```{r}
+dca_pop_data <- bayesDCA:::get_thr_data(
+  outcomes = df_pop$y,
+  predictions = predicted_prob_disease
+)
+head(dca_pop_data)
+```
+
+With these we are ready to plot our reference decision curve. Recall that DCA plots Net Benefit (NB) against probability thresholds. The NB is defined as:
+
+$$
+NB_t = p \cdot Se_t - (1 - p)\cdot (1-Sp_t) \cdot \frac{t}{1-t} 
+$$
+
+where $p$ is prevalence or outcome proportion, $Se_t$ is sensitivity at threshold $t$ and $Sp_t$ is the specificity at threshold $t$.
+
+We first compute $p$ (same for all $t$), $Se_t$, and $Sp_t$, and then the actual $NB_t$.
+
+```{r}
+library(tidyverse)
+dca_pop_data <- dca_pop_data %>% 
+  mutate(
+    p = d/N,
+    Se = tp/d,
+    Sp = tn/(N-d),
+    NB = Se*p - (1-p)*(1-Sp)*(thresholds/(1-thresholds))
+  )
+head(dca_pop_data)
+```
+
+We can plot the reference decision curve:
+
+```{r}
+dca_pop_data %>% 
+  ggplot(aes(thresholds, NB)) +
+  geom_line() +
+  geom_hline(yintercept = 0, alpha = 0.3, linetype = "dashed") +
+  labs(x = "Probability threshold",
+       y = "Net Benefit",
+       title = "Reference decision curve for perfect model") +
+  theme_bw()
+```
+
+## Simulating validation studies
+
+In a validation study, we use DCA to assess the performance of a previously-estimated model in a sample of the population. Given our (nearly perfect) model, we can study the variability in the decision curve estimates by computing them for many subsamples of our super-population. Let's simulate `B=500` validation studies for our model. In each validation study, we will use samples of size `N=400` to get 120 expected events. The variable `subsamples_ix` below is a list of length $B$ whose items are subsample indexes for our super-population - each of length $N$.
+
+```{r}
+B <- 500
+N <- 400
+samples_ix <- map(1:B, ~ sample(1:N_pop, N))
+```
+
+We then simulate the validation studies, following the same steps to compute a decision curve for each. We keep only the thresholds and NB information for further analysis.
+
+```{r}
+validations <- vector('list', B)
+for (i in 1:B) {
+  sample_ix <- samples_ix[[i]]
+  df_sample <- df_pop[sample_ix, ]
+  pred_prob_sample <- predict(model, 
+                              newdata = df_sample, 
+                              type = 'response')
+  dca_sample_data <- bayesDCA:::get_thr_data(df_sample$y,
+                                             pred_prob_sample) %>% 
+    mutate(
+      p = d/N,
+      Se = tp/d,
+      Sp = tn/(N-d),
+      NB = Se*p - (1-p)*(1-Sp)*(thresholds/(1-thresholds))
+    ) %>% 
+    select(thresholds, NB)
+  validations[[i]] <- dca_sample_data
+}
+# collect simulated studies into data.frame
+validations <- validations %>% 
+  bind_rows(.id = "study_id")
+```
+
+
+Let's now plot the simulations against the reference decision curve. In gray, we plot the curves from each sample; in red, the reference curve.
+
+```{r}
+ggplot() +
+  geom_line(
+    data = validations,
+    aes(thresholds, NB, group = study_id),
+    color = "gray40", alpha = 0.3
+  ) +
+  geom_line(
+    data = dca_pop_data,
+    aes(thresholds, NB),
+    color = "red", lwd = 1.2
+  ) +
+  geom_hline(yintercept = 0, alpha = 0.3, linetype = "dashed") +
+  labs(x = "Probability threshold",
+       y = "Net Benefit") +
+  theme_bw()
+```
+
+Even though on average this procedure seems to do fine, it is clear that there's some non-negligible uncertainty in the decision curve estimation process. For studies lying on the top of the plot, perhaps you will feel overconfident about your model; for studies in the bottom of the lines distribution, you might end up discarding an actually useful model. The `bayesDCA` R package deals with that by estimating uncertainty intervals around each estimated curve, for each individual validation study.
+
+Let's now repeat the simulation above, but using `bayesDCA` to estimate the decision curves. We will check for bias in the curve estimates as well as for pointwise coverage of the uncertainty intervals.
+
+## Validating with `bayesDCA`
+
+We follow the same steps as before, but use `bayesDCA` for all computations. The `select` statement below converts `bayesDCA` output into the notation we have been using so far.
+
+```{r}
+library(bayesDCA)
+validations <- vector('list', B)
+for (i in 1:B) {
+  sample_ix <- samples_ix[[i]]
+  df_sample <- df_pop[sample_ix, ]
+  pred_prob_sample <- predict(model, 
+                              newdata = df_sample, 
+                              type = 'response')
+  dca_fit_sample <- dca_predictive_model(df_sample$y,
+                                         pred_prob_sample)
+  dca_sample_data <- dca_fit_sample$net_benefit %>% 
+    select(thresholds := thr, 
+           NB := estimate,
+           lower := `2.5%`,
+           upper := `97.5%`)
+  validations[[i]] <- dca_sample_data
+}
+# collect simulated studies into data.frame
+validations <- validations %>% 
+  bind_rows(.id = "study_id")
+```
+
+Let's plot a single decision curve from `bayesDCA` just to visualize the primary uncertainty intervals:
+
+```{r}
+plot(dca_fit_sample, .color = 'blue') +
+  geom_line(
+    data = dca_pop_data,
+    aes(thresholds, NB),
+    color = "red", linetype = "dashed"
+  )
+```
+
+The interval properly captures the reference curve. Notice that the maximum estimated NB does not exactly match the maximum reference NB. This is because our sample has observed prevalence of `r unique(dca_fit_sample$d/dca_fit_sample$N)`, while the super-population has a true prevalence of `r mean(df_pop$y)`.
+
+We then plot the point estimates for each curve along with the reference decision curve, plus the pointwise average of the estimated (dashed blue):
+
+```{r}
+ggplot() +
+  geom_line(
+    data = validations,
+    aes(thresholds, NB, group = study_id),
+    color = "gray40", alpha = 0.3
+  ) +
+  geom_line(
+    data = dca_pop_data,
+    aes(thresholds, NB),
+    color = "red"
+  ) +
+  geom_line(
+    data = validations %>% 
+      group_by(thresholds) %>% 
+      summarise(NB = mean(NB)),
+    aes(thresholds, NB),
+    color = "blue", linetype = 'dashed'
+  ) +
+  geom_hline(yintercept = 0, alpha = 0.3, linetype = "dashed") +
+  labs(x = "Probability threshold",
+       y = "Net Benefit") +
+  theme_bw()
+```
+
+We see the same variability in the (unbiased) point estimates. But how did the uncertainty intervals do? Let's compute the pointwise empirical coverage of the 95% credible intervals computed by default in `bayesDCA`.
+
+```{r}
+df_coverage <- left_join(
+  validations %>% select(study_id, thresholds, lower, upper),
+  dca_pop_data %>% rename(true_NB := NB) %>% select(thresholds, true_NB),
+  by = "thresholds"
+)
+head(df_coverage)
+```
+
+Group by threshold, summarize over study ids, and plot results:
+
+```{r}
+df_coverage %>% 
+  group_by(thresholds) %>% 
+  summarise(
+    coverage = mean(
+      true_NB >= lower & true_NB <= upper
+    )
+  ) %>% 
+  ggplot(aes(
+    thresholds,
+    coverage
+  )) +
+  geom_line(lwd = 1.2) +
+  theme_bw() +
+  scale_y_continuous(labels = scales::percent,
+                     limits = c(0.5, 1.01),
+                     breaks = scales::pretty_breaks(10))
+```
+
+## Conclusion
+
+Decision Curve Analysis of predictive models in validation studies benefits from uncertainty quantification, as point estimates suffer from sampling variability. The R package `bayesDCA` accurately estimates decisions curves and provides reliable uncertainty intervals around such estimates.

@@ -31,6 +31,21 @@
     <loc>/reference/dot-dca_stan_list.html</loc>
   </url>
   <url>
+    <loc>/reference/dot-extract_dca_draws.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-extract_dca_summary.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-get_prior_parameters.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-get_thr_data_list.html</loc>
+  </url>
+  <url>
+    <loc>/reference/evpi.html</loc>
+  </url>
+  <url>
     <loc>/reference/extract_dca_draws.html</loc>
   </url>
   <url>
