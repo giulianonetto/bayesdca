@@ -13,3 +13,4 @@ src
 !docs/*/*/*.html
 inst/tmp/bayesDCA
 inst/tmp/localsonly
+tmp/
