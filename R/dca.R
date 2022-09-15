@@ -561,6 +561,9 @@ plot.BayesDCAList <- function(obj,
     ) +
     # make it pretty
     ggplot2::theme_bw(base_size = 12) +
+    ggplot2::theme(
+      legend.position = c(.8, .8)
+    ) +
     ggplot2::coord_cartesian(ylim = c(.ymin, NA)) +
     ggplot2::scale_x_continuous(
       labels = scales::percent
@@ -613,7 +616,7 @@ plot.BayesDCAList <- function(obj,
 #' compare_dca(fit)
 #' @return A patchwork/ggplot object or a list of ggplot objects.
 compare_dca <- function(obj, models_or_tests = NULL, colors = NULL, labels = NULL,
-                        plot_list = FALSE, ...) {
+                        plot_list = FALSE, .evpi = FALSE, ...) {
 
   if (is.null(models_or_tests)) {
     models_or_tests <- as.vector(na.omit(obj$model_or_test_names[1:2]))
@@ -635,15 +638,31 @@ compare_dca <- function(obj, models_or_tests = NULL, colors = NULL, labels = NUL
   p3 <- plot_prob_better(obj = obj,
                          models_or_tests = models_or_tests,
                          labels = labels)
-  # TODO: subset p1 to models_or_tests
 
   if (isTRUE(plot_list)) {
-    return(list(dca = p1, delta = p2, prob_better = p3))
+    .plot_list <- list(dca = p1,
+                       delta = p2,
+                       prob_better = p3)
+    if (isTRUE(.evpi)) {
+      .plot_list[['evpi']] <- plot_evpi(obj = obj,
+                                        models_or_tests = models_or_tests,
+                                        labels = labels)
+
+    }
+
+    return(.plot_list)
+
+  } else {
+    if (isTRUE(.evpi)) {
+      p4 <- plot_evpi(obj = obj,
+                      models_or_tests = models_or_tests,
+                      labels = labels)
+      .p <- (p1|p3)/(p2|p4)
+    } else {
+      .p <- p1/(p2 | p3)
+    }
+    return(.p)
   }
-
-  .p <- p1/(p2 | p3)
-
-  return(.p)
 }
 
 #' @title Plot BayesDCAList delta
@@ -850,23 +869,57 @@ get_thr_data <- function(outcomes,
 #' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
 plot_evpi <- function(obj, models_or_tests = NULL, labels = NULL) {
+  if (is.null(models_or_tests)) {
+    models_or_tests <- as.vector(na.omit(obj$model_or_test_names[1:2]))
+  } else {
+    stopifnot(
+      "Provided `models_or_tests` are not available" = all(
+        models_or_tests %in% obj$model_or_test_names
+      )
+    )
+  }
+
+  # build labels for plot subtitle
+  plot_labels <- vector("character", length = 2L)
+
+  if (models_or_tests[1] %in% names(labels)) {
+    plot_labels[1] <- labels[models_or_tests[1]]
+  } else {
+    plot_labels[1] <- models_or_tests[1]
+  }
+
+  if (length(models_or_tests) > 1) {
+    if (models_or_tests[2] %in% names(labels)) {
+      plot_labels[2] <- labels[models_or_tests[2]]
+    } else {
+      plot_labels[2] <- models_or_tests[2]
+    }
+  }
+
+  # get subtitles
+  if (length(models_or_tests) == 1) {
+    .subtitle <- paste0(plot_labels, ' vs. Treat all or none')
+  } else {
+    .subtitle <- paste0(plot_labels[1],
+                        ' vs. ',
+                        plot_labels[2])
+  }
+
   data.frame(
     .threhsolds = obj$thresholds,
     .evpi = evpi(obj, models_or_tests = models_or_tests)
   ) %>%
-    ggplot2::ggplot(aes(.threhsolds, .evpi)) +
+    ggplot2::ggplot(ggplot2::aes(.threhsolds, .evpi)) +
     ggplot2::geom_line() +
     ggplot2::theme_bw() +
     ggplot2::scale_x_continuous(
       labels = scales::percent_format(1)
     ) +
     ggplot2::scale_y_continuous(
-      labels = scales::percent_format(1),
-      breaks = scales::pretty_breaks(10),
-      limits = c(0, 1)
+      breaks = scales::pretty_breaks(10)
     ) +
     ggplot2::labs(
-      x = "Decision threshold", y = NULL,
+      x = "Decision threshold", y = "EVPI",
       subtitle = .subtitle
     )
 }
