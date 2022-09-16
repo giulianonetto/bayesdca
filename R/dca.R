@@ -561,9 +561,6 @@ plot.BayesDCAList <- function(obj,
     ) +
     # make it pretty
     ggplot2::theme_bw(base_size = 12) +
-    ggplot2::theme(
-      legend.position = c(.8, .8)
-    ) +
     ggplot2::coord_cartesian(ylim = c(.ymin, NA)) +
     ggplot2::scale_x_continuous(
       labels = scales::percent
@@ -657,7 +654,9 @@ compare_dca <- function(obj, models_or_tests = NULL, colors = NULL, labels = NUL
       p4 <- plot_evpi(obj = obj,
                       models_or_tests = models_or_tests,
                       labels = labels)
-      .p <- (p1|p3)/(p2|p4)
+      .p <- (p1|p3)/(p2|p4) +
+        patchwork::plot_layout(guides = "collect") &
+        ggplot2::theme(legend.position = 'bottom')
     } else {
       .p <- p1/(p2 | p3)
     }
@@ -898,9 +897,12 @@ plot_evpi <- function(obj, models_or_tests = NULL, labels = NULL) {
 
   # get subtitles
   if (length(models_or_tests) == 1) {
-    .subtitle <- paste0(plot_labels, ' vs. Treat all or none')
+    .subtitle <- paste0("EVPI: ",
+                        plot_labels,
+                        ' vs. Treat all or none')
   } else {
-    .subtitle <- paste0(plot_labels[1],
+    .subtitle <- paste0("EVPI: ",
+                        plot_labels[1],
                         ' vs. ',
                         plot_labels[2])
   }
@@ -919,7 +921,7 @@ plot_evpi <- function(obj, models_or_tests = NULL, labels = NULL) {
       breaks = scales::pretty_breaks(10)
     ) +
     ggplot2::labs(
-      x = "Decision threshold", y = "EVPI",
+      x = "Decision threshold", y = NULL,
       subtitle = .subtitle
     )
 }
