@@ -6,7 +6,7 @@
 \usage{
 dca(
   .data,
-  thresholds = seq(0.01, 0.5, 0.02),
+  thresholds = seq(0.01, 0.5, 0.01),
   keep_draws = TRUE,
   keep_fit = FALSE,
   prior_p = NULL,

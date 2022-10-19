@@ -10,6 +10,7 @@ compare_dca(
   colors = NULL,
   labels = NULL,
   plot_list = FALSE,
+  .evpi = FALSE,
   ...
 )
 }

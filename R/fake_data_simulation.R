@@ -47,3 +47,37 @@ simulate_diagnostic_test_data <- function(B = 100,
 
   return(df)
 }
+
+
+#' @title Simulate Prognostic Test Data
+#' @importFrom magrittr %>%
+#' @export
+simulate_prognostic_model_data <- function(N = 500,
+                                           .seed = 123) {
+  stopifnot(require(simstudy))
+  
+  def <- defData(varname = "x1", formula = 0.5, dist = "binary")
+  def <- defData(def, varname = "grp", formula = 0.5, dist = "binary")
+  
+  # Survival data definitions
+  set.seed(.seed)
+  sdef <- defSurv(varname = "survTime",
+                  formula = "1.5*x1", 
+                  scale = "grp*50 + (1-grp)*25",
+                  shape = "grp*1 + (1-grp)*1.5")
+  sdef <- defSurv(sdef, varname = "censorTime", scale = 80, shape = 1)
+  
+  # Baseline data definitions
+  .dtSurv <- genData(N, def) %>% 
+    genSurv(
+      sdef, timeName = "obsTime", censorName = "censorTime",
+      eventName = "status", keepEvents = TRUE
+    ) %>% 
+    dplyr::mutate(
+      survTime = ifelse(survTime > 0, survTime, 0.001),
+      censorTime = ifelse(censorTime > 0, censorTime, 0.001),
+      obsTime = ifelse(status > 0, survTime, censorTime)
+    )
+  
+  return(.dtSurv)
+}
