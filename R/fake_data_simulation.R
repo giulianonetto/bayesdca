@@ -52,7 +52,7 @@ simulate_diagnostic_test_data <- function(B = 100,
 #' @title Simulate Prognostic Test Data
 #' @importFrom magrittr %>%
 #' @export
-simulate_prognostic_model_data <- function(N = 500,
+simulate_prognostic_model_data <- function(N = 200,
                                            .seed = 123) {
   stopifnot(require(simstudy))
   

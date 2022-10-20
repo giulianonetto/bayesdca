@@ -13,9 +13,9 @@ evpi <- function(obj, models_or_tests = NULL) {
       )
     )
   }
-
+  
   stopifnot(length(models_or_tests) > 0 & length(models_or_tests) < 3)
-
+  
   .evpi <- vector("numeric", length(obj$thresholds))
   for (i in seq_along(obj$thresholds)) {
     # get posterior NB for each strategy in i-th threshold
@@ -30,7 +30,7 @@ evpi <- function(obj, models_or_tests = NULL) {
     ENB_current <- max(0, mean(nb1), mean(nb2))
     .evpi[i] <- ENB_perfect - ENB_current
   }
-
+  
   return(.evpi)
 }
 
@@ -51,16 +51,16 @@ plot_evpi <- function(obj, models_or_tests = NULL, labels = NULL) {
       )
     )
   }
-
+  
   # build labels for plot subtitle
   plot_labels <- vector("character", length = 2L)
-
+  
   if (models_or_tests[1] %in% names(labels)) {
     plot_labels[1] <- labels[models_or_tests[1]]
   } else {
     plot_labels[1] <- models_or_tests[1]
   }
-
+  
   if (length(models_or_tests) > 1) {
     if (models_or_tests[2] %in% names(labels)) {
       plot_labels[2] <- labels[models_or_tests[2]]
@@ -68,7 +68,7 @@ plot_evpi <- function(obj, models_or_tests = NULL, labels = NULL) {
       plot_labels[2] <- models_or_tests[2]
     }
   }
-
+  
   # get subtitles
   if (length(models_or_tests) == 1) {
     .subtitle <- paste0("EVPI: ",
@@ -80,7 +80,7 @@ plot_evpi <- function(obj, models_or_tests = NULL, labels = NULL) {
                         ' vs. ',
                         plot_labels[2])
   }
-
+  
   data.frame(
     .threhsolds = obj$thresholds,
     .evpi = evpi(obj, models_or_tests = models_or_tests)
@@ -161,6 +161,81 @@ get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, la
       )
     )
   }
-
+  
   return(colors_and_labels)
+}
+
+get_survival_cutpoints <- function(death_times) {
+  if (length(death_times) >= 200) {
+    .probs <- c(.1, .25, .5, .75, .9, .975)
+    
+    top_one_percent <- quantile(death_times, 0.99)
+    if (sum(death_times >= top_one_percent) > 50) {
+      .probs <- c(.probs, .99)
+    } 
+  } else if (length(death_times) >= 50) {
+    .probs <- c(.1, .5, .9)
+  } else if (length(death_times) >= 30) {
+    .probs <- c(1/3, 2/3)
+  } else {
+    .probs <- c(1/3)
+  }
+  
+  .cuts <- c(
+    0,
+    unname(quantile(death_times, probs = .probs))
+  )
+  
+  return(.cuts)
+}
+
+
+get_survival_time_exposed <- function(.t, .cutpoints) {
+  # reference: https://rpubs.com/kaz_yos/surv_stan_piecewise1
+  # TODO: <= or <
+  if (!(0 %in% .cutpoints)) {
+    .cutpoints <- c(0, .cutpoints)
+  }
+  interval_exposed <- outer(.cutpoints, .t, `<=`)
+  
+  ## t - cutpoint. Multiply by interval exposed to avoid negative times.
+  time_exposed <-  -outer(.cutpoints, .t, `-`) * interval_exposed
+  if (any(is.na(time_exposed))) {
+    cat("There are NAs in time exposed. Replacing with zero.\n")
+    time_exposed[is.na(time_exposed)] <- 0.0
+  }
+  
+  
+  ## Last interval is of width Inf
+  interval_widths <- c(diff(.cutpoints), Inf)
+  
+  ## For each interval, time exposed cannot exceed interval width.
+  ## matrix with length(.cutpoints) rows and length(.t) columns
+  time_exposed_correct  <- sweep(x = time_exposed,
+                                 MARGIN = 1,
+                                 STATS = interval_widths,
+                                 FUN = pmin)
+  
+  return(t(time_exposed_correct))
+}
+
+get_survival_posterior_parameters <- function(
+    .data, 
+    .prior_alpha = 0.001, 
+    .prior_beta = 0.001
+) {
+  
+  .totals <- .data %>% 
+    ungroup() %>% 
+    group_by(j) %>% 
+    summarise(
+      total_dij = sum(dij),
+      total_tij = sum(tij)
+    ) 
+  posterior_parameters <- data.frame(
+    alpha = .prior_alpha + .totals$total_dij,
+    beta = .prior_beta + .totals$total_tij
+  )
+  
+  return(posterior_parameters)
 }

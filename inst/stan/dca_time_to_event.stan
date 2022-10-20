@@ -1,17 +1,14 @@
 data {
-  int<lower=0> n_preds;
   int<lower=0> n_thr;
   int<lower=0> n_models;
-  int<lower=0> n_intervals;
+  int<lower=0> n_intervals;  // number of time intervals with constant hazard
   vector<lower=0, upper=1>[n_thr] thresholds;
-  matrix<lower=0, upper=n_preds>[n_models, n_thr] positives;
-  matrix<lower=0>[n_models, n_thr] pos_post1;
+  matrix<lower=0>[n_models, n_thr] pos_post1;  // posterior pars for P(phat > t)
   matrix<lower=0>[n_models, n_thr] pos_post2;
-  // Exposure time within each interval, for each desired survival time
-  row_vector[n_intervals] time_exposed;
-  matrix[n_intervals, n_thr] posterior_alpha[n_models];
+  row_vector[n_intervals] time_exposed;  // exposure time within each time interval
+  matrix[n_intervals, n_thr] posterior_alpha[n_models]; // posterior pars for constant hazards, given phat > t
   matrix[n_intervals, n_thr] posterior_beta[n_models];
-  vector[n_intervals] posterior_alpha0;
+  vector[n_intervals] posterior_alpha0;  // posterior pars for constant hazards (marginal)
   vector[n_intervals] posterior_beta0;
 }
 
