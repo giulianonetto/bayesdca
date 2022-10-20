@@ -190,16 +190,16 @@ get_survival_cutpoints <- function(death_times) {
 }
 
 
-get_survival_time_exposed <- function(.t, .cutpoints) {
+get_survival_time_exposed <- function(.prediction_time, .cutpoints) {
   # reference: https://rpubs.com/kaz_yos/surv_stan_piecewise1
   # TODO: <= or <
   if (!(0 %in% .cutpoints)) {
     .cutpoints <- c(0, .cutpoints)
   }
-  interval_exposed <- outer(.cutpoints, .t, `<=`)
+  interval_exposed <- outer(.cutpoints, .prediction_time, `<=`)
   
   ## t - cutpoint. Multiply by interval exposed to avoid negative times.
-  time_exposed <-  -outer(.cutpoints, .t, `-`) * interval_exposed
+  time_exposed <-  -outer(.cutpoints, .prediction_time, `-`) * interval_exposed
   if (any(is.na(time_exposed))) {
     cat("There are NAs in time exposed. Replacing with zero.\n")
     time_exposed[is.na(time_exposed)] <- 0.0
@@ -221,21 +221,73 @@ get_survival_time_exposed <- function(.t, .cutpoints) {
 
 get_survival_posterior_parameters <- function(
     .data, 
-    .prior_alpha = 0.001, 
-    .prior_beta = 0.001
+    .cutpoints,
+    .models_or_tests,
+    .thresholds,
+    .prior_alpha, 
+    .prior_beta
 ) {
   
-  .totals <- .data %>% 
-    ungroup() %>% 
-    group_by(j) %>% 
-    summarise(
-      total_dij = sum(dij),
-      total_tij = sum(tij)
-    ) 
-  posterior_parameters <- data.frame(
-    alpha = .prior_alpha + .totals$total_dij,
-    beta = .prior_beta + .totals$total_tij
-  )
+  all_posteriorpars <- vector('list', length(.models_or_tests))
+  for (i in seq_along(.models_or_tests)) {
+    for (j in seq_along(.thresholds)) {
+      .model <- .models_or_tests[i]
+      .thr <- .thresholds[j]
+      .predictions <- .data[[.model]]
+      .d <- .data[.predictions >= .thr, ]
+      .d$patient_id <- 1:nrow(.d)
+      .median_surv <- median(.d[["outcomes"]])$quantile
+      .d_split <- survSplit(
+        outcomes ~ 1,
+        data = .d,
+        cut = .cutpoints,
+        subset = 1:nrow(.d),
+        id = "patient_id",
+        start = "tstart",
+        end = "tstop"
+      )
+      # TODO: group_by and so on
+    }
+  }
+  lapply(.thresholds, \(i) {
+    .d <- .data %>% 
+      dplyr::filter(cancerpredmarker >= i)
+    q50_surv <- median(.d$outcomes)$quantile
+    survSplit(
+      s ~ 1,
+      data = .d,
+      cut = .cutpoints,
+      subset = 1:nrow(.d),
+      id = "patientid",
+      start = "tstart",
+      end = "tstop"
+    ) %>% 
+      group_by(
+        ij = paste0("[", tstart, ", ", tstop, ")"),
+        j = paste0(
+          "interval_", as.numeric(factor(tstart))
+        )
+      ) %>% 
+      summarise(
+        dij = sum(cancer),
+        tij = sum(tstop - tstart),
+        .groups = 'drop'
+      ) %>% 
+      ungroup() %>% 
+      group_by(j) %>% 
+      summarise(
+        total_dij = sum(dij),
+        total_tij = sum(tij)
+      ) %>% 
+      mutate(.thr = i)
+    
+    posterior_parameters <- data.frame(
+      alpha = .prior_alpha + .totals$total_dij,
+      beta = .prior_beta + .totals$total_tij
+    )
+    
+    return(posterior_parameters)
+  })
   
-  return(posterior_parameters)
+  
 }

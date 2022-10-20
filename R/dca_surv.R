@@ -66,44 +66,70 @@
 #' fit <- dca(PredModelData, cores = 4)
 #' plot(fit)
 dca_surv <- function(.data,
+                     prediction_time,
                      thresholds = seq(0.01, 0.5, 0.01),
                      keep_draws = TRUE,
                      keep_fit = FALSE,
                      summary_probs = c(0.025, 0.975),
+                     cutpoints = c(0, 0.1, 0.5, 0.9),
                      refresh = 0,
                      ...) {
   if (colnames(.data)[1] != "outcomes") {
     stop("Missing 'outcomes' column as the first column in input .data")
   }
-  model_or_test_names <- colnames(.data)[-1]
-  N <- nrow(.data)
-  d <- sum(.data[['outcomes']])
-  n_thresholds = length(thresholds)
-  n_models_or_tests = length(model_or_test_names)
-  threshold_data <- .get_thr_data_list(.data = .data,
-                                       thresholds = thresholds)
-  priors <- .get_prior_parameters(prior_p = prior_p,
-                                  prior_se = prior_se,
-                                  prior_sp = prior_sp,
-                                  n_thresholds = n_thresholds,
-                                  n_models_or_tests = n_models_or_tests)
-  time_exposed <- get_time_exposed(pred_time, .cutpoints)
-  posterior_pars0 <- get_survival_baseline_posterior_parameters()
-  posterior_pars <- get_survival_posterior_parameters()
-  positivity_pars <- get_positivity_posterior_parameters()
+  
+  # avoid thresholds in {0, 1}
+  thresholds <- thresholds %>% 
+    pmin(0.99999) %>% 
+    pmax(0.00001)
+  
+  # make sure zero is included and cutpoints are correctly ordered
+  cutpoints <- sort(unique(c(0, cutpoints)))
+  
+  # preprocess outcome
+  status <- unname(.data[['outcomes']][,2])  # 1 if event, 0 if censored
+  time <- unname(.data[['outcomes']][,1])  # observed time-to-event
+  event_times <- time[status > 0]
+  events_per_interval <- table(cut(event_times, c(cutpoints, Inf), include.lowest = T))
+  if (!(all(events_per_interval >= 5))) {
+    msg <- paste0(
+      "Please updade cutpoints, too few events per interval (at least five needed):\n",
+      paste(names(events_per_interval), events_per_interval, sep = ": ", collapse = "  ")
+    )
+    stop(msg)
+  }
+  
+  n_thresholds <- length(thresholds)
+  n_models_or_tests <- ncol(.data) - 1
+  n_intervals = length(cutpoints)
+  time_exposed <- get_survival_time_exposed(prediction_time, cutpoints)
+  posterior_surv_pars <- get_survival_posterior_parameters(
+    .data = .data,
+    .models_or_tests = colnames(.data)[-1],
+    .prior_alpha = 0.001, 
+    .prior_beta = 0.001,
+    .thresholds = thresholds
+  )
+  posterior_surv_pars0 <- get_survival_posterior_parameters(
+    .data = .data,
+    .prior_alpha = 0.001, 
+    .prior_beta = 0.001,
+    .thresholds = 0
+  )
+  posterior_posit_pars <- get_positivity_posterior_parameters()
   
   fit <- .dca_stan_surv(
     n_thr = n_thresholds,
     n_models = n_models_or_tests,
-    n_intervals = length(.cutpoints),
+    n_intervals = n_intervals,
     thresholds = thresholds,
     time_exposed = time_exposed, # get_time_exposed(pred_time, .cutpoints) %>% as.vector(),
-    posterior_alpha = posterior_pars$alpha, #list(sapply(1:length(thr), \(i) posterior_pars[[i]]$alpha)),
-    posterior_beta = posterior_pars$beta, #list(sapply(1:length(thr), \(i) posterior_pars[[i]]$beta)),
-    posterior_alpha0 = posterior_pars0$alpha, #posterior_pars0[[1]]$alpha,
-    posterior_beta0 = posterior_pars0$beta,#posterior_pars0[[1]]$beta,
-    pos_post1 = positivity_pars$shape1, #0.5 + t(sapply(thr, \(i) sum(preds>i))),
-    pos_post2 = positivity_pars$shape1, #0.5 + length(preds) - t(sapply(thr, \(i) sum(preds>i))),
+    posterior_alpha = posterior_surv_pars$alpha, #list(sapply(1:length(thr), \(i) posterior_pars[[i]]$alpha)),
+    posterior_beta = posterior_surv_pars$beta, #list(sapply(1:length(thr), \(i) posterior_pars[[i]]$beta)),
+    posterior_alpha0 = posterior_surv_pars0$alpha, #posterior_pars0[[1]]$alpha,
+    posterior_beta0 = posterior_surv_pars0$beta,#posterior_pars0[[1]]$beta,
+    pos_post1 = posterior_posit_pars$shape1, #0.5 + t(sapply(thr, \(i) sum(preds>i))),
+    pos_post2 = posterior_posit_pars$shape2, #0.5 + length(preds) - t(sapply(thr, \(i) sum(preds>i))),
     refresh = refresh,
     ...
   )
