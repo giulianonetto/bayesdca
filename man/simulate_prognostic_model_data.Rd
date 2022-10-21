@@ -4,7 +4,7 @@
 \alias{simulate_prognostic_model_data}
 \title{Simulate Prognostic Test Data}
 \usage{
-simulate_prognostic_model_data(N = 500, .seed = 123)
+simulate_prognostic_model_data(N = 200, .seed = 123)
 }
 \description{
 Simulate Prognostic Test Data
