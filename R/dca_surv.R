@@ -36,6 +36,8 @@
 
   .model <- stanmodels$dca_time_to_event
   stanfit <- rstan::sampling(.model, data = standata,
+                             control = list(adapt_delta = 0.9),
+                             iter = 8000,
                              refresh = refresh, ...)
   return(stanfit)
 }
@@ -64,7 +66,7 @@ dca_surv <- function(.data,
   }
 
   stopifnot(
-    "'outcomes' column must be Surv object. " = survival::is.Surv(.data[['outcomes']])
+    "'outcomes' column must be a Surv object. " = survival::is.Surv(.data[['outcomes']])
   )
 
   # avoid thresholds in {0, 1}
@@ -73,14 +75,15 @@ dca_surv <- function(.data,
     pmax(0.00001)
 
   # preprocess .data
+  model_or_test_names <- colnames(.data)[-1]
   prediction_data <- data.frame(.data[, -1])
+  colnames(prediction_data) <- model_or_test_names
   surv_data <- data.frame(
     .time = unname(.data[['outcomes']][,1]),   # observed time-to-event
     .status = unname(.data[['outcomes']][,2])  # 1 if event, 0 if censored
   )
 
   event_times <- surv_data$.time[surv_data$.status > 0]
-  model_or_test_names <- colnames(prediction_data)
 
   # preprocess cutpoints
   if (is.null(cutpoints)) {
@@ -154,11 +157,12 @@ dca_surv <- function(.data,
   output_data <- list(
     summary = dca_summary,
     thresholds = thresholds,
-    event_times = event_times,
-    censor_times = surv_data$.time[surv_data$.status == 0],
+    .time = surv_data$.time,
+    .status = surv_data$.status,
     .data = .data,
     cutpoints = cutpoints,
-    model_or_test_names = model_or_test_names
+    model_or_test_names = model_or_test_names,
+    prediction_time = prediction_time
   )
 
   if (isTRUE(keep_fit)) {
@@ -172,4 +176,166 @@ dca_surv <- function(.data,
 
   .output <- structure(output_data, class = "BayesDCASurv")
   return(.output)
+}
+
+#' Extract posterior summaries for `BayesDCASurv` object
+#'
+#' @return An object of class `BayesDCASurv`
+#' @importFrom magrittr %>%
+#' @importFrom stringr str_detect str_c str_extract str_remove str_remove_all
+#' @examples
+#' data(PredModelData)
+#' fit <- dca(PredModelData, cores = 4)
+#' plot(fit)
+.extract_dca_surv_summary <- function(
+    fit,
+    summary_probs,
+    thresholds,
+    model_or_test_names
+) {
+
+  .pars <- c(
+    "net_benefit", "delta", "prob_better_than_soc",
+    "positivity", "treat_all", "St_marginal"
+  )
+
+  fit_summary <- rstan::summary(
+    fit,
+    pars = .pars,
+    probs = summary_probs,
+  )$summary %>%
+    tibble::as_tibble(rownames = "par_name") %>%
+    dplyr::select(-c(se_mean, sd, n_eff, Rhat)) %>%
+    dplyr::rename(estimate := mean) %>%
+    dplyr::mutate(
+      threshold_ix = dplyr::case_when(
+        str_detect(par_name, str_c(.pars[1:3], collapse = "|")) ~ str_extract(par_name, "\\[\\d+") %>%
+          str_remove(string = ., pattern = "\\[") %>%
+          as.integer(),
+        str_detect(par_name, str_c(.pars[4:5], collapse = "|")) ~ str_extract(par_name, "\\d+\\]") %>%
+          str_remove(string = ., pattern = "\\]") %>%
+          as.integer(),
+        TRUE ~ NA_integer_
+      ),
+      model_or_test_ix = dplyr::case_when(
+        str_detect(par_name, str_c(.pars[1:3], collapse = "|")) ~ str_extract(par_name, "\\d+\\]") %>%
+          str_remove(string = ., pattern = "\\]") %>%
+          as.integer(),
+        str_detect(par_name, str_c(.pars[4], collapse = "|")) ~ str_extract(par_name, "\\[\\d+") %>%
+          str_remove(string = ., pattern = "\\[") %>%
+          as.integer(),
+        TRUE ~ NA_integer_
+      ),
+      threshold = ifelse(
+        is.na(threshold_ix),
+        NA_real_,
+        thresholds[threshold_ix]
+      ),
+      model_or_test_name = ifelse(
+        is.na(model_or_test_ix),
+        NA_character_,
+        model_or_test_names[model_or_test_ix]
+      ),
+      par_name = stringr::str_extract(par_name, "\\w+")
+    ) %>%
+    dplyr::select(par_name, threshold, model_or_test_name,
+                  dplyr::everything(), -dplyr::contains("ix"))
+
+  # overall survival at prediction time
+  overall_surv <- fit_summary %>%
+    dplyr::filter(
+      str_detect(par_name, "St_marginal")
+    ) %>%
+    dplyr::mutate(par_name = "overall_surv") %>%
+    dplyr::select(-c(threshold, model_or_test_name))
+
+  # positivity
+  positivity <- fit_summary %>%
+    dplyr::filter(str_detect(par_name, "positivity"))
+
+  # net benefit
+  net_benefit <- fit_summary %>%
+    dplyr::filter(str_detect(par_name, "net_benefit"))
+
+  # treat all (net benefit for treat all strategy)
+  treat_all <- fit_summary %>%
+    dplyr::filter(str_detect(par_name, "treat_all")) %>%
+    dplyr::select(-model_or_test_name)
+
+  .summary <- structure(
+    list(
+      net_benefit = net_benefit,
+      treat_all = treat_all,
+      overall_surv = overall_surv,
+      positivity = positivity
+    ), class = "BayesDCASummary"
+  )
+
+  return(.summary)
+}
+
+#' @title Get posterior draws from time-to-event DCA stanfit
+#'
+#' @param fit A stanfit object.
+#' @param model_or_test_names Vector of names of models or binary tests under assessment.
+.extract_dca_surv_draws <- function(fit,
+                                    model_or_test_names) {
+
+  .pars <- c(
+    "net_benefit", "delta", "prob_better_than_soc",
+    "positivity", "treat_all", "St_marginal"
+  )
+
+  stan_draws <- rstan::extract(
+    fit,
+    pars = .pars
+  )
+
+  .draws <- list(
+    overall_surv = stan_draws$St_marginal %>% as.vector(),
+    treat_all = stan_draws$treat_all,
+    net_benefit = list(),
+    delta_default = list(),
+    prob_better_than_default = list()
+  )
+
+  for (i in seq_along(model_or_test_names)) {
+    .name <- model_or_test_names[i]
+    .draws[['net_benefit']][[.name]] <- stan_draws$net_benefit[,,i]
+    .draws[['delta_default']][[.name]] <- stan_draws$delta[,,i]
+    .draws[['prob_better_than_default']][[.name]] <- stan_draws$prob_better_than_soc[,,i]
+  }
+
+  return(.draws)
+}
+
+
+#' @title Print BayesDCASurv
+#'
+#' @param obj BayesDCASurv object
+#' @export
+print.BayesDCASurv <- function(obj, ...) {
+  sample_size_info <- paste0(
+    "N=", length(obj$.time), "\tevents=", sum(obj$.status)
+  )
+  os <- round(obj$summary$overall_surv[, -1]*100, 1)
+  cat(
+    paste0(
+      c(
+        "BayesDCASurv\n",
+        paste0("Number of thresholds: ", length(obj$thresholds)),
+        sample_size_info,
+        paste0("Prediction time point: ", obj$prediction_time),
+        paste0(
+          "Survival at prediction time: ",
+          os$estimate, "% [",
+          os$`2.5%`, "% \u2012 ",
+          os$`97.5%`, "%]"
+        ),
+        "Models or tests: ",
+        paste0(obj$model_or_test_names, collapse = ", ")
+      ),
+      collapse = "\n"
+    )
+  )
 }

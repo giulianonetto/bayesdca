@@ -5,12 +5,10 @@
 \title{Fit Bayesian Decision Curve Analysis using Stan for survival outcomes}
 \usage{
 .dca_stan_surv(
-  n_preds,
   n_thr,
   n_models_or_tests,
   n_intervals,
   thresholds,
-  positives,
   time_exposed,
   posterior_alpha,
   posterior_beta,

@@ -299,23 +299,22 @@ dca <- function(.data,
 #' @importFrom magrittr %>%
 .extract_dca_summary <- function(fit,
                                  model_or_test_names,
-                                 summary_probs = c(0.025, 0.975),
-                                 thresholds = seq(0.01, 0.5, 0.01)) {
+                                 summary_probs,
+                                 thresholds) {
 
   # overall summary
   fit_summary <- rstan::summary(
     fit, probs = summary_probs
   )$summary %>%
-    data.frame(check.names = FALSE) %>%
     tibble::as_tibble(rownames = "par_name") %>%
     dplyr::select(-se_mean) %>%
     dplyr::rename(estimate := mean) %>%
     dplyr::mutate(
       threshold_ix = stringr::str_extract(par_name, "\\[\\d+") %>%
-        stringr::str_remove("\\[") %>%
+        stringr::str_remove(string = ., pattern = "\\[") %>%
         as.integer(),
       model_or_test_ix = stringr::str_extract(par_name, ",\\d+\\]") %>%
-        stringr::str_remove_all("\\]|,") %>%
+        stringr::str_remove_all(string = ., pattern = "\\]|,") %>%
         as.integer(),
       threshold = thresholds[threshold_ix],
       model_or_test_name = model_or_test_names[model_or_test_ix]
@@ -475,7 +474,7 @@ plot.BayesDCAList <- function(obj,
     ) +
     ggplot2::geom_line(
       data = obj$summary$treat_all,
-      ggplot2::aes(y = estimate, color = "Treat all")
+      ggplot2::aes(y = estimate, color = "Treat all", group = 1)
     ) +
     # add net benefit curves
     ggplot2::geom_ribbon(
@@ -487,7 +486,8 @@ plot.BayesDCAList <- function(obj,
     ggplot2::geom_line(
       data = net_benefit_data,
       ggplot2::aes(y = estimate,
-                   color = model_or_test_name)
+                   color = model_or_test_name,
+                   group = model_or_test_name)
     ) +
     # add treat none curve
     ggplot2::geom_hline(

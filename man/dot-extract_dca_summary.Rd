@@ -4,12 +4,7 @@
 \alias{.extract_dca_summary}
 \title{Get summary from BayesDCA fit}
 \usage{
-.extract_dca_summary(
-  fit,
-  model_or_test_names,
-  summary_probs = c(0.025, 0.975),
-  thresholds = seq(0.01, 0.5, 0.01)
-)
+.extract_dca_summary(fit, model_or_test_names, summary_probs, thresholds)
 }
 \arguments{
 \item{fit}{A stanfit object.}
