@@ -5,15 +5,17 @@ data {
   vector<lower=0, upper=1>[n_thr] thresholds;
   matrix<lower=0>[n_models, n_thr] pos_post1;  // posterior pars for P(phat > t)
   matrix<lower=0>[n_models, n_thr] pos_post2;
-  row_vector[n_intervals] time_exposed;  // exposure time within each time interval
+  matrix[n_intervals, n_thr] time_exposed;  // exposure time within each time interval
+  row_vector[n_intervals] time_exposed0;
   matrix[n_intervals, n_thr] posterior_alpha[n_models]; // posterior pars for constant hazards, given phat > t
   matrix[n_intervals, n_thr] posterior_beta[n_models];
   vector[n_intervals] posterior_alpha0;  // posterior pars for constant hazards (marginal)
   vector[n_intervals] posterior_beta0;
+  row_vector[n_intervals] ones;
 }
 
 parameters {
-  matrix<lower=0>[n_intervals, n_thr] lambda[n_models]; 
+  matrix<lower=0>[n_intervals, n_thr] lambda[n_models];
   vector<lower=0, upper=1>[n_thr] positivity[n_models];
   vector<lower=0>[n_intervals] lambda0;
 }
@@ -21,13 +23,13 @@ parameters {
 transformed parameters {
   vector[n_thr] St_positives[n_models];
   real St_marginal;
-  
+
   for (model_j in 1:n_models) {
-    St_positives[model_j] = exp(-(time_exposed * lambda[model_j]))'; // S(t) = exp(-H(t)), matrix * vector product
+    St_positives[model_j] = exp(-(ones * (time_exposed .* lambda[model_j])))'; // S(t) = exp(-H(t)), matrix * vector product
   }
-  
-  St_marginal = exp(-(time_exposed*lambda0))';
-  
+
+  St_marginal = exp(-(time_exposed0*lambda0))';
+
 }
 
 model {
@@ -40,13 +42,13 @@ model {
       positivity[model_j][thr_k] ~ beta(pos_post1[model_j, thr_k], pos_post2[model_j, thr_k]);
     }
   }
-  
+
   lambda0 ~ gamma(posterior_alpha0, posterior_beta0);
-  
+
 }
 
 generated quantities {
-  
+
   // Treat all (same for all models)
   vector[n_thr] treat_all;
   // Net benefir calculation for each threshold, each model
@@ -56,7 +58,7 @@ generated quantities {
   // Probability that delta NB is greater than zero - model better than treat all/none ("Standard of Care")
   // for each threshold, each model
   matrix<lower=0, upper = 1>[n_thr, n_models] prob_better_than_soc;
-  
+
   for (thr_i in 1:n_thr) {
     // tmp variable for odds(threshold)
     real odds_thr = thresholds[thr_i]/(1-thresholds[thr_i]);
