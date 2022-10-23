@@ -170,14 +170,14 @@ get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, la
 #' @param .prediction_time Time for event prediction
 #' @param .cutpoints Cutpoints for constant hazard interval
 get_survival_time_exposed <- function(.prediction_time, .cutpoints) {
-  time_exposed <- numeric(length = length(cutpoints))
-  for (i in 1:(length(cutpoints)-1) ) {
-    if (prediction_time >= cutpoints[i+1]) {
+  time_exposed <- numeric(length = length(.cutpoints))
+  for (i in 1:(length(.cutpoints)-1) ) {
+    if (.prediction_time >= .cutpoints[i+1]) {
       # if prediction time > upper bound, use interval length
-      time_exposed[i] <- cutpoints[i+1] - cutpoints[i]
-    } else if (prediction_time >= cutpoints[i]) {
+      time_exposed[i] <- .cutpoints[i+1] - .cutpoints[i]
+    } else if (.prediction_time >= .cutpoints[i]) {
       # if prediction time > lower bound, use distance between pred time and lower bound
-      time_exposed[i] <- prediction_time - cutpoints[i]
+      time_exposed[i] <- .prediction_time - .cutpoints[i]
     } else {
       # otherwise, prediction time is before interval, exposure time is zero
       time_exposed[i] <- 0
@@ -202,7 +202,8 @@ get_survival_posterior_parameters <- function(
     .cutpoints,
     .models_or_tests,
     .thresholds,
-    .prior_scaling_factor = 0.1
+    .prior_scaling_factor,
+    .use_median_surv = TRUE
 ) {
 
   initialize_pars <- function() {
@@ -228,9 +229,14 @@ get_survival_posterior_parameters <- function(
       .positive_prediction <- .predictions >= .thr
       .d <- .surv_data[.positive_prediction, ]
       .d$patient_id <- 1:nrow(.d)
-      .median_survival <- survival:::median.Surv(Surv(.d$.time, .d$.status))$quantile
-      .prior_alpha <- (0.69/.median_survival) * .prior_scaling_factor
-      .prior_beta <- .prior_scaling_factor
+      if (isTRUE(.use_median_surv)) {
+        .median_surv <- survival:::median.Surv(Surv(.d$.time, .d$.status))$quantile
+        .prior_mean <- 0.69/.median_surv
+      } else {
+        .prior_mean <- 1
+      }
+      .prior_alpha <- .prior_scaling_factor
+      .prior_beta <- .prior_scaling_factor / .prior_mean
       .d_split <- survival::survSplit(
         Surv(.time, .status) ~ 1,
         data = .d,
@@ -252,7 +258,7 @@ get_survival_posterior_parameters <- function(
         )
 
       all_posterior_alphas[[i]][ , j] <- .d_split$total_events + .prior_alpha
-      all_posterior_betas[[i]][ , j] <- .d_split$total_events + .prior_beta
+      all_posterior_betas[[i]][ , j] <- .d_split$total_exposure_time + .prior_beta
 
     }
   }

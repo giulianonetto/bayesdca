@@ -10,7 +10,8 @@ get_survival_posterior_parameters(
   .cutpoints,
   .models_or_tests,
   .thresholds,
-  .prior_scaling_factor = 0.1
+  .prior_scaling_factor,
+  .use_median_surv = TRUE
 )
 }
 \arguments{

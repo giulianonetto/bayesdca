@@ -37,7 +37,7 @@
   .model <- stanmodels$dca_time_to_event
   stanfit <- rstan::sampling(.model, data = standata,
                              control = list(adapt_delta = 0.9),
-                             iter = 8000,
+                             iter = 4000,
                              refresh = refresh, ...)
   return(stanfit)
 }
@@ -59,6 +59,8 @@ dca_surv <- function(.data,
                      keep_fit = FALSE,
                      summary_probs = c(0.025, 0.975),
                      cutpoints = NULL,
+                     prior_scaling_factor = 0.01,
+                     use_median_surv = TRUE,
                      refresh = 0,
                      ...) {
   if (colnames(.data)[1] != "outcomes") {
@@ -111,7 +113,7 @@ dca_surv <- function(.data,
 
   n_models_or_tests <- ncol(prediction_data)
   n_thresholds <- length(thresholds)
-  n_intervals = length(cutpoints)
+  n_intervals <- length(cutpoints)
   time_exposed <- get_survival_time_exposed(prediction_time, cutpoints)
 
   posterior_surv_pars <- get_survival_posterior_parameters(
@@ -119,14 +121,18 @@ dca_surv <- function(.data,
     .surv_data = surv_data,
     .models_or_tests = colnames(prediction_data),
     .cutpoints = cutpoints,
-    .thresholds = thresholds
+    .thresholds = thresholds,
+    .prior_scaling_factor = prior_scaling_factor,
+    .use_median_surv = use_median_surv
   )
   posterior_surv_pars0 <- get_survival_posterior_parameters(
     .prediction_data = prediction_data,
     .surv_data = surv_data,
     .models_or_tests = colnames(prediction_data),
     .cutpoints = cutpoints,
-    .thresholds = 0
+    .thresholds = 0,
+    .prior_scaling_factor = prior_scaling_factor,
+    .use_median_surv = use_median_surv
   )
   posterior_positivity_pars <- get_positivity_posterior_parameters(
     .prediction_data = prediction_data,
@@ -162,7 +168,9 @@ dca_surv <- function(.data,
     .data = .data,
     cutpoints = cutpoints,
     model_or_test_names = model_or_test_names,
-    prediction_time = prediction_time
+    prediction_time = prediction_time,
+    posterior_surv_pars = posterior_surv_pars,
+    posterior_positivity_pars = posterior_positivity_pars
   )
 
   if (isTRUE(keep_fit)) {
@@ -338,4 +346,12 @@ print.BayesDCASurv <- function(obj, ...) {
       collapse = "\n"
     )
   )
+}
+
+#' @title Plot BayesDCASurv
+#'
+#' @param obj BayesDCASurv object
+#' @export
+plot.BayesDCASurv <- function(obj, ...) {
+  plot.BayesDCAList(obj = obj, ... = ...)
 }
