@@ -94,21 +94,31 @@ dca_surv <- function(.data,
 
   # make sure zero is included and cutpoints are correctly ordered
   cutpoints <- sort(unique(c(0, cutpoints)))
-  print(cutpoints)
   # stopifnot(
   #   "prediction_time must be at most max(cutpoints)" = prediction_time <= max(cutpoints)
   # )
 
 
   events_per_interval <- get_events_per_interval(cutpoints, event_times)
+  epi_text <- paste(
+    names(events_per_interval), events_per_interval, sep = ": ", collapse = "  "
+  ) %>%
+    stringr::str_replace("Inf]", "Inf)")
   if (!(all(events_per_interval >= min_events_per_interval()))) {
     msg <- paste0(
       "Please updade cutpoints, too few events per interval (at least ",
       min_events_per_interval(), " required):\n",
-      paste(names(events_per_interval), events_per_interval, sep = ": ", collapse = "  ")
+      epi_text
     )
     stop(msg)
   }
+
+  msg <- paste0(
+    "Survival estimation with the following intervals (total event counts):\n",
+    epi_text,
+    collapse = "\n"
+  )
+  message(msg)
 
   n_models_or_tests <- ncol(prediction_data)
   n_thresholds <- length(thresholds)

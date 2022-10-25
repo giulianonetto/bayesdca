@@ -267,7 +267,6 @@ get_survival_posterior_parameters <- function(
       }
       .prior_alpha <- .prior_scaling_factor * .prior_mean
       .prior_beta <- .prior_scaling_factor
-      cat("prior alpha ", .prior_alpha, "Prior beta", .prior_beta, "\n")
       .d_split <- survival::survSplit(
         Surv(.time, .status) ~ 1,
         data = .d,
