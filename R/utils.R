@@ -100,6 +100,34 @@ plot_evpi <- function(obj, models_or_tests = NULL, labels = NULL) {
     )
 }
 
+#' @title Minimal events per interval
+min_events_per_interval <- function() {
+  return(3)
+}
+
+#' @title Get cutpoints for survival estimation
+#' @param .prediction_time time point at which event is predicted to happen
+#' @param .event_times times of observed events (non-censored)
+get_cutpoints <- function(.prediction_time, .event_times) {
+  .cuts <- .prediction_time * c(
+    0.00, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 1
+  )
+
+  events_per_interval <- get_events_per_interval(.cuts, .event_times)
+
+  return(.cuts[events_per_interval >= min_events_per_interval()])
+
+}
+
+#' @title Get events per intervals defined by set of cutpoints
+#' @param .cutpoints cutpoints defining intervals
+#' @param .event_times times of observed events (non-censored)
+get_events_per_interval <- function(.cutpoints, .event_times) {
+
+  table(cut(.event_times, c(.cutpoints, Inf), include.lowest = T))
+
+}
+
 
 #' @title Get colors and labels for BayesDCA plots
 #'
@@ -206,12 +234,14 @@ get_survival_posterior_parameters <- function(
     .use_median_surv = TRUE
 ) {
 
+  n_cuts <- length(.cutpoints)
+  n_thr <- length(.thresholds)
   initialize_pars <- function() {
     lapply(
       seq_along(.models_or_tests),
       function(...) {
-        matrix(nrow = length(.cutpoints),
-               ncol = length(.thresholds))
+        matrix(nrow = n_cuts,
+               ncol = n_thr)
       }
     )
   }
@@ -235,8 +265,9 @@ get_survival_posterior_parameters <- function(
       } else {
         .prior_mean <- 1
       }
-      .prior_alpha <- .prior_scaling_factor
-      .prior_beta <- .prior_scaling_factor / .prior_mean
+      .prior_alpha <- .prior_scaling_factor * .prior_mean
+      .prior_beta <- .prior_scaling_factor
+      cat("prior alpha ", .prior_alpha, "Prior beta", .prior_beta, "\n")
       .d_split <- survival::survSplit(
         Surv(.time, .status) ~ 1,
         data = .d,
@@ -256,6 +287,23 @@ get_survival_posterior_parameters <- function(
           total_events = sum(.status),
           total_exposure_time = sum(tstop - tstart)
         )
+
+      n_empty_intervals <- n_cuts - nrow(.d_split)
+      if (n_empty_intervals > 0) {
+        msg <- paste0(
+          "Got ", n_empty_intervals, " empty interval (s) for threshold ",
+          .thresholds[j], " in model ", .model
+        )
+        warning(msg)
+        for (k in 1:n_empty_intervals) {
+          .d_split <- .d_split %>%
+            dplyr::add_row(
+              interval_id = paste0("interval_", nrow(.d_split) + k),
+              total_events = 0,
+              total_exposure_time = 0
+            )
+        }
+      }
 
       all_posterior_alphas[[i]][ , j] <- .d_split$total_events + .prior_alpha
       all_posterior_betas[[i]][ , j] <- .d_split$total_exposure_time + .prior_beta

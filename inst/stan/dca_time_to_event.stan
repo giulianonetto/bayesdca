@@ -5,13 +5,11 @@ data {
   vector<lower=0, upper=1>[n_thr] thresholds;
   matrix<lower=0>[n_models, n_thr] pos_post1;  // posterior pars for P(phat > t)
   matrix<lower=0>[n_models, n_thr] pos_post2;
-  matrix[n_intervals, n_thr] time_exposed;  // exposure time within each time interval
-  row_vector[n_intervals] time_exposed0;
+  row_vector[n_intervals] time_exposed;  // exposure time within each time interval
   matrix[n_intervals, n_thr] posterior_alpha[n_models]; // posterior pars for constant hazards, given phat > t
   matrix[n_intervals, n_thr] posterior_beta[n_models];
   vector[n_intervals] posterior_alpha0;  // posterior pars for constant hazards (marginal)
   vector[n_intervals] posterior_beta0;
-  row_vector[n_intervals] ones;
 }
 
 parameters {
@@ -25,10 +23,10 @@ transformed parameters {
   real St_marginal;
 
   for (model_j in 1:n_models) {
-    St_positives[model_j] = exp(-(ones * (time_exposed .* lambda[model_j])))'; // S(t) = exp(-H(t)), matrix * vector product
+    St_positives[model_j] = exp(-(time_exposed * lambda[model_j]))'; // S(t) = exp(-H(t)), matrix * vector product
   }
 
-  St_marginal = exp(-(time_exposed0*lambda0))';
+  St_marginal = exp(-(time_exposed*lambda0))';
 
 }
 

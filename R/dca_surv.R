@@ -59,7 +59,7 @@ dca_surv <- function(.data,
                      keep_fit = FALSE,
                      summary_probs = c(0.025, 0.975),
                      cutpoints = NULL,
-                     prior_scaling_factor = 0.01,
+                     prior_scaling_factor = 1/3,
                      use_median_surv = TRUE,
                      refresh = 0,
                      ...) {
@@ -89,23 +89,22 @@ dca_surv <- function(.data,
 
   # preprocess cutpoints
   if (is.null(cutpoints)) {
-    cutpoints <- quantile(
-      event_times, probs = c(0.1, 0.5, 0.9)
-    )
+    cutpoints <- get_cutpoints(prediction_time, event_times)
   }
 
   # make sure zero is included and cutpoints are correctly ordered
   cutpoints <- sort(unique(c(0, cutpoints)))
+  print(cutpoints)
+  # stopifnot(
+  #   "prediction_time must be at most max(cutpoints)" = prediction_time <= max(cutpoints)
+  # )
 
-  stopifnot(
-    "prediction_time must be less than max(cutpoints)" = prediction_time < max(cutpoints)
-  )
 
-
-  events_per_interval <- table(cut(event_times, c(cutpoints, Inf), include.lowest = T))
-  if (!(all(events_per_interval >= 5))) {
+  events_per_interval <- get_events_per_interval(cutpoints, event_times)
+  if (!(all(events_per_interval >= min_events_per_interval()))) {
     msg <- paste0(
-      "Please updade cutpoints, too few events per interval (at least five needed):\n",
+      "Please updade cutpoints, too few events per interval (at least ",
+      min_events_per_interval(), " required):\n",
       paste(names(events_per_interval), events_per_interval, sep = ": ", collapse = "  ")
     )
     stop(msg)
