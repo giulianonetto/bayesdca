@@ -28,6 +28,7 @@
                            prior_Sp1, prior_Sp2,
                            N_ext,
                            d_ext,
+                           other_models_indices,
                            refresh = 0, ...) {
 
   thresholds <- pmin(thresholds, 0.999)  # odds(1) = Inf
@@ -47,7 +48,8 @@
     prior_Sp1 = prior_Sp1,
     prior_Sp2 = prior_Sp2,
     N_ext = N_ext,
-    d_ext = d_ext
+    d_ext = d_ext,
+    other_models_indices = other_models_indices
   )
 
   .model <- stanmodels$dca_list_model

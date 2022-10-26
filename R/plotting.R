@@ -90,7 +90,7 @@ plot.BayesDCAList <- function(obj,
                   color = NULL) +
     ggplot2::guides(
       fill = 'none',
-      color = guide_legend(
+      color = ggplot2::guide_legend(
         keywidth = ggplot2::unit(0.5, 'cm'),
         override.aes = list(
           linetype = c(1, 2, rep(1, dplyr::n_distinct(net_benefit_data$model_or_test_name) ))
@@ -174,13 +174,13 @@ compare_dca <- function(obj, models_or_tests = NULL, colors = NULL, labels = NUL
                    colors = colors,
                    labels = labels,
                    type = type) +
-    guides(color = 'none', fill = 'none')
+    ggplot2::guides(color = 'none', fill = 'none')
   p3 <- plot_superiority_prob(obj = obj,
                               models_or_tests = models_or_tests,
                               colors = colors,
                               labels = labels,
                               type = type) +
-    guides(color = 'none')
+    ggplot2::guides(color = 'none')
 
   if (isTRUE(plot_list)) {
     .plot_list <- list(dca = p1,
@@ -199,12 +199,13 @@ compare_dca <- function(obj, models_or_tests = NULL, colors = NULL, labels = NUL
 
   } else {
     if (isTRUE(.evpi)) {
-      p1 <- p1 + labs(subtitle = "DCA")
+      p1 <- p1 + ggplot2::labs(subtitle = "DCA")
       p4 <- plot_evpi(obj = obj,
                       models_or_tests = models_or_tests,
                       colors = colors,
                       labels = labels,
-                      type = type)
+                      type = type) +
+        ggplot2::guides(color = 'none')
       .p <- (p1|p3)/(p2|p4) +
         patchwork::plot_layout(guides = "collect") &
         ggplot2::theme(legend.position = 'bottom',
@@ -288,13 +289,15 @@ plot_delta <- function(obj, models_or_tests = NULL, type = c("best", "useful", "
 
   } else {
     df <- lapply(
-      1:length(obj$draws$prob_best),
+      1:length(models_or_tests),
       function(i) {
 
+        .m <- models_or_tests[i]
+
         if (type == "best") {
-          .delta <- matrixStats::colQuantiles(obj$draws$delta_default[[i]], probs = c(.025, .5, .975))
+          .delta <- matrixStats::colQuantiles(obj$draws$delta_default[[.m]], probs = c(.025, .5, .975))
         } else { # type = 'useful'
-          nb1 <- obj$draws$net_benefit[[i]]
+          nb1 <- obj$draws$net_benefit[[.m]]
           nb2 <- pmax(obj$draws$treat_all, 0)  # default strategies: treat all or none (0)
           .delta <-  matrixStats::colQuantiles(nb1 - nb2, probs = c(.025, .5, .975))
         }
@@ -304,7 +307,7 @@ plot_delta <- function(obj, models_or_tests = NULL, type = c("best", "useful", "
           `2.5%` = .delta[,'2.5%'],
           `97.5%` = .delta[,'97.5%'],
           threshold = obj$thresholds,
-          model_or_test = models_or_tests[i],
+          model_or_test = .m,
           label = labels[models_or_tests[i]]
         )
       }) %>%
@@ -407,13 +410,15 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
 
   } else {
     df <- lapply(
-      1:length(obj$draws$prob_best),
+      1:length(models_or_tests),
       function(i) {
 
+        .m <- models_or_tests[i]
+
         if (type == "best") {
-          .prob <- colMeans(obj$draws$prob_best[[i]])
+          .prob <- colMeans(obj$draws$prob_best[[.m]])
         } else { # type = 'useful'
-          nb1 <- obj$draws$net_benefit[[i]]
+          nb1 <- obj$draws$net_benefit[[.m]]
           nb2 <- pmax(obj$draws$treat_all, 0)  # default strategies: treat all or none (0)
           .prob <- colMeans(nb1 > nb2)
         }
@@ -421,7 +426,7 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
         tibble::tibble(
           prob = .prob,
           threshold = obj$thresholds,
-          model_or_test = models_or_tests[i],
+          model_or_test = .m,
           label = labels[models_or_tests[i]]
         )
       }) %>%
@@ -435,7 +440,7 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
     .subtitle <- paste0("P(", type, ")")
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = prob)) +
-      ggplot2::geom_line(aes(color = model_or_test), lwd = 0.9) +
+      ggplot2::geom_line(ggplot2::aes(color = model_or_test), lwd = 0.9) +
       .colors_and_labels
   }
 
@@ -527,13 +532,15 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
 
   } else if (type == "useful") {
     df <- lapply(
-      1:length(obj$draws$net_benefit),
+      1:length(models_or_tests),
       function(i) {
+
+        .m <- models_or_tests[i]
 
         # type = 'useful', considers this model against treat all/none
         args <- list(
           thresholds = obj$thresholds,
-          obj$draws$net_benefit[[i]],
+          obj$draws$net_benefit[[.m]],
           obj$draws$treat_all
         )
 
@@ -543,7 +550,7 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
         tibble::tibble(
           .evpi = .evpi,
           threshold = obj$thresholds,
-          model_or_test = models_or_tests[i],
+          model_or_test = .m,
           label = labels[models_or_tests[i]]
         )
       }) %>%
@@ -557,7 +564,7 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
     .subtitle <- paste0("EVPI against treat all or none")
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = .evpi)) +
-      ggplot2::geom_line(aes(color = model_or_test), lwd = 0.9) +
+      ggplot2::geom_line(ggplot2::aes(color = model_or_test), lwd = 0.9) +
       .colors_and_labels
 
   } else {
