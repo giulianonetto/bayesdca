@@ -151,7 +151,10 @@ dca <- function(.data,
     N_ext <- rep(external_prevalence_data[2], n_thresholds)
 
   }
-
+  other_models_indices <- lapply(
+    1:n_models_or_tests,
+    function(i)  (1:n_models_or_tests)[-i]
+  )
   fit <- .dca_stan_list(
     n_thr = n_thresholds,
     n_models_or_tests = n_models_or_tests,
@@ -168,6 +171,7 @@ dca <- function(.data,
     prior_Se2 = priors[['Se2']],
     prior_Sp1 = priors[['Sp1']],
     prior_Sp2 = priors[['Sp2']],
+    other_models_indices = other_models_indices,
     refresh = refresh,
     ...
   )
@@ -376,7 +380,7 @@ dca <- function(.data,
     treat_all = stan_draws$treat_all,
     net_benefit = list(),
     delta_default = list(),
-    prob_better_than_default = list(),
+    prob_best = list(),
     Se = list(),
     Sp = list()
   )
@@ -385,7 +389,7 @@ dca <- function(.data,
     .name <- model_or_test_names[i]
     .draws[['net_benefit']][[.name]] <- stan_draws$net_benefit[,,i]
     .draws[['delta_default']][[.name]] <- stan_draws$delta[,,i]
-    .draws[['prob_better_than_default']][[.name]] <- stan_draws$prob_better_than_soc[,,i]
+    .draws[['prob_best']][[.name]] <- stan_draws$prob_better_than_soc[,,i]
     .draws[['Se']][[.name]] <- stan_draws$Se[,,i]
     .draws[['Sp']][[.name]] <- stan_draws$Sp[,,i]
   }
@@ -413,361 +417,6 @@ print.BayesDCAList <- function(obj, ...) {
       collapse = "\n"
     )
   )
-}
-
-#' @title Plot BayesDCAList
-#'
-#' @param obj BayesDCAList object
-#' @param colors Named vector with color for each model or test. If provided
-#' for a subset of models or tests, only that subset will be plotted.
-#' @param labels Named vector with label for each model or test.
-#' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
-#' @importFrom magrittr %>%
-#' @export
-plot.BayesDCAList <- function(obj,
-                              models_or_tests = NULL,
-                              colors = NULL,
-                              labels = NULL,
-                              raw_values = NULL,
-                              raw_values_label = "Biomarker threshold", ...) {
-
-
-  if (!is.null(models_or_tests)) {
-
-    stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
-      )
-    )
-
-    net_benefit_data <- obj$summary$net_benefit %>%
-      dplyr::filter(model_or_test_name %in% models_or_tests)
-
-  } else {
-
-    net_benefit_data <- obj$summary$net_benefit
-
-  }
-
-  colors_and_labels <- get_colors_and_labels(obj = obj,
-                                             colors = colors,
-                                             labels = labels,
-                                             models_or_tests = models_or_tests)
-
-  .ymin <- ifelse(
-    max(obj$summary$treat_all$estimate) > 0.02,
-    -0.02,
-    -max(obj$summary$treat_all$estimate)
-  )
-
-  .p <- ggplot2::ggplot() +
-    # set x axis
-    ggplot2::aes(x = threshold) +
-    # add color/fill/label scheme
-    colors_and_labels +
-    # add treat all curve
-    ggplot2::geom_ribbon(
-      data = obj$summary$treat_all,
-      ggplot2::aes(ymax = `97.5%`, ymin = `2.5%`,
-                   fill = "Treat all"),
-      alpha = 0.4
-    ) +
-    ggplot2::geom_line(
-      data = obj$summary$treat_all,
-      ggplot2::aes(y = estimate, color = "Treat all", group = 1)
-    ) +
-    # add net benefit curves
-    ggplot2::geom_ribbon(
-      data = net_benefit_data,
-      ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`,
-                   fill = model_or_test_name),
-      alpha = 0.4
-    ) +
-    ggplot2::geom_line(
-      data = net_benefit_data,
-      ggplot2::aes(y = estimate,
-                   color = model_or_test_name,
-                   group = model_or_test_name)
-    ) +
-    # add treat none curve
-    ggplot2::geom_hline(
-      ggplot2::aes(color = "Treat none", yintercept = 0),
-      linetype = 'longdash', lwd = 0.8
-    ) +
-    # make it pretty
-    ggplot2::theme_bw(base_size = 12) +
-    ggplot2::coord_cartesian(ylim = c(.ymin, NA)) +
-    ggplot2::scale_x_continuous(
-      labels = scales::percent
-    ) +
-    ggplot2::scale_y_continuous(
-      breaks = scales::pretty_breaks()
-    ) +
-    ggplot2::labs(x = "Decision threshold", y = "Net Benefit",
-                  color = NULL) +
-    ggplot2::guides(fill = 'none')
-
-  if (!is.null(raw_values)) {
-
-    stopifnot(is.data.frame(raw_values))
-
-    raw_values_p <- ggplot2::ggplot(
-      raw_values,
-      ggplot2::aes(x = thresholds*100)
-    ) +
-      ggplot2::scale_x_continuous(
-        labels = raw_values$values,
-      ) +
-      ggplot2::theme_bw(base_size = 12) +
-      ggplot2::labs(
-        x = raw_values_label
-      )
-    .p <- (.p / raw_values_p) +
-      patchwork::plot_layout(
-        heights = c(0.9, 0.01)
-      )
-  }
-
-  return(.p)
-}
-
-#' @title Plot BayesDCAList comparison
-#'
-#' @param obj BayesDCAList object
-#' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
-#' @param colors Named vector with color for each model or test. If provided
-#' for a subset of models or tests, only that subset will be plotted.
-#' @param labels Named vector with label for each model or test.
-#' @param plot_list If TRUE, returns a list of separate ggplot objects.
-#' @importFrom magrittr %>%
-#' @import patchwork
-#' @export
-#' @examples
-#' data(PredModelData)
-#' fit <- dca(PredModelData, cores = 4)
-#' compare_dca(fit)
-#' @return A patchwork/ggplot object or a list of ggplot objects.
-compare_dca <- function(obj, models_or_tests = NULL, colors = NULL, labels = NULL,
-                        plot_list = FALSE, .evpi = FALSE, ...) {
-
-  if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_test_names[1:2]))
-  } else {
-    stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
-      )
-    )
-  }
-
-  stopifnot(length(models_or_tests) > 0 & length(models_or_tests) < 3)
-
-  p1 <- plot(obj, colors = colors, labels = labels,
-             models_or_tests = models_or_tests)
-  p2 <- plot_delta_nb(obj = obj,
-                      models_or_tests = models_or_tests,
-                      labels = labels)
-  p3 <- plot_prob_better(obj = obj,
-                         models_or_tests = models_or_tests,
-                         labels = labels)
-
-  if (isTRUE(plot_list)) {
-    .plot_list <- list(dca = p1,
-                       delta = p2,
-                       prob_better = p3)
-    if (isTRUE(.evpi)) {
-      .plot_list[['evpi']] <- plot_evpi(obj = obj,
-                                        models_or_tests = models_or_tests,
-                                        labels = labels)
-
-    }
-
-    return(.plot_list)
-
-  } else {
-    if (isTRUE(.evpi)) {
-      p4 <- plot_evpi(obj = obj,
-                      models_or_tests = models_or_tests,
-                      labels = labels)
-      .p <- (p1|p3)/(p2|p4) +
-        patchwork::plot_layout(guides = "collect") &
-        ggplot2::theme(legend.position = 'bottom')
-    } else {
-      .p <- p1/(p2 | p3)
-    }
-    return(.p)
-  }
-}
-
-#' @title Plot BayesDCAList delta
-#'
-#' @param obj BayesDCAList object
-#' @param colors Named vector with color for each model or test. If provided
-#' for a subset of models or tests, only that subset will be plotted.
-#' @param labels Named vector with label for each model or test.
-#' @importFrom magrittr %>%
-#' @export
-#' @examples
-#' data(PredModelData)
-#' fit <- dca(PredModelData, cores = 4)
-#' plot_delta_nb(fit)
-#' @return A ggplot object.
-plot_delta_nb <- function(obj, models_or_tests, labels = NULL) {
-
-  if (is.null(obj$draws)) {
-    stop("Missing draws in BayesDCAList object. Run dca() with `keep_draws = TRUE`")
-  }
-
-  # build labels for plot subtitle
-  plot_labels <- vector("character", length = 2L)
-
-  if (models_or_tests[1] %in% names(labels)) {
-    plot_labels[1] <- labels[models_or_tests[1]]
-  } else {
-    plot_labels[1] <- models_or_tests[1]
-  }
-
-  if (length(models_or_tests) > 1) {
-    if (models_or_tests[2] %in% names(labels)) {
-      plot_labels[2] <- labels[models_or_tests[2]]
-    } else {
-      plot_labels[2] <- models_or_tests[2]
-    }
-  }
-
-
-  # retrieve posterior draws
-  if (length(models_or_tests) == 1) {
-    # get delta posterior draws
-    .delta <- obj$draws$delta_default[[models_or_tests]]
-    # get subtitles
-    .subtitle <- paste0(plot_labels, ' \u2212 Treat all or none')
-  } else {
-    # get delta posterior draws
-    nb1 <- obj$draws$net_benefit[[models_or_tests[1]]]
-    nb2 <- obj$draws$net_benefit[[models_or_tests[2]]]
-    .delta <- nb1 - nb2
-    # get subtitles
-    .subtitle <- paste0(plot_labels[1],
-                        ' \u2212 ',
-                        plot_labels[2])
-  }
-
-  q <- matrixStats::colQuantiles(.delta, probs = c(.025, .5, .975))
-
-  .plot <- tibble::tibble(
-    threshold = obj$thresholds,
-    estimate = q[,'50%'],
-    `2.5%` = q[,'2.5%'],
-    `97.5%` = q[,'97.5%']
-  ) %>%
-    ggplot2::ggplot() +
-    ggplot2::aes(x = threshold, y = estimate,
-                 ymin = `2.5%`, ymax = `97.5%`) +
-    ggplot2::geom_ribbon(alpha = 0.4) +
-    ggplot2::geom_line() +
-    ggplot2::theme_bw() +
-    ggplot2::scale_x_continuous(
-      labels = scales::percent_format(1)
-    ) +
-    ggplot2::geom_hline(
-      yintercept = 0, linetype = 'longdash',
-      color = 'gray30', lwd = 0.8
-    ) +
-    ggplot2::labs(
-      x = "Decision threshold",
-      y = '\u0394 NB',
-      subtitle = .subtitle
-    )
-  return(.plot)
-}
-
-#' @title Plot probability of better net benefit between two models or tests
-#' @param obj BayesDCAList object
-#' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
-#' @param colors Named vector with color for each model or test. If provided
-#' for a subset of models or tests, only that subset will be plotted.
-#' @param labels Named vector with label for each model or test.
-#' @importFrom magrittr %>%
-#' @export
-#' @examples
-#' data(PredModelData)
-#' fit <- dca(PredModelData, cores = 4)
-#' plot_prob_better(fit)
-
-#' @return A ggplot object.
-plot_prob_better <- function(obj, models_or_tests = NULL, labels = NULL) {
-  if (is.null(obj$draws)) {
-    stop("Missing draws in BayesDCAList object. Run dca() with `keep_draws = TRUE`")
-  }
-
-  if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_test_names[1:2]))
-  } else {
-    stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
-      )
-    )
-  }
-
-  # build labels for plot subtitle
-  plot_labels <- vector("character", length = 2L)
-
-  if (models_or_tests[1] %in% names(labels)) {
-    plot_labels[1] <- labels[models_or_tests[1]]
-  } else {
-    plot_labels[1] <- models_or_tests[1]
-  }
-
-  if (length(models_or_tests) > 1) {
-    if (models_or_tests[2] %in% names(labels)) {
-      plot_labels[2] <- labels[models_or_tests[2]]
-    } else {
-      plot_labels[2] <- models_or_tests[2]
-    }
-  }
-
-  # retrieve posterior draws
-  if (length(models_or_tests) == 1) {
-    # get delta posterior draws
-    .delta <- obj$draws$delta_default[[models_or_tests]]
-    # get subtitles
-    .subtitle <- paste0("P(", plot_labels, ' \u003E  Treat all or none)')
-  } else {
-    # get delta posterior draws
-    nb1 <- obj$draws$net_benefit[[models_or_tests[1]]]
-    nb2 <- obj$draws$net_benefit[[models_or_tests[2]]]
-    .delta <- nb1 - nb2
-    # get ubtitles
-    .subtitle <- paste0("P(",
-                        plot_labels[1],
-                        ' \u003E ',
-                        plot_labels[2],
-                        ")")
-  }
-
-  .plot <- tibble::tibble(
-    threshold = obj$thresholds,
-    estimate = colMeans(.delta > 0)
-  ) %>%
-    ggplot2::ggplot(ggplot2::aes(x = threshold, y = estimate)) +
-    ggplot2::geom_line() +
-    ggplot2::theme_bw() +
-    ggplot2::scale_x_continuous(
-      labels = scales::percent_format(1)
-    ) +
-    ggplot2::scale_y_continuous(
-      labels = scales::percent_format(1),
-      breaks = scales::pretty_breaks(10),
-      limits = c(0, 1)
-    ) +
-    ggplot2::labs(
-      x = "Decision threshold", y = NULL,
-      subtitle = .subtitle
-    )
-
-  return(.plot)
 }
 
 #' @title Get Threshold Performance Data

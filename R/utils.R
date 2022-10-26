@@ -3,9 +3,26 @@
 #' @param obj BayesDCAList object
 #' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
 #' @importFrom magrittr %>%
-evpi <- function(obj, models_or_tests = NULL) {
+evpi_old <- function(obj, models_or_tests = NULL, type = c("best", "useful", "pairwise")) {
+  type <- match.arg(type)
+  if (type == "pairwise") {
+    stopifnot(
+      "Must specify two models_or_tests to plot pairwise comparison" = length(models_or_tests) == 2
+    )
+  }
+  if (is.null(obj$draws)) {
+    msg <- "Retrieving posterior draws."
+    if (inherits(obj, "BayesDCAList")) {
+      obj$draws <- .extract_dca_draws(fit = obj,
+                                      model_or_test_names = model_or_test_names)
+    } else {
+      obj$draws <- .extract_dca_surv_draws(fit = obj,
+                                           model_or_test_names = model_or_test_names)
+    }
+  }
+
   if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_test_names[1:2]))
+    models_or_tests <- as.vector(na.omit(obj$model_or_test_names))
   } else {
     stopifnot(
       "Provided `models_or_tests` are not available" = all(
@@ -13,8 +30,6 @@ evpi <- function(obj, models_or_tests = NULL) {
       )
     )
   }
-
-  stopifnot(length(models_or_tests) > 0 & length(models_or_tests) < 3)
 
   .evpi <- vector("numeric", length(obj$thresholds))
   for (i in seq_along(obj$thresholds)) {
@@ -34,70 +49,20 @@ evpi <- function(obj, models_or_tests = NULL) {
   return(.evpi)
 }
 
-
-#' @title Plot Expected Value of Perfect Information (EVPI)
-#'
-#' @param obj BayesDCAList object
-#' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
-#' @param labels Named vector with label for each model or test.
-#' @importFrom magrittr %>%
-plot_evpi <- function(obj, models_or_tests = NULL, labels = NULL) {
-  if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_test_names[1:2]))
-  } else {
-    stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
-      )
+evpi <- function(thresholds, ...) {
+  .dots <- list(...)
+  .evpi <- numeric(length = length(thresholds))
+  for (i in 1:length(thresholds)) {
+    .dots_i <- lapply(.dots, function(.d) .d[, i])
+    mean_nbs <- unlist(lapply(.dots_i, function(nb_draws) mean(nb_draws)))
+    max_nb_draws <- matrixStats::rowMaxs(
+      cbind(0, do.call(cbind, .dots_i))
     )
+    ENB_perfect <- mean(max_nb_draws)
+    ENB_current <- max(0, mean_nbs)
+    .evpi[i] <- ENB_perfect - ENB_current
   }
-
-  # build labels for plot subtitle
-  plot_labels <- vector("character", length = 2L)
-
-  if (models_or_tests[1] %in% names(labels)) {
-    plot_labels[1] <- labels[models_or_tests[1]]
-  } else {
-    plot_labels[1] <- models_or_tests[1]
-  }
-
-  if (length(models_or_tests) > 1) {
-    if (models_or_tests[2] %in% names(labels)) {
-      plot_labels[2] <- labels[models_or_tests[2]]
-    } else {
-      plot_labels[2] <- models_or_tests[2]
-    }
-  }
-
-  # get subtitles
-  if (length(models_or_tests) == 1) {
-    .subtitle <- paste0("EVPI: ",
-                        plot_labels,
-                        ' vs. Treat all or none')
-  } else {
-    .subtitle <- paste0("EVPI: ",
-                        plot_labels[1],
-                        ' vs. ',
-                        plot_labels[2])
-  }
-
-  data.frame(
-    .threhsolds = obj$thresholds,
-    .evpi = evpi(obj, models_or_tests = models_or_tests)
-  ) %>%
-    ggplot2::ggplot(ggplot2::aes(.threhsolds, .evpi)) +
-    ggplot2::geom_line() +
-    ggplot2::theme_bw() +
-    ggplot2::scale_x_continuous(
-      labels = scales::percent_format(1)
-    ) +
-    ggplot2::scale_y_continuous(
-      breaks = scales::pretty_breaks(10)
-    ) +
-    ggplot2::labs(
-      x = "Decision threshold", y = NULL,
-      subtitle = .subtitle
-    )
+  return(.evpi)
 }
 
 #' @title Minimal events per interval
@@ -136,7 +101,7 @@ get_events_per_interval <- function(.cutpoints, .event_times) {
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
-get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, labels = NULL) {
+get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, labels = NULL, all_or_none = TRUE) {
   # decide which models/tests to include
   if (is.null(models_or_tests)) {
     model_or_test_names <- obj$model_or_test_names
@@ -149,9 +114,14 @@ get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, la
     ]
   }
   # pick color palette for ggplot
-  color_values <- c(
-    "Treat all" = "black", "Treat none" = "gray40"
-  )
+  if (isTRUE(all_or_none)) {
+    color_values <- c(
+      "Treat all" = "black", "Treat none" = "gray40"
+    )
+  } else {
+    color_values <- character()
+  }
+
   n_colors <- length(model_or_test_names)
   if (n_colors < 9) {
     palette <- RColorBrewer:::brewer.pal(max(c(n_colors, 3)), 'Dark2')
@@ -164,9 +134,9 @@ get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, la
   for (i in seq_len(n_colors)) {
     model_or_test <- model_or_test_names[i]
     if (!is.null(colors) & model_or_test %in% names(colors)) {
-      color_values[[model_or_test]] <- colors[[model_or_test]]
+      color_values[model_or_test] <- colors[[model_or_test]]
     } else {
-      color_values[[model_or_test]] <- palette[i]
+      color_values[model_or_test] <- palette[i]
     }
   }
   # define color and label scales
@@ -255,8 +225,13 @@ get_survival_posterior_parameters <- function(
 
     for (j in seq_along(.thresholds)) {
       .thr <- .thresholds[j]
-      .predictions <- .prediction_data[[.model]]
-      .positive_prediction <- .predictions >= .thr
+      if (all(is.na(.prediction_data))) {
+        .positive_prediction <- 1 >= .thr  # for S0, all positives
+      } else {
+        .predictions <- .prediction_data[[.model]]
+        .positive_prediction <- .predictions >= .thr
+      }
+
       .d <- .surv_data[.positive_prediction, ]
       .d$patient_id <- 1:nrow(.d)
       if (isTRUE(.use_median_surv)) {

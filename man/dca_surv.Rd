@@ -12,7 +12,7 @@ dca_surv(
   keep_fit = FALSE,
   summary_probs = c(0.025, 0.975),
   cutpoints = NULL,
-  prior_scaling_factor = 0.01,
+  prior_scaling_factor = 1/3,
   use_median_surv = TRUE,
   refresh = 0,
   ...

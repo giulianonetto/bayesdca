@@ -16,6 +16,7 @@
   posterior_beta0,
   pos_post1,
   pos_post2,
+  other_models_indices,
   refresh = 0,
   ...
 )

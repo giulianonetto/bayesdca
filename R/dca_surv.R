@@ -15,6 +15,7 @@
                            posterior_beta0,
                            pos_post1,
                            pos_post2,
+                           other_models_indices,
                            refresh = 0, ...) {
 
   thresholds <- pmin(thresholds, 0.9999)  # odds(1) = Inf
@@ -135,9 +136,9 @@ dca_surv <- function(.data,
     .use_median_surv = use_median_surv
   )
   posterior_surv_pars0 <- get_survival_posterior_parameters(
-    .prediction_data = prediction_data,
+    .prediction_data = NA,
     .surv_data = surv_data,
-    .models_or_tests = colnames(prediction_data),
+    .models_or_tests = 1,
     .cutpoints = cutpoints,
     .thresholds = 0,
     .prior_scaling_factor = prior_scaling_factor,
@@ -146,6 +147,11 @@ dca_surv <- function(.data,
   posterior_positivity_pars <- get_positivity_posterior_parameters(
     .prediction_data = prediction_data,
     .thresholds = thresholds
+  )
+
+  other_models_indices <- lapply(
+    1:n_models_or_tests,
+    function(i)  (1:n_models_or_tests)[-i]
   )
 
   fit <- .dca_stan_surv(
@@ -160,6 +166,7 @@ dca_surv <- function(.data,
     posterior_beta0 = posterior_surv_pars0$.beta,#posterior_pars0[[1]]$beta,
     pos_post1 = posterior_positivity_pars$.shape1, #0.5 + t(sapply(thr, \(i) sum(preds>i))),
     pos_post2 = posterior_positivity_pars$.shape2, #0.5 + length(preds) - t(sapply(thr, \(i) sum(preds>i))),
+    other_models_indices = other_models_indices,
     refresh = refresh,
     ...
   )
@@ -212,7 +219,7 @@ dca_surv <- function(.data,
 ) {
 
   .pars <- c(
-    "net_benefit", "delta", "prob_better_than_soc",
+    "net_benefit", "delta", "prob_better_than_soc", "highest_nb_other_than_model_j",
     "positivity", "treat_all", "St_marginal"
   )
 
@@ -226,19 +233,19 @@ dca_surv <- function(.data,
     dplyr::rename(estimate := mean) %>%
     dplyr::mutate(
       threshold_ix = dplyr::case_when(
-        str_detect(par_name, str_c(.pars[1:3], collapse = "|")) ~ str_extract(par_name, "\\[\\d+") %>%
+        str_detect(par_name, str_c(.pars[1:4], collapse = "|")) ~ str_extract(par_name, "\\[\\d+") %>%
           str_remove(string = ., pattern = "\\[") %>%
           as.integer(),
-        str_detect(par_name, str_c(.pars[4:5], collapse = "|")) ~ str_extract(par_name, "\\d+\\]") %>%
+        str_detect(par_name, str_c(.pars[5:6], collapse = "|")) ~ str_extract(par_name, "\\d+\\]") %>%
           str_remove(string = ., pattern = "\\]") %>%
           as.integer(),
         TRUE ~ NA_integer_
       ),
       model_or_test_ix = dplyr::case_when(
-        str_detect(par_name, str_c(.pars[1:3], collapse = "|")) ~ str_extract(par_name, "\\d+\\]") %>%
+        str_detect(par_name, str_c(.pars[1:4], collapse = "|")) ~ str_extract(par_name, "\\d+\\]") %>%
           str_remove(string = ., pattern = "\\]") %>%
           as.integer(),
-        str_detect(par_name, str_c(.pars[4], collapse = "|")) ~ str_extract(par_name, "\\[\\d+") %>%
+        str_detect(par_name, str_c(.pars[5], collapse = "|")) ~ str_extract(par_name, "\\[\\d+") %>%
           str_remove(string = ., pattern = "\\[") %>%
           as.integer(),
         TRUE ~ NA_integer_
@@ -253,7 +260,8 @@ dca_surv <- function(.data,
         NA_character_,
         model_or_test_names[model_or_test_ix]
       ),
-      par_name = stringr::str_extract(par_name, "\\w+")
+      par_name = stringr::str_extract(par_name, "\\w+"),
+      par_name = ifelse(str_detect(par_name, 'highest_nb_other_than_model_j'), 'best_competitor_nb', par_name)
     ) %>%
     dplyr::select(par_name, threshold, model_or_test_name,
                   dplyr::everything(), -dplyr::contains("ix"))
@@ -299,7 +307,7 @@ dca_surv <- function(.data,
                                     model_or_test_names) {
 
   .pars <- c(
-    "net_benefit", "delta", "prob_better_than_soc",
+    "net_benefit", "delta", "prob_better_than_soc", "highest_nb_other_than_model_j",
     "positivity", "treat_all", "St_marginal"
   )
 
@@ -313,14 +321,15 @@ dca_surv <- function(.data,
     treat_all = stan_draws$treat_all,
     net_benefit = list(),
     delta_default = list(),
-    prob_better_than_default = list()
+    prob_best = list()
   )
 
   for (i in seq_along(model_or_test_names)) {
     .name <- model_or_test_names[i]
     .draws[['net_benefit']][[.name]] <- stan_draws$net_benefit[,,i]
     .draws[['delta_default']][[.name]] <- stan_draws$delta[,,i]
-    .draws[['prob_better_than_default']][[.name]] <- stan_draws$prob_better_than_soc[,,i]
+    .draws[['prob_best']][[.name]] <- stan_draws$prob_better_than_soc[,,i]
+    .draws[['best_competitor_nb']][[.name]] <- stan_draws$highest_nb_other_than_model_j[,,i]
   }
 
   return(.draws)
@@ -355,12 +364,4 @@ print.BayesDCASurv <- function(obj, ...) {
       collapse = "\n"
     )
   )
-}
-
-#' @title Plot BayesDCASurv
-#'
-#' @param obj BayesDCASurv object
-#' @export
-plot.BayesDCASurv <- function(obj, ...) {
-  plot.BayesDCAList(obj = obj, ... = ...)
 }

@@ -8,7 +8,8 @@ get_colors_and_labels(
   obj,
   models_or_tests = NULL,
   colors = NULL,
-  labels = NULL
+  labels = NULL,
+  all_or_none = TRUE
 )
 }
 \arguments{

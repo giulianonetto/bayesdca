@@ -18,6 +18,7 @@ data {
   // Prior parameters for Specificity (same for each threshold, all models)
   matrix<lower = 0>[n_thr, n_models] prior_Sp1;
   matrix<lower = 0>[n_thr, n_models] prior_Sp2;
+  int<lower=1> other_models_indices[n_models, n_models-1];
 }
 transformed data {
   // Posterior parameters for prevalence
@@ -29,6 +30,11 @@ transformed data {
   // Posterior parameters for Specificity for each threshold, each model
   matrix<lower = 0>[n_thr, n_models] post_Sp1;
   matrix<lower = 0>[n_thr, n_models] post_Sp2;
+  vector<lower=0>[n_thr] odds_thrs;
+  // just a vector with odds of the thresholds
+  for (i in 1:n_thr) {
+    odds_thrs[i] = thresholds[i] / (1 - thresholds[i]);
+  }
   // Analytical posterior parameters for prevalence
   if (N_ext[1] >= 1) { // it means there's external information for prevalence
     post_p1 = d_ext[1] + prior_p1;
@@ -78,6 +84,8 @@ generated quantities {
 
   // Treat all (same for all models)
   vector[n_thr] treat_all;
+  // Record higher net benefit fot each threshold
+  matrix[n_thr, n_models] highest_nb_other_than_model_j;
   // Net benefir calculation for each threshold, each model
   matrix[n_thr, n_models] net_benefit;
   // Delta NB calculation (against treat all/none) for each threshold, each model
@@ -86,24 +94,31 @@ generated quantities {
   // for each threshold, each model
   matrix<lower=0, upper = 1>[n_thr, n_models] prob_better_than_soc;
 
+  // Treat all
+  treat_all = 1*p - (1-p)*(1-0)*odds_thrs;
+
+  for (model_j in 1:n_models) {
+    // NB for threshold i, model j
+      net_benefit[, model_j] = Se[, model_j]*p - (1-p)*(1-Sp[, model_j]).*odds_thrs;
+  }
+
   for (thr_i in 1:n_thr) {
-    // tmp variable for odds(threshold)
-    real odds_thr = thresholds[thr_i]/(1-thresholds[thr_i]);
-    // Treat all
-    treat_all[thr_i] = 1*p - (1-p)*(1-0)*odds_thr;
+    real best_among_treat_all_or_none = fmax(0, treat_all[thr_i]);
+
     for (model_j in 1:n_models) {
-      // NB for threshold i, model j
-      net_benefit[thr_i, model_j] = Se[thr_i, model_j]*p - (1-p)*(1-Sp[thr_i, model_j])*odds_thr;
-      // Delta NB for threshold i, model j:
-      // against treat all if treat all is positive
-      // against treat none otherwise
-      if (treat_all[thr_i] > 0) {
-        delta[thr_i, model_j] = net_benefit[thr_i, model_j] - treat_all[thr_i];
+
+      if (n_models > 1) {
+        real best_among_other_models = max(net_benefit[thr_i, other_models_indices[model_j]]);
+        highest_nb_other_than_model_j[thr_i, model_j] = fmax(best_among_treat_all_or_none, best_among_other_models);
+
       } else {
-        delta[thr_i, model_j] = net_benefit[thr_i, model_j];  // "minus treat none" = "minus zero"
+        highest_nb_other_than_model_j[thr_i, model_j] = best_among_treat_all_or_none;
       }
-      // P(delta NB > 0) = probability model is better than treat all/none
-      prob_better_than_soc[thr_i, model_j] = delta[thr_i, model_j] > 0;
+
+      // P(useful)
+      prob_better_than_soc[thr_i, model_j] = net_benefit[thr_i, model_j] > highest_nb_other_than_model_j[thr_i, model_j];
+      // Delta against best strategy
+      delta[thr_i, model_j] = net_benefit[thr_i, model_j] - highest_nb_other_than_model_j[thr_i, model_j];
     }
   }
 }
