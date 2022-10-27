@@ -14,3 +14,4 @@ evpi_old(obj, models_or_tests = NULL, type = c("best", "useful", "pairwise"))
 \description{
 Compute Expected Value of Perfect Information (EVPI)
 }
+\keyword{internal}

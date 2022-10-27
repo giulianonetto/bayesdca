@@ -25,3 +25,4 @@ A single vector of the form \code{c(a, b)} can be provided for each.}
 \description{
 Get prior parameters formated for Stan model
 }
+\keyword{internal}

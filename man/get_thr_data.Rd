@@ -14,3 +14,4 @@ get_thr_data(outcomes, predictions, thresholds = seq(0.01, 0.5, 0.01))
 \description{
 Get Threshold Performance Data
 }
+\keyword{internal}

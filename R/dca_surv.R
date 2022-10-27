@@ -3,7 +3,7 @@
 #' @param refresh Control verbosity of [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).
 #' @param ... Arguments passed to [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).
 #' @return An object of class [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)
-#'
+#' @keywords internal
 .dca_stan_surv <- function(n_thr,
                            n_models_or_tests,
                            n_intervals,
@@ -50,8 +50,8 @@
 #' @return An object of class `BayesDCASurv`
 #' @importFrom magrittr %>%
 #' @examples
-#' data(PredModelData)
-#' fit <- dca(PredModelData, cores = 4)
+#' data(dca_survival_data)
+#' fit <- dca_surv(dca_survival_data, cores = 4)
 #' plot(fit)
 dca_surv <- function(.data,
                      prediction_time,
@@ -207,10 +207,7 @@ dca_surv <- function(.data,
 #' @return An object of class `BayesDCASurv`
 #' @importFrom magrittr %>%
 #' @importFrom stringr str_detect str_c str_extract str_remove str_remove_all
-#' @examples
-#' data(PredModelData)
-#' fit <- dca(PredModelData, cores = 4)
-#' plot(fit)
+#' @keywords internal
 .extract_dca_surv_summary <- function(
     fit,
     summary_probs,
@@ -303,6 +300,7 @@ dca_surv <- function(.data,
 #'
 #' @param fit A stanfit object.
 #' @param model_or_test_names Vector of names of models or binary tests under assessment.
+#' @keywords internal
 .extract_dca_surv_draws <- function(fit,
                                     model_or_test_names) {
 

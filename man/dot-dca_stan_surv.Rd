@@ -32,3 +32,4 @@ An object of class \href{https://mc-stan.org/rstan/reference/stanfit-class.html}
 \description{
 Fit Bayesian Decision Curve Analysis using Stan for survival outcomes
 }
+\keyword{internal}

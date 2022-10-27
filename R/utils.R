@@ -3,6 +3,7 @@
 #' @param obj BayesDCAList object
 #' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
 #' @importFrom magrittr %>%
+#' @keywords internal
 evpi_old <- function(obj, models_or_tests = NULL, type = c("best", "useful", "pairwise")) {
   type <- match.arg(type)
   if (type == "pairwise") {
@@ -49,6 +50,12 @@ evpi_old <- function(obj, models_or_tests = NULL, type = c("best", "useful", "pa
   return(.evpi)
 }
 
+#' @title Compute Expected Value of Perfect Information (EVPI)
+#'
+#' @param obj BayesDCAList or BayesDCASurv object
+#' @param ... matrices of dimension n_draws * n_thresholds containing posterior net benefit
+#' @importFrom magrittr %>%
+#' @keywords internal
 evpi <- function(thresholds, ...) {
   .dots <- list(...)
   .evpi <- numeric(length = length(thresholds))
@@ -66,6 +73,7 @@ evpi <- function(thresholds, ...) {
 }
 
 #' @title Minimal events per interval
+#' @keywords internal
 min_events_per_interval <- function() {
   return(3)
 }
@@ -73,6 +81,7 @@ min_events_per_interval <- function() {
 #' @title Get cutpoints for survival estimation
 #' @param .prediction_time time point at which event is predicted to happen
 #' @param .event_times times of observed events (non-censored)
+#' @keywords internal
 get_cutpoints <- function(.prediction_time, .event_times) {
   .cuts <- .prediction_time * c(
     0.00, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 1
@@ -87,6 +96,7 @@ get_cutpoints <- function(.prediction_time, .event_times) {
 #' @title Get events per intervals defined by set of cutpoints
 #' @param .cutpoints cutpoints defining intervals
 #' @param .event_times times of observed events (non-censored)
+#' @keywords internal
 get_events_per_interval <- function(.cutpoints, .event_times) {
 
   table(cut(.event_times, c(.cutpoints, Inf), include.lowest = T))
@@ -101,6 +111,7 @@ get_events_per_interval <- function(.cutpoints, .event_times) {
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
+#' @keywords internal
 get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, labels = NULL, all_or_none = TRUE) {
   # decide which models/tests to include
   if (is.null(models_or_tests)) {
@@ -167,6 +178,7 @@ get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, la
 #'
 #' @param .prediction_time Time for event prediction
 #' @param .cutpoints Cutpoints for constant hazard interval
+#' @keywords internal
 get_survival_time_exposed <- function(.prediction_time, .cutpoints) {
   time_exposed <- numeric(length = length(.cutpoints))
   for (i in 1:(length(.cutpoints)-1) ) {
@@ -194,6 +206,7 @@ get_survival_time_exposed <- function(.prediction_time, .cutpoints) {
 #' @param .prior_scaling_factor Prior alpha = (0.69/median_surv)*.prior_scaling_factor, Prior beta = .prior_scaling_factor.
 #' @importFrom magrittr %>%
 #' @importFrom survival Surv
+#' @keywords internal
 get_survival_posterior_parameters <- function(
     .prediction_data,
     .surv_data,
@@ -306,6 +319,7 @@ get_survival_posterior_parameters <- function(
 #' @param .thresholds DCA thresholds.
 #' @param .prior_shape1 Shape 1 for beta prior.
 #' @param .prior_shape2 Shape 2 for beta prior.
+#' @keywords internal
 get_positivity_posterior_parameters <- function(
     .prediction_data,
     .thresholds,

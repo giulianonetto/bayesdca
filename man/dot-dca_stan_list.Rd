@@ -20,6 +20,7 @@
   prior_Sp2,
   N_ext,
   d_ext,
+  other_models_indices,
   refresh = 0,
   ...
 )
@@ -56,3 +57,4 @@ An object of class \href{https://mc-stan.org/rstan/reference/stanfit-class.html}
 \description{
 Fit Bayesian Decision Curve Analysis using Stan for list of models or binary tests
 }
+\keyword{internal}

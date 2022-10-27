@@ -15,7 +15,7 @@
 #' @param refresh Control verbosity of [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).
 #' @param ... Arguments passed to [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).
 #' @return An object of class [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)
-#'
+#' @keywords internal
 .dca_stan_list <- function(n_thr,
                            n_models_or_tests,
                            N,
@@ -210,6 +210,7 @@ dca <- function(.data,
 #' @param outcomes Integer vector (0 or 1) with binary outcomes.
 #' @param predictions Numeric vector with predicted probabilities.
 #' @importFrom magrittr %>%
+#' @keywords internal
 .get_thr_data_list <- function(.data,
                                thresholds = seq(0.01, 0.5, 0.01)) {
   if (colnames(.data)[1] != "outcomes") {
@@ -263,6 +264,7 @@ dca <- function(.data,
 #' Default is uniform prior for all parameters - Beta(1, 1).
 #' A single vector of the form `c(a, b)` can be provided for each.
 #' @importFrom magrittr %>%
+#' @keywords internal
 .get_prior_parameters <- function(n_thresholds,
                                   n_models_or_tests,
                                   prior_p = NULL,
@@ -303,6 +305,7 @@ dca <- function(.data,
 #' @param summary_probs Numeric vector giving probabilities for credible interval.
 #' @param thresholds Vector of thresholds for DCA.
 #' @importFrom magrittr %>%
+#' @keywords internal
 .extract_dca_summary <- function(fit,
                                  model_or_test_names,
                                  summary_probs,
@@ -372,6 +375,7 @@ dca <- function(.data,
 #'
 #' @param fit A stanfit object.
 #' @param model_or_test_names Vector of names of models or binary tests under assessment.
+#' @keywords internal
 .extract_dca_draws <- function(fit,
                                model_or_test_names) {
 
@@ -426,6 +430,7 @@ print.BayesDCAList <- function(obj, ...) {
 #' @param outcomes Integer vector (0 or 1) with binary outcomes.
 #' @param predictions Numeric vector with predicted probabilities.
 #' @importFrom magrittr %>%
+#' @keywords internal
 get_thr_data <- function(outcomes,
                          predictions,
                          thresholds = seq(0.01, 0.5, 0.01)) {

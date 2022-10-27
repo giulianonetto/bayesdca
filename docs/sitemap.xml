@@ -7,6 +7,12 @@
     <loc>/LICENSE.html</loc>
   </url>
   <url>
+    <loc>/articles/index.html</loc>
+  </url>
+  <url>
+    <loc>/articles/survival-outcomes.html</loc>
+  </url>
+  <url>
     <loc>/authors.html</loc>
   </url>
   <url>
@@ -28,13 +34,28 @@
     <loc>/reference/dca.html</loc>
   </url>
   <url>
+    <loc>/reference/dca_surv.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dca_survival_data.html</loc>
+  </url>
+  <url>
     <loc>/reference/dot-dca_stan_list.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-dca_stan_surv.html</loc>
   </url>
   <url>
     <loc>/reference/dot-extract_dca_draws.html</loc>
   </url>
   <url>
     <loc>/reference/dot-extract_dca_summary.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-extract_dca_surv_draws.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-extract_dca_surv_summary.html</loc>
   </url>
   <url>
     <loc>/reference/dot-get_prior_parameters.html</loc>
@@ -46,6 +67,9 @@
     <loc>/reference/evpi.html</loc>
   </url>
   <url>
+    <loc>/reference/evpi_old.html</loc>
+  </url>
+  <url>
     <loc>/reference/extract_dca_draws.html</loc>
   </url>
   <url>
@@ -55,7 +79,22 @@
     <loc>/reference/get_colors_and_labels.html</loc>
   </url>
   <url>
+    <loc>/reference/get_cutpoints.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_events_per_interval.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_positivity_posterior_parameters.html</loc>
+  </url>
+  <url>
     <loc>/reference/get_prior_parameters.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_survival_posterior_parameters.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_survival_time_exposed.html</loc>
   </url>
   <url>
     <loc>/reference/get_thr_data.html</loc>
@@ -67,18 +106,39 @@
     <loc>/reference/index.html</loc>
   </url>
   <url>
+    <loc>/reference/min_events_per_interval.html</loc>
+  </url>
+  <url>
     <loc>/reference/plot.BayesDCAList.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot.BayesDCASurv.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_delta.html</loc>
   </url>
   <url>
     <loc>/reference/plot_delta_nb.html</loc>
   </url>
   <url>
+    <loc>/reference/plot_evpi.html</loc>
+  </url>
+  <url>
     <loc>/reference/plot_prob_better.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_superiority_prob.html</loc>
   </url>
   <url>
     <loc>/reference/print.BayesDCAList.html</loc>
   </url>
   <url>
+    <loc>/reference/print.BayesDCASurv.html</loc>
+  </url>
+  <url>
     <loc>/reference/simulate_diagnostic_test_data.html</loc>
+  </url>
+  <url>
+    <loc>/reference/simulate_prognostic_model_data.html</loc>
   </url>
 </urlset>

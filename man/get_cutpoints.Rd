@@ -14,3 +14,4 @@ get_cutpoints(.prediction_time, .event_times)
 \description{
 Get cutpoints for survival estimation
 }
+\keyword{internal}

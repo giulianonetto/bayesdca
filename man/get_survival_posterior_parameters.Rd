@@ -30,3 +30,4 @@ get_survival_posterior_parameters(
 \description{
 Get posterior parameters for survival model
 }
+\keyword{internal}

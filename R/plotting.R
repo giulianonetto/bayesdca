@@ -575,8 +575,8 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
     df <- tibble::tibble(
       .evpi = do.call(evpi, args),
       threshold = obj$thresholds,
-      model_or_test = models_or_tests[i],
-      label = labels[models_or_tests[i]]
+      model_or_test = NA_character_,
+      label = NA_character_
     )
     .subtitle <- "EVPI"
     initial_plot <- df %>%

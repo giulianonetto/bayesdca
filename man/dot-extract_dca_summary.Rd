@@ -18,3 +18,4 @@
 \description{
 Get summary from BayesDCA fit
 }
+\keyword{internal}

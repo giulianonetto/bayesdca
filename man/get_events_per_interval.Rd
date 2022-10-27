@@ -14,3 +14,4 @@ get_events_per_interval(.cutpoints, .event_times)
 \description{
 Get events per intervals defined by set of cutpoints
 }
+\keyword{internal}

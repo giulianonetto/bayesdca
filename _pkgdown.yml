@@ -3,13 +3,14 @@ development:
   version_label: info
   version_tooltip: "Experimental package"
 template:
-  package: preferably
   bootstrap: 5
   params:
-    toggle: manual
+    # ganalytics: UA-145876596-1
+    bootswatch: flatly
 authors:
-  Giuliano Netto Flores Cruz:
+  Giuliano N.F Cruz:
     href: "https://giulianonetto.netlify.app"
+
 repo:
   url:
     home: https://github.com/giulianonetto/bayesdca/
@@ -26,20 +27,36 @@ reference:
 - title: "Main"
   contents:
   - dca
+  - dca_surv
   - compare_dca
+- title: "Datasets"
+  contents:
+  - PredModelData
+  - dca_survival_data
+  - Docking2021Data
 - title: "Other"
   contents:
+  - plot_delta
+  - plot_superiority_prob
+  - plot_evpi
   - matches("plot")
   - matches("print")
+  - bayesDCA-package
 
 figures:
   dev: ragg::agg_png
   dpi: 300
   dev.args: []
   fig.ext: png
-  fig.width: 7.2916667
+  fig.width: 12
   fig.height: ~
   fig.retina: 2
-  fig.asp: 1.618
   bg: NA
   other.parameters: []
+
+articles:
+- title: "Survival outcomess"
+  sidebar:
+  width: 10%
+  contents:
+  - survival-outcomes

@@ -9,3 +9,4 @@ min_events_per_interval()
 \description{
 Minimal events per interval
 }
+\keyword{internal}

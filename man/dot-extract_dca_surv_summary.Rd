@@ -12,8 +12,4 @@ An object of class \code{BayesDCASurv}
 \description{
 Extract posterior summaries for \code{BayesDCASurv} object
 }
-\examples{
-data(PredModelData)
-fit <- dca(PredModelData, cores = 4)
-plot(fit)
-}
+\keyword{internal}

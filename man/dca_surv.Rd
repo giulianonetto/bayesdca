@@ -25,7 +25,7 @@ An object of class \code{BayesDCASurv}
 Bayesian Decision Curve Analysis for Predictive Models and Binary tests
 }
 \examples{
-data(PredModelData)
-fit <- dca(PredModelData, cores = 4)
+data(dca_survival_data)
+fit <- dca_surv(dca_survival_data, cores = 4)
 plot(fit)
 }

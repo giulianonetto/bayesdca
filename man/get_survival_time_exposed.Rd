@@ -14,3 +14,4 @@ get_survival_time_exposed(.prediction_time, .cutpoints)
 \description{
 Get time exposed within each interval for a given prediction time
 }
+\keyword{internal}

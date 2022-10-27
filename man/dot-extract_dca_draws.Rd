@@ -14,3 +14,4 @@
 \description{
 Get posterior draws from DCA stanfit
 }
+\keyword{internal}

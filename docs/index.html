@@ -6,20 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="description" content="Performs Bayesian Decision Curve Analysis (DCA) for diagnostic tests and clinical prediction models.">
-<!-- Inform modern browsers that this page supports both dark and light color schemes,
-  and the page author prefers light. --><meta name="color-scheme" content="dark light">
-<script>
-  // If `prefers-color-scheme` is not supported, fall back to light mode.
-  // i.e. In this case, inject the `light` CSS before the others, with
-  // no media filter so that it will be downloaded with highest priority.
-  if (window.matchMedia("(prefers-color-scheme: dark)").media === "not all") {
-    document.documentElement.style.display = "none";
-    document.head.insertAdjacentHTML(
-      "beforeend",
-      "<link id=\"css\" rel=\"stylesheet\" href=\"https://bootswatch.com/5/flatly/bootstrap.css\" onload=\"document.documentElement.style.display = ''\">"
-    );
-  }
-</script><title>Bayesian Decision Curve Analysis • bayesDCA</title>
+<title>Bayesian Decision Curve Analysis • bayesDCA</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.1.3/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.1.3/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
@@ -29,12 +16,7 @@
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-<![endif]--><!-- Flatly Theme - Light  --><link id="css-light" rel="stylesheet" href="https://bootswatch.com/5/flatly/bootstrap.css" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)">
-<!-- Darkly Theme - Dark --><link id="css-dark" rel="stylesheet" href="https://bootswatch.com/5/darkly/bootstrap.css" media="(prefers-color-scheme: dark)">
-<!-- preferably CSS --><link rel="stylesheet" href="preferably.css">
-<link id="css-code-light" rel="stylesheet" href="code-color-scheme-light.css" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)">
-<link id="css-code-dark" rel="stylesheet" href="code-color-scheme-dark.css" media="(prefers-color-scheme: dark)">
-<script src="darkswitch.js"></script>
+<![endif]-->
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -51,10 +33,13 @@
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div id="navbar" class="collapse navbar-collapse ms-2">
+    <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item">
   <a class="nav-link" href="reference/index.html">Reference</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="articles/index.html">Articles</a>
 </li>
       </ul>
 <form class="form-inline my-2 my-lg-0" role="search">
@@ -68,16 +53,6 @@
      
   </a>
 </li>
-
-        
-        <li>
-          <a class="external-link nav-link" id="css-toggle-btn" aria-label="github">
-            <span class="fas fa fas fa-adjust fa-lg"></span>
-          </a>
-        </li>
-        
-        
-        
       </ul>
 </div>
 
@@ -98,8 +73,8 @@
 </h1>
 <p>You can install the development version of bayesDCA from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># install.packages("devtools")</span>
-<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/remote-reexports.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"giulianonetto/bayesdca"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"giulianonetto/bayesdca"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level1">
 <h1 id="running-bayesian-dca">Running Bayesian DCA<a class="anchor" aria-label="anchor" href="#running-bayesian-dca"></a>
@@ -107,49 +82,73 @@
 <p>You can use <code>bayesDCA</code> to evaluate predictive models as well as binary tests.</p>
 <p>All you need is a <code>data.frame</code> with a column named <code>outcomes</code> (0 or 1) and one column for each model or test being evaluated. In the example below, the <code>PredModelData</code> includes the probability predictions from a model (<code>"predictions" column</code>) and the results from a binary test (<code>"binary_test"</code> column). The names of these columns don’t matter (except for the <code>outcomes</code> column, which should always be present).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">bayesDCA</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">PredModelData</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">PredModelData</span><span class="op">)</span>
-<span class="co">#&gt;   outcomes predictions binary_test</span>
-<span class="co">#&gt; 1        0  0.01280653           0</span>
-<span class="co">#&gt; 2        0  0.13981948           0</span>
-<span class="co">#&gt; 3        0  0.03566458           0</span>
-<span class="co">#&gt; 4        0  0.02351731           0</span>
-<span class="co">#&gt; 5        0  0.00863298           0</span>
-<span class="co">#&gt; 6        0  0.00959754           0</span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">bayesDCA</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">PredModelData</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">PredModelData</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   outcomes predictions binary_test</span></span>
+<span><span class="co">#&gt; 1        0  0.01280653           0</span></span>
+<span><span class="co">#&gt; 2        0  0.13981948           0</span></span>
+<span><span class="co">#&gt; 3        0  0.03566458           0</span></span>
+<span><span class="co">#&gt; 4        0  0.02351731           0</span></span>
+<span><span class="co">#&gt; 5        0  0.00863298           0</span></span>
+<span><span class="co">#&gt; 6        0  0.00959754           0</span></span></code></pre></div>
 <p>We set <code>cores = 4</code> to speed up MCMC sampling with <a href="https://mc-stan.org/" class="external-link">Stan</a>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dca.html">dca</a></span><span class="op">(</span><span class="va">PredModelData</span>, cores <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-4-1.png" width="100%" height="50%"></p>
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dca.html">dca</a></span><span class="op">(</span><span class="va">PredModelData</span>, cores <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-4-1.png"><!-- --></p>
+</div>
+<div class="section level1">
+<h1 id="interrogating-the-output">Interrogating the output<a class="anchor" aria-label="anchor" href="#interrogating-the-output"></a>
+</h1>
+<p>We may want to ask several questions about the estimated decision curves, such as: * What is the best strategy? * Are the strategies useful at all? * Is the model guaranteed to be better than the binary test? * Do we need more data? In other words, what is the price of uncertainty?</p>
+<p>Below we answer these questions using <code>bayesDCA</code>.</p>
 <div class="section level2">
-<h2 id="comparing-two-decision-strategies">Comparing two decision strategies<a class="anchor" aria-label="anchor" href="#comparing-two-decision-strategies"></a>
+<h2 id="what-is-the-best-decision-strategy">What is the best decision strategy?<a class="anchor" aria-label="anchor" href="#what-is-the-best-decision-strategy"></a>
 </h2>
-<p>Say you want to infer whether the predictions from the model yield a better decision strategy than the binary test – i.e., you want to compare their decision curves. Then:</p>
+<p>Say you want to infer what is the best decision strategy among the prediction model, the binary test, and the default strategies (treat all/none). You can then compare the decision curves:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-5-1.png" width="100%" height="50%"></p>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"best"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-5-1.png"><!-- --></p>
 </div>
 <div class="section level2">
-<h2 id="comparing-against-default-strategies">Comparing against default strategies<a class="anchor" aria-label="anchor" href="#comparing-against-default-strategies"></a>
+<h2 id="are-the-prediction-model-or-the-binary-test-useful-at-all">Are the prediction model or the binary test useful at all?<a class="anchor" aria-label="anchor" href="#are-the-prediction-model-or-the-binary-test-useful-at-all"></a>
 </h2>
-<p>Default strategies include treating all patients and treating no patients. If you run <code>compare_dca</code> and specify only one decision strategy, <code>bayesDCA</code> will compare this strategy against the the appropriate default for each decision threshold.</p>
+<p>Well, maybe not everyone has access to both the prediction model and the binary test. But is each of them useful at all? Here, “useful” means better than the default strategies (treat all/none), following the definition in <a href="https://pubmed.ncbi.nlm.nih.gov/29575170/" class="external-link">Wynants et al. (2018)</a>.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span>, models_or_tests <span class="op">=</span> <span class="st">"binary_test"</span><span class="op">)</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-6-1.png" width="100%" height="50%"></p>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"useful"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-6-1.png"><!-- --></p>
 </div>
 <div class="section level2">
-<h2 id="using-external-information-to-estimate-prevalence">Using external information to estimate prevalence<a class="anchor" aria-label="anchor" href="#using-external-information-to-estimate-prevalence"></a>
+<h2 id="is-the-model-better-than-the-test">Is the model better than the test?<a class="anchor" aria-label="anchor" href="#is-the-model-better-than-the-test"></a>
 </h2>
-<p>Say you are validating tests using a nested case-control study, so the prevalence parameter must come from the larger sample from which cases and controls were selected. Another example is when you want to use an external estimate of prevalence (say from a large prospective cross-sectional study). You can do so by passing the <code>external_prevalence_data</code> argument to <code>dca</code>. Notice that you may want to adjust the default <code>thresholds</code> argument as well: in the example below, the prevalence is around 60/20,000 = 0.3%, so we use pretty low thresholds.</p>
+<p>We can also do pairwise comparisons by specifying the pair of strategies we want to compare with the <code>models_or_tests</code> argument (set it to a single value to compare it against default strategies).</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dca.html">dca</a></span><span class="op">(</span><span class="va">PredModelData</span>, cores <span class="op">=</span> <span class="fl">4</span>,
-           external_prevalence_data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">60</span>,<span class="fl">20000</span><span class="op">)</span>,
-           thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.01</span>, <span class="fl">0.001</span><span class="op">)</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-7-1.png" width="100%" height="50%"></p>
-<p>Notice also that the <code>external_prevalence_data</code> information is used only to estimate the prevalence, which is then used in the net benefit calculation. Sensitivity and specificity use the original information in <code>PredModelData</code>.</p>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span>, </span>
+<span>            models_or_tests <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"predictions"</span>, <span class="st">"binary_test"</span><span class="op">)</span>, </span>
+<span>            type <span class="op">=</span> <span class="st">"pairwise"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-7-1.png"><!-- --></p>
 </div>
+<div class="section level2">
+<h2 id="what-is-the-price-of-uncertainty">What is the price of uncertainty?<a class="anchor" aria-label="anchor" href="#what-is-the-price-of-uncertainty"></a>
+</h2>
+<p>To answer that, we need an estimate of the <em>Expected Value of Perfect Information</em> (EVPI) as defined in <a href="https://arxiv.org/abs/2208.03343" class="external-link">Sadatsafavi et al. (2022)</a>. You may think of this as the price or consequence of uncertainty. Since we only have a sample dataset, we don’t know for sure what is the best decision strategy for each threshold. The EVPI quantifies the expected net benefit loss associated with that uncertainty. If it is high for a given threshold, then we would greatly benefit from more data to validate our decision strategies.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span>, .evpi <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-8-1.png"><!-- --></p>
+<p>Notice that the EVPI follows closely the uncertainty around the best strategy.</p>
+</div>
+</div>
+<div class="section level1">
+<h1 id="using-external-information-to-estimate-prevalence">Using external information to estimate prevalence<a class="anchor" aria-label="anchor" href="#using-external-information-to-estimate-prevalence"></a>
+</h1>
+<p>Say you are validating tests using a nested case-control study, so the prevalence parameter must come from the larger sample from which cases and controls were selected. Another example is when you want to use an external estimate of prevalence (say from a large prospective cross-sectional study). You can do so by passing the <code>external_prevalence_data</code> argument to <code>dca</code>.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dca.html">dca</a></span><span class="op">(</span><span class="va">PredModelData</span>, cores <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>           external_prevalence_data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">500</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-9-1.png"><!-- --></p>
+<p>Notice also that the <code>external_prevalence_data</code> information is used only to estimate the prevalence, which is then used in the net benefit calculation. Sensitivity and specificity use the original information in <code>PredModelData</code>.</p>
 </div>
 
   </main><aside class="col-md-3"><div class="links">
@@ -178,8 +177,7 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>
-<a href="https://giulianonetto.netlify.app" class="external-link">Giuliano Netto Flores Cruz</a> <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0001-9122-8286" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
+<li>Giuliano Netto Flores Cruz <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0001-9122-8286" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
 </ul>
 </div>
 
@@ -194,15 +192,14 @@
 </div>
 
 
-    <footer><div class="copyright">
+    <footer><div class="pkgdown-footer-left">
   <p></p>
-<p>Developed by <a href="https://giulianonetto.netlify.app" class="external-link">Giuliano Netto Flores Cruz</a>.</p>
+<p>Developed by Giuliano Netto Flores Cruz.</p>
 </div>
 
-<div class="pkgdown">
+<div class="pkgdown-footer-right">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
-  <p class="preferably">Using <a href="https://preferably.amirmasoudabdol.name/?source=footer" class="external-link">preferably</a> template.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
     </footer>

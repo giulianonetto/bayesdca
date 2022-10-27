@@ -23,3 +23,4 @@ for a subset of models or tests, only that subset will be plotted.}
 \description{
 Get colors and labels for BayesDCA plots
 }
+\keyword{internal}

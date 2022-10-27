@@ -1,0 +1,67 @@
+---
+title: "Survival outcomes"
+output: rmarkdown::html_vignette
+description: >
+  Bayesian DCA for survival (or time-to-event) outcomes.
+vignette: >
+  %\VignetteIndexEntry{Survival outcomes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 12,
+  fig.height = 7,
+  dpi = 300
+)
+```
+
+To illustrate Bayesian DCA on survival data, we load the example dataset `dca_survival_data` shown below.
+
+```{r}
+library(bayesDCA)
+head(dca_survival_data)
+```
+
+The dataset contains the time-to-event `outcomes` (a `survival::Surv` object), the predictions from a prognostic model, and the results from a binary prognostic test. The time horizon for the event prediction is one time units (e.g., year), so we set `prediction_time = 1`. We also set `cores = 4` to speed up MCMC sampling with [Stan](https://mc-stan.org/).
+
+```{r, fig.height=4.5}
+fit <- dca_surv(dca_survival_data, prediction_time = 1, chains = 1)
+plot(fit)
+```
+
+# Interrogating the output
+
+We can do all kinds of output interrogation just like with binary outcomes.
+
+## What is the best decision strategy?
+
+```{r}
+compare_dca(fit)
+```
+
+## Are the prediction model or the binary test useful at all?
+
+```{r}
+compare_dca(fit, type = "useful")
+```
+
+## Is the model better than the test?
+
+```{r fig.width=14}
+compare_dca(fit, 
+            models_or_tests = c("model_predictions", "binary_test"), 
+            type = "pairwise")
+```
+
+## What is the price of uncertainty?
+
+```{r}
+compare_dca(fit, .evpi = TRUE)
+```
+
+
+

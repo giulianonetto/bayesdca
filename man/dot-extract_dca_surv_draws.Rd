@@ -14,3 +14,4 @@
 \description{
 Get posterior draws from time-to-event DCA stanfit
 }
+\keyword{internal}

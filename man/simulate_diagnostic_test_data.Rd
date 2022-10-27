@@ -54,3 +54,4 @@ d <- simulate_diagnostic_test_data(B = 2,
                                    true_sp = 0.9)
 head(d)
 }
+\keyword{internal}

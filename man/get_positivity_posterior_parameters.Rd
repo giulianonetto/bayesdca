@@ -23,3 +23,4 @@ get_positivity_posterior_parameters(
 \description{
 Get posterior parameters for positivity probability
 }
+\keyword{internal}
