@@ -3,14 +3,13 @@ development:
   version_label: info
   version_tooltip: "Experimental package"
 template:
+  package: preferably
   bootstrap: 5
   params:
-    # ganalytics: UA-145876596-1
-    bootswatch: flatly
+    toggle: manual
 authors:
-  Giuliano N.F Cruz:
+  Giuliano Netto Flores Cruz:
     href: "https://giulianonetto.netlify.app"
-
 repo:
   url:
     home: https://github.com/giulianonetto/bayesdca/
@@ -22,7 +21,17 @@ repo:
 navbar:
   structure:
     left:  [home, reference, articles]
-    right: [github]
+    right: [twitter, github]
+  components:
+    articles:
+      text: Articles
+      menu:
+      - text: Survival outcomes
+        href: articles/survival-outcomes.html
+    twitter:
+      icon: fa-twitter
+      href: http://twitter.com/giulianonetto
+      aria-label: Twitter
 reference:
 - title: "Main"
   contents:
