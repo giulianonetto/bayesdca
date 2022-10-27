@@ -10,7 +10,8 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 <!-- badges: end -->
 
 Perform Bayesian Decision Curve Analysis for clinical prediction models
-and diagnostic tests.
+and diagnostic tests – check out the [bayesDCA package
+website](https://giulianonetto.github.io/bayesdca).
 
 When validating a clinical prediction model, you may end up with AUC
 0.79 and a slight miscalibration. How do you know if that is good enough
@@ -66,53 +67,102 @@ fit <- dca(PredModelData, cores = 4)
 plot(fit)
 ```
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" height="50%" />
+![](man/figures/README-unnamed-chunk-4-1.png)<!-- -->
 
-## Comparing two decision strategies
+# Interrogating the output
 
-Say you want to infer whether the predictions from the model yield a
-better decision strategy than the binary test – i.e., you want to
-compare their decision curves. Then:
+Each decision curve represents the predictive performance of a decision
+strategy – yes, treating all (or none) is a valid decision strategy.
+Given the estimated decision curves, we may want to ask several
+questions, such as:
+
+-   What is the best decision strategy?
+-   Are the strategies based on predictive models or tests useful *at
+    all*?
+-   Is the predictive model guaranteed to be better than the binary
+    test?
+-   What is the consequence of uncertainty imposed by the available
+    data?
+
+Below we answer these questions using `bayesDCA`.
+
+### What is the best decision strategy?
+
+Say you want to infer what is the best decision strategy among the
+prediction model, the binary test, and the default strategies (treat
+all/none). You can then compare the decision curves:
 
 ``` r
-compare_dca(fit)
+compare_dca(fit, type = "best")
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" height="50%" />
+![](man/figures/README-unnamed-chunk-5-1.png)<!-- -->
 
-## Comparing against default strategies
+### Are the prediction model or the binary test useful at all?
 
-Default strategies include treating all patients and treating no
-patients. If you run `compare_dca` and specify only one decision
-strategy, `bayesDCA` will compare this strategy against the the
-appropriate default for each decision threshold.
+Well, maybe not everyone has access to both the prediction model and the
+binary test. But is each of them useful at all? Here, “useful” means
+better than the default strategies (treat all/none), following the
+definition in [Wynants et
+al. (2018)](https://pubmed.ncbi.nlm.nih.gov/29575170/).
 
 ``` r
-compare_dca(fit, models_or_tests = "binary_test")
+compare_dca(fit, type = "useful")
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" height="50%" />
+![](man/figures/README-unnamed-chunk-6-1.png)<!-- -->
 
-## Using external information to estimate prevalence
+### Is the model better than the test?
+
+We can also do pairwise comparisons by specifying the pair of strategies
+we want to compare with the `models_or_tests` argument (set it to a
+single value to compare it against default strategies).
+
+``` r
+compare_dca(fit, 
+            models_or_tests = c("predictions", "binary_test"), 
+            type = "pairwise")
+```
+
+![](man/figures/README-unnamed-chunk-7-1.png)<!-- -->
+
+### What is the consequence of uncertainty?
+
+To answer that, we need an estimate of the *Expected Value of Perfect
+Information* (EVPI) as defined in [Sadatsafavi et
+al. (2022)](https://arxiv.org/abs/2208.03343). You may think of this as
+the price or consequence of uncertainty. Since we only have a sample
+dataset, we don’t know for sure what is the best decision strategy for
+each threshold. The EVPI quantifies the expected loss in net benefit
+associated with that uncertainty. If it is high for a given threshold,
+then we would greatly benefit from more data to validate our decision
+strategies.
+
+``` r
+compare_dca(fit, .evpi = TRUE)
+```
+
+![](man/figures/README-unnamed-chunk-8-1.png)<!-- -->
+
+Notice that the EVPI follows closely the uncertainty around the best
+strategy.
+
+# Using external information to estimate prevalence
 
 Say you are validating tests using a nested case-control study, so the
 prevalence parameter must come from the larger sample from which cases
 and controls were selected. Another example is when you want to use an
 external estimate of prevalence (say from a large prospective
 cross-sectional study). You can do so by passing the
-`external_prevalence_data` argument to `dca`. Notice that you may want
-to adjust the default `thresholds` argument as well: in the example
-below, the prevalence is around 60/20,000 = 0.3%, so we use pretty low
-thresholds.
+`external_prevalence_data` argument to `dca`.
 
 ``` r
 fit <- dca(PredModelData, cores = 4,
-           external_prevalence_data = c(60,20000),
-           thresholds = seq(0, 0.01, 0.001))
+           external_prevalence_data = c(100, 500))
 plot(fit)
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" height="50%" />
+![](man/figures/README-unnamed-chunk-9-1.png)<!-- -->
 
 Notice also that the `external_prevalence_data` information is used only
 to estimate the prevalence, which is then used in the net benefit
