@@ -26,6 +26,6 @@ Bayesian Decision Curve Analysis for Predictive Models and Binary tests
 }
 \examples{
 data(dca_survival_data)
-fit <- dca_surv(dca_survival_data, cores = 4)
+fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
 plot(fit)
 }

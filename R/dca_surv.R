@@ -51,7 +51,7 @@
 #' @importFrom magrittr %>%
 #' @examples
 #' data(dca_survival_data)
-#' fit <- dca_surv(dca_survival_data, cores = 4)
+#' fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
 #' plot(fit)
 dca_surv <- function(.data,
                      prediction_time,
@@ -61,7 +61,7 @@ dca_surv <- function(.data,
                      summary_probs = c(0.025, 0.975),
                      cutpoints = NULL,
                      prior_scaling_factor = 1/3,
-                     use_median_surv = TRUE,
+                     prior_means = NULL,
                      refresh = 0,
                      ...) {
   if (colnames(.data)[1] != "outcomes") {
@@ -74,7 +74,7 @@ dca_surv <- function(.data,
 
   # avoid thresholds in {0, 1}
   thresholds <- thresholds %>%
-    pmin(0.99999) %>%
+    pmin(0.999) %>%
     pmax(0.00001)
 
   # preprocess .data
@@ -133,7 +133,7 @@ dca_surv <- function(.data,
     .cutpoints = cutpoints,
     .thresholds = thresholds,
     .prior_scaling_factor = prior_scaling_factor,
-    .use_median_surv = use_median_surv
+    .prior_means = prior_means
   )
   posterior_surv_pars0 <- get_survival_posterior_parameters(
     .prediction_data = NA,
@@ -142,7 +142,7 @@ dca_surv <- function(.data,
     .cutpoints = cutpoints,
     .thresholds = 0,
     .prior_scaling_factor = prior_scaling_factor,
-    .use_median_surv = use_median_surv
+    .prior_means = prior_means
   )
   posterior_positivity_pars <- get_positivity_posterior_parameters(
     .prediction_data = prediction_data,

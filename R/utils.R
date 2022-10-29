@@ -214,7 +214,7 @@ get_survival_posterior_parameters <- function(
     .models_or_tests,
     .thresholds,
     .prior_scaling_factor,
-    .use_median_surv = TRUE
+    .prior_means = NULL
 ) {
 
   n_cuts <- length(.cutpoints)
@@ -235,7 +235,8 @@ get_survival_posterior_parameters <- function(
   for (i in seq_along(.models_or_tests)) {
 
     .model <- .models_or_tests[i]
-
+    w <- .prior_scaling_factor  # might be updated for some thresholds
+    empty_thresholds <- 0
     for (j in seq_along(.thresholds)) {
       .thr <- .thresholds[j]
       if (all(is.na(.prediction_data))) {
@@ -246,55 +247,95 @@ get_survival_posterior_parameters <- function(
       }
 
       .d <- .surv_data[.positive_prediction, ]
-      .d$patient_id <- 1:nrow(.d)
-      if (isTRUE(.use_median_surv)) {
-        .median_surv <- survival:::median.Surv(Surv(.d$.time, .d$.status))$quantile
-        .prior_mean <- 0.69/.median_surv
-      } else {
-        .prior_mean <- 1
-      }
-      .prior_alpha <- .prior_scaling_factor * .prior_mean
-      .prior_beta <- .prior_scaling_factor
-      .d_split <- survival::survSplit(
-        Surv(.time, .status) ~ 1,
-        data = .d,
-        cut = .cutpoints,
-        subset = 1:nrow(.d),
-        id = "patient_id",
-        start = "tstart",
-        end = "tstop"
-      ) %>%
-        # TODO: might want to double check the calculation below
-        dplyr::group_by(
-          interval_id = paste0(
-            "interval_", as.numeric(factor(tstart))
+
+      if (is.null(.prior_means)) {  # use median survival for prior mean
+        .n_events <- sum(.d$.status == 1L)
+        if (.n_events > 0) {
+          .median_surv <- survival:::median.Surv(Surv(.d$.time, .d$.status))$quantile
+        } else {
+          msg <- paste0(
+            "Zero events among positive patients for model '",
+            .model, "' and threshold ", .thr
           )
-        ) %>%
-        dplyr::summarise(
-          total_events = sum(.status),
-          total_exposure_time = sum(tstop - tstart)
-        )
-
-      n_empty_intervals <- n_cuts - nrow(.d_split)
-      if (n_empty_intervals > 0) {
-        msg <- paste0(
-          "Got ", n_empty_intervals, " empty interval (s) for threshold ",
-          .thresholds[j], " in model ", .model
-        )
-        warning(msg)
-        for (k in 1:n_empty_intervals) {
-          .d_split <- .d_split %>%
-            dplyr::add_row(
-              interval_id = paste0("interval_", nrow(.d_split) + k),
-              total_events = 0,
-              total_exposure_time = 0
-            )
+          message(cli::col_red(msg))
+          empty_thresholds <- empty_thresholds + 1
+          # positive patients with previous threshold
+          thr_ix <- j - empty_thresholds
+          .d_previous <- .surv_data[.predictions >= .thresholds[thr_ix], ]
+          .median_surv <- survival:::median.Surv(
+            Surv(.d_previous$.time, .d_previous$.status)
+          )$quantile
+          w <- w * 2
         }
+
+        if (is.na(.median_surv)) {
+          msg <- "Failed to compute median survival. Setting prior mean to 1."
+          message(cli::col_red(msg))
+          .median_surv <- -log(0.5)
+        }
+
+        .prior_mean <- -log(0.5)/.median_surv
+
+      } else {
+        .prior_mean <- .prior_means[j]
+      }
+      .prior_alpha <- .prior_mean * w
+      .prior_beta <- w
+
+      if (nrow(.d) > 0) {
+        .d$patient_id <- 1:nrow(.d)
+        .d_split <- survival::survSplit(
+          Surv(.time, .status) ~ 1,
+          data = .d,
+          cut = .cutpoints,
+          subset = 1:nrow(.d),
+          id = "patient_id",
+          start = "tstart",
+          end = "tstop"
+        ) %>%
+          # TODO: might want to double check the calculation below
+          dplyr::group_by(
+            interval_id = paste0(
+              "interval_", as.numeric(factor(tstart))
+            )
+          ) %>%
+          dplyr::summarise(
+            total_events = sum(.status),
+            total_exposure_time = sum(tstop - tstart)
+          )
+
+        n_empty_intervals <- n_cuts - nrow(.d_split)
+        if (n_empty_intervals > 0) {
+          msg <- paste0(
+            "Got ", n_empty_intervals, " empty interval (s) for threshold ",
+            .thresholds[j], " in model '", .model, "'"
+          )
+          message(cli::col_cyan(msg))
+          for (k in 1:n_empty_intervals) {
+            .d_split <- .d_split %>%
+              dplyr::add_row(
+                interval_id = paste0("interval_", nrow(.d_split) + k),
+                total_events = 0,
+                total_exposure_time = 0
+              )
+          }
+        }
+
+        all_posterior_alphas[[i]][ , j] <- .d_split$total_events + .prior_alpha
+        all_posterior_betas[[i]][ , j] <- .d_split$total_exposure_time + .prior_beta
+      } else {
+        all_posterior_alphas[[i]][ , j] <- 0 + .prior_alpha
+        all_posterior_betas[[i]][ , j] <- 0 + .prior_beta
       }
 
-      all_posterior_alphas[[i]][ , j] <- .d_split$total_events + .prior_alpha
-      all_posterior_betas[[i]][ , j] <- .d_split$total_exposure_time + .prior_beta
-
+    }
+    if (empty_thresholds > 0) {
+      msg <- paste0(
+        "Observed ", empty_thresholds,
+        " thresholds with zero events among positive patients for model '",
+        .model, "'"
+      )
+      message(cli::col_red(msg))
     }
   }
 

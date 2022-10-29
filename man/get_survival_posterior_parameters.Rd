@@ -11,7 +11,7 @@ get_survival_posterior_parameters(
   .models_or_tests,
   .thresholds,
   .prior_scaling_factor,
-  .use_median_surv = TRUE
+  .prior_means = NULL
 )
 }
 \arguments{
