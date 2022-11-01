@@ -156,7 +156,7 @@ compare_dca <- function(obj, models_or_tests = NULL, colors = NULL, labels = NUL
   }
 
   if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_test_names[1:2]))
+    models_or_tests <- as.vector(na.omit(obj$model_or_test_names))
   } else {
     stopifnot(
       "Provided `models_or_tests` are not available" = all(
@@ -328,6 +328,9 @@ plot_delta <- function(obj, models_or_tests = NULL, type = c("best", "useful", "
       .colors_and_labels
   }
 
+  .ymax <- max(obj$summary$treat_all$estimate)*1.02  # put into context of max treat all
+  .ymin <- -1*.ymax
+  
   .plot <- initial_plot +
     ggplot2::theme_bw(base_size = 14) +
     ggplot2::scale_x_continuous(
@@ -341,6 +344,9 @@ plot_delta <- function(obj, models_or_tests = NULL, type = c("best", "useful", "
       x = "Decision threshold",
       y = expression(Delta[NB]),
       subtitle = .subtitle
+    ) +
+    ggplot2::coord_cartesian(
+      ylim = c(.ymin, .ymax)
     )
   return(.plot)
 }
