@@ -338,7 +338,7 @@ plot_delta <- function(obj, models_or_tests = NULL, type = c("best", "useful", "
     ) +
     ggplot2::geom_hline(
       yintercept = 0, linetype = 2,
-      color = 'gray30', lwd = 0.8
+      color = 'gray40', lwd = 0.8
     ) +
     ggplot2::labs(
       x = "Decision threshold",
