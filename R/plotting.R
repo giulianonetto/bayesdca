@@ -353,6 +353,7 @@ plot_delta <- function(obj, models_or_tests = NULL, type = c("best", "useful", "
 
 #' @title Plot P(useful) from Wynants 2018 (doi: 10.1002/sim.7653)
 #' @param obj BayesDCAList or BayesDCASurv object
+#' @param mcip Minimal clinically important difference. Defaults to zero. Used only for `type = "pairwise"`
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
@@ -364,7 +365,7 @@ plot_delta <- function(obj, models_or_tests = NULL, type = c("best", "useful", "
 #' plot_superiority_prob(fit)
 
 #' @return A ggplot object.
-plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", "useful", "pairwise"), colors = NULL, labels = NULL) {
+plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", "useful", "pairwise"), mcip = 0, colors = NULL, labels = NULL) {
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(
@@ -404,7 +405,7 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
   if (type == "pairwise") {
     nb1 <- obj$draws$net_benefit[[models_or_tests[1]]]
     nb2 <- obj$draws$net_benefit[[models_or_tests[2]]]
-    .prob <- colMeans(nb1 > nb2)
+    .prob <- colMeans(nb1 - nb2 > mcip)
     df <- tibble::tibble(
       prob = .prob,
       threshold = obj$thresholds

@@ -8,12 +8,15 @@ plot_superiority_prob(
   obj,
   models_or_tests = NULL,
   type = c("best", "useful", "pairwise"),
+  mcip = 0,
   colors = NULL,
   labels = NULL
 )
 }
 \arguments{
 \item{obj}{BayesDCAList or BayesDCASurv object}
+
+\item{mcip}{Minimal clinically important difference. Defaults to zero. Used only for \code{type = "pairwise"}}
 
 \item{colors}{Named vector with color for each model or test. If provided
 for a subset of models or tests, only that subset will be plotted.}
