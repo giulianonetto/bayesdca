@@ -80,6 +80,11 @@
 #' Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
 #' Default is uniform prior for all parameters - Beta(1, 1).
 #' A single vector of the form `c(a, b)` can be provided for each.
+#' @param priors A list with threshold- and model-specific priors
+#' should contain a vector for shape1 of prevalence (named `p1`)
+#' and shape2 (named `p2`). Similarly for Se1/Se2 and Sp1/Sp2, except
+#' these should be matrices with as many rows as thresholds and 
+#' as many columns as models or tests.
 #' @param summary_probs Probabilities used to compute credible intervals (defaults to a 95% Cr.I.).
 #' @param external_prevalence_data Vector with two positive integers giving number of diseased and
 #' non-diseased individuals, respectively, from external data (e.g., if analyzing nested case-control data,
@@ -100,6 +105,7 @@ dca <- function(.data,
                 prior_p = NULL,
                 prior_se = NULL,
                 prior_sp = NULL,
+                priors = NULL,
                 summary_probs = c(0.025, 0.975),
                 external_prevalence_data = NULL,
                 refresh = 0,
@@ -114,11 +120,13 @@ dca <- function(.data,
   n_models_or_tests = length(model_or_test_names)
   threshold_data <- .get_thr_data_list(.data = .data,
                                        thresholds = thresholds)
-  priors <- .get_prior_parameters(prior_p = prior_p,
-                                  prior_se = prior_se,
-                                  prior_sp = prior_sp,
-                                  n_thresholds = n_thresholds,
-                                  n_models_or_tests = n_models_or_tests)
+  if (is.null(priors)) {
+    priors <- .get_prior_parameters(prior_p = prior_p,
+                                    prior_se = prior_se,
+                                    prior_sp = prior_sp,
+                                    n_thresholds = n_thresholds,
+                                    n_models_or_tests = n_models_or_tests)
+  }
   tp <- threshold_data %>%
     dplyr::select(thresholds, model_or_test, tp) %>%
     tidyr::pivot_wider(names_from = model_or_test,
