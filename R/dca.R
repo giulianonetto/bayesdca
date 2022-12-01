@@ -137,7 +137,7 @@ dca <- function(.data,
   if (is.null(priors)) {
     priors <- .get_prior_parameters(
       thresholds = thresholds,
-      constant = constant,
+      constant = constant_prior,
       prior_p = prior_p,
       prior_se = prior_se,
       prior_sp = prior_sp,
