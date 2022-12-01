@@ -4,7 +4,13 @@
 \alias{get_prior_se_mu}
 \title{Get threshold-specific mean prior sensitivity}
 \usage{
-get_prior_se_mu(thresholds, shift = 0.45, slope = 0.025)
+get_prior_se_mu(
+  thresholds,
+  shift = 0.45,
+  slope = 0.025,
+  .min = 0.1,
+  .max = 0.9
+)
 }
 \arguments{
 \item{thresholds}{Vector of decision thresholds.}
@@ -12,6 +18,8 @@ get_prior_se_mu(thresholds, shift = 0.45, slope = 0.025)
 \item{shift}{Scalar controlling height of prior Sensitivity curve}
 
 \item{slope}{Scalar controlling shape of prior Sensitivity curve}
+
+\item{.min, .max}{Minimum and maximum prior mean}
 }
 \description{
 Get threshold-specific mean prior sensitivity

@@ -85,7 +85,13 @@
 #' and shape2 (named `p2`). Similarly for Se1/Se2 and Sp1/Sp2, except
 #' these should be matrices with as many rows as thresholds and
 #' as many columns as models or tests.
+#' @param constant_prior If TRUE (default), it will set a single
+#' prior for all models or tests in all thresholds.
+#' If FALSE, the prior will be threshold and, potentially, model/test-specific.
 #' @param prior_only If set to TRUE, will produce prior DCA.
+#' @param min_prior_mean,max_prior_mean Minimum
+#' and maximum prior mean for sensitivity and specificity.
+#' Only used if `constant_prior = FALSE`.
 #' @param summary_probs Probabilities used to compute credible intervals (defaults to a 95% Cr.I.).
 #' @param external_prevalence_data Vector with two positive integers giving number of diseased and
 #' non-diseased individuals, respectively, from external data (e.g., if analyzing nested case-control data,
@@ -107,9 +113,11 @@ dca <- function(.data,
                 prior_se = NULL,
                 prior_sp = NULL,
                 priors = NULL,
-                constant = TRUE,
+                constant_prior = TRUE,
                 shift = 0.45, slope = 0.025,
                 prior_sample_size = 5,
+                min_prior_mean = 0.05,
+                max_prior_mean = 0.95,
                 summary_probs = c(0.025, 0.975),
                 external_prevalence_data = NULL,
                 prior_only = FALSE,
@@ -136,7 +144,11 @@ dca <- function(.data,
       n_models_or_tests = n_models_or_tests,
       shift = shift,
       slope = slope,
-      prior_sample_size = prior_sample_size
+      prior_sample_size = prior_sample_size,
+      min_mean_se = min_prior_mean,
+      max_mean_se = max_prior_mean,
+      min_mean_sp = min_prior_mean,
+      max_mean_sp = max_prior_mean
     )
   }
   tp <- threshold_data %>%

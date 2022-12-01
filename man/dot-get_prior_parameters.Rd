@@ -14,7 +14,11 @@
   prior_sp = NULL,
   shift = 0.45,
   slope = 0.025,
-  prior_sample_size = 5
+  prior_sample_size = 5,
+  min_mean_se = 0.1,
+  max_mean_se = 0.9,
+  min_mean_sp = 0.1,
+  max_mean_sp = 0.9
 )
 }
 \arguments{
@@ -23,6 +27,9 @@
 \item{shift}{Scalar controlling height of prior Specificity curve}
 
 \item{slope}{Scalar controlling shape of prior Specificity curve}
+
+\item{min_mean_se, min_mean_sp, max_mean_se, max_mean_se}{Minimum
+and maximum prior mean for sensitivity (se) and specificity (sp).}
 }
 \description{
 Get priors for Bayesian DCA

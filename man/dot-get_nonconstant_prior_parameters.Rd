@@ -10,7 +10,11 @@
   shift = 0.45,
   slope = 0.025,
   prior_sample_size = 5,
-  prior_p = NULL
+  prior_p = NULL,
+  min_mean_se = 0.1,
+  max_mean_se = 0.9,
+  min_mean_sp = 0.1,
+  max_mean_sp = 0.9
 )
 }
 \arguments{
@@ -20,6 +24,9 @@
 Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
 Default is uniform prior for all parameters - Beta(1, 1).
 A single vector of the form \code{c(a, b)} can be provided for each.}
+
+\item{min_mean_se, min_mean_sp, max_mean_se, max_mean_se}{Minimum
+and maximum prior mean for sensitivity (se) and specificity (sp).}
 
 \item{n_thresholds}{Number of thresholds (int.).}
 }

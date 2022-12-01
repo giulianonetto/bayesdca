@@ -13,10 +13,12 @@ dca(
   prior_se = NULL,
   prior_sp = NULL,
   priors = NULL,
-  constant = TRUE,
+  constant_prior = TRUE,
   shift = 0.45,
   slope = 0.025,
   prior_sample_size = 5,
+  min_prior_mean = 0.1,
+  max_prior_mean = 0.9,
   summary_probs = c(0.025, 0.975),
   external_prevalence_data = NULL,
   prior_only = FALSE,
@@ -49,6 +51,14 @@ should contain a vector for shape1 of prevalence (named \code{p1})
 and shape2 (named \code{p2}). Similarly for Se1/Se2 and Sp1/Sp2, except
 these should be matrices with as many rows as thresholds and
 as many columns as models or tests.}
+
+\item{constant_prior}{If TRUE (default), it will set a single
+prior for all models or tests in all thresholds.
+If FALSE, the prior will be threshold and, potentially, model/test-specific.}
+
+\item{min_prior_mean, max_prior_mean}{Minimum
+and maximum prior mean for sensitivity and specificity.
+Only used if \code{constant_prior = FALSE}.}
 
 \item{summary_probs}{Probabilities used to compute credible intervals (defaults to a 95\% Cr.I.).}
 

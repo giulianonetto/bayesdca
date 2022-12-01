@@ -401,28 +401,30 @@ get_positivity_posterior_parameters <- function(
 #' @param thresholds Vector of decision thresholds.
 #' @param shift Scalar controlling height of prior Sensitivity curve
 #' @param slope Scalar controlling shape of prior Sensitivity curve
+#' @param .min,.max Minimum and maximum prior mean
 #' @importFrom magrittr %>%
 #' @keywords internal
-get_prior_se_mu <- \(thresholds, shift = 0.45, slope = 0.025) {
+get_prior_se_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max = 0.9) {
   x <- plogis(shift + slope * qlogis(1 - thresholds)^3)
   x %>%
     # prior mean cannot be exactly 0 or 1
-    pmax(0.1) %>%
-    pmin(0.9)
+    pmax(.min) %>%
+    pmin(.max)
 }
 
 #' Get threshold-specific mean prior specificity
 #' @param thresholds Vector of decision thresholds.
 #' @param shift Scalar controlling height of prior Specificity curve
 #' @param slope Scalar controlling shape of prior Specificity curve
+#' @param .min,.max Minimum and maximum prior mean
 #' @importFrom magrittr %>%
 #' @keywords internal
-get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025) {
+get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max = 0.9) {
   x <- plogis(shift + slope * qlogis(thresholds)^3)
   x %>%
     # prior mean cannot be exactly 0 or 1
-    pmax(0.1) %>%
-    pmin(0.9)
+    pmax(.min) %>%
+    pmin(.max)
 }
 
 #' @title Get priors for Bayesian DCA
@@ -430,6 +432,8 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025) {
 #' @param thresholds Vector of decision thresholds.
 #' @param shift Scalar controlling height of prior Specificity curve
 #' @param slope Scalar controlling shape of prior Specificity curve
+#' @param min_mean_se,min_mean_sp,max_mean_se,max_mean_se Minimum
+#' and maximum prior mean for sensitivity (se) and specificity (sp).
 #' @importFrom magrittr %>%
 #' @export
 .get_prior_parameters <- function(
@@ -442,7 +446,11 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025) {
     prior_sp = NULL,
     shift = 0.45,
     slope = 0.025,
-    prior_sample_size = 5
+    prior_sample_size = 5,
+    min_mean_se = 0.1,
+    max_mean_se = 0.9,
+    min_mean_sp = 0.1,
+    max_mean_sp = 0.9
 ) {
 
   if (isTRUE(constant)) {
@@ -459,7 +467,11 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025) {
       n_models_or_tests = n_models_or_tests,
       shift = shift,
       slope = slope,
-      prior_sample_size = prior_sample_size
+      prior_sample_size = prior_sample_size,
+      min_mean_se = min_mean_se,
+      max_mean_se = max_mean_se,
+      min_mean_sp = min_mean_sp,
+      max_mean_sp = max_mean_sp
     )
   }
 
@@ -518,6 +530,8 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025) {
 #' Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
 #' Default is uniform prior for all parameters - Beta(1, 1).
 #' A single vector of the form `c(a, b)` can be provided for each.
+#' @param min_mean_se,min_mean_sp,max_mean_se,max_mean_se Minimum
+#' and maximum prior mean for sensitivity (se) and specificity (sp).
 #' @importFrom magrittr %>%
 #' @keywords internal
 .get_nonconstant_prior_parameters <- function(
@@ -526,7 +540,11 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025) {
     shift = 0.45,
     slope = 0.025,
     prior_sample_size = 5,
-    prior_p = NULL
+    prior_p = NULL,
+    min_mean_se = 0.1,
+    max_mean_se = 0.9,
+    min_mean_sp = 0.1,
+    max_mean_sp = 0.9
   ) {
 
   if (is.null(prior_p)) prior_p <- c(1, 1)
@@ -564,12 +582,16 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025) {
     se_mu <- get_prior_se_mu(
       thresholds = thresholds,
       shift = shift[m],
-      slope = slope[m]
+      slope = slope[m],
+      .min = min_mean_se,
+      .max = max_mean_se
     )
     sp_mu <- get_prior_sp_mu(
       thresholds = thresholds,
       shift = shift[m],
-      slope = slope[m]
+      slope = slope[m],
+      .min = min_mean_sp,
+      .max = max_mean_sp
     )
     smpl_size <- prior_sample_size[m]
     .priors[["Se1"]][, m] <- se_mu * smpl_size
