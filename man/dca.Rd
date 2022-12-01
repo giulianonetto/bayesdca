@@ -13,8 +13,13 @@ dca(
   prior_se = NULL,
   prior_sp = NULL,
   priors = NULL,
+  constant = TRUE,
+  shift = 0.45,
+  slope = 0.025,
+  prior_sample_size = 5,
   summary_probs = c(0.025, 0.975),
   external_prevalence_data = NULL,
+  prior_only = FALSE,
   refresh = 0,
   ...
 )
@@ -50,6 +55,8 @@ as many columns as models or tests.}
 \item{external_prevalence_data}{Vector with two positive integers giving number of diseased and
 non-diseased individuals, respectively, from external data (e.g., if analyzing nested case-control data,
 this is the number of cases and non-cases in the source population).}
+
+\item{prior_only}{If set to TRUE, will produce prior DCA.}
 
 \item{refresh}{Control verbosity of \code{rstan::sampling} (check its help
 page for details).}

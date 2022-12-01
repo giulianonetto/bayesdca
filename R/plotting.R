@@ -330,7 +330,7 @@ plot_delta <- function(obj, models_or_tests = NULL, type = c("best", "useful", "
 
   .ymax <- max(obj$summary$treat_all$estimate)*1.02  # put into context of max treat all
   .ymin <- -1*.ymax
-  
+
   .plot <- initial_plot +
     ggplot2::theme_bw(base_size = 14) +
     ggplot2::scale_x_continuous(
@@ -610,3 +610,89 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
 
   return(.plot)
 }
+
+#' Plot classification performance from Bayesian DCA of binary outcome
+#'
+#' May plot either sensitivity or specificity.
+#' @param obj BayesDCAList object
+#' @param colors Named vector with color for each model or test. If provided
+#' for a subset of models or tests, only that subset will be plotted.
+#' @param labels Named vector with label for each model or test.
+#' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
+#' @importFrom magrittr %>%
+#' @export
+plot_classification <- function(
+    obj,
+    type = c("sensitivity", "specificity"),
+    models_or_tests = NULL,
+    colors = NULL,
+    labels = NULL
+) {
+
+  type <- match.arg(type)
+
+  if (!is.null(models_or_tests)) {
+
+    stopifnot(
+      "Provided `models_or_tests` are not available" = all(
+        models_or_tests %in% obj$model_or_test_names
+      )
+    )
+
+    plot_data <- obj$summary[[type]] %>%
+      dplyr::filter(model_or_test_name %in% models_or_tests)
+
+  } else {
+
+    plot_data <- obj$summary[[type]]
+
+  }
+
+  colors_and_labels <- get_colors_and_labels(obj = obj,
+                                             colors = colors,
+                                             labels = labels,
+                                             models_or_tests = models_or_tests,
+                                             all_or_none = FALSE)
+  .p <- plot_data %>%
+    dplyr::filter(
+      model_or_test_name %in% model_or_test_names
+    ) %>%
+    ggplot2::ggplot() +
+    # set x axis
+    ggplot2::aes(x = threshold) +
+    # add color/fill/label scheme
+    colors_and_labels +
+    # add net benefit curves
+    ggplot2::geom_ribbon(
+      ggplot2::aes(ymin = `2.5%`, ymax = `97.5%`,
+                   fill = model_or_test_name),
+      alpha = 0.4
+    ) +
+    ggplot2::geom_line(
+      ggplot2::aes(y = estimate,
+                   color = model_or_test_name,
+                   group = model_or_test_name)
+    ) +
+    # make it pretty
+    ggplot2::theme_bw(base_size = 14) +
+    ggplot2::coord_cartesian(ylim = c(0, 1)) +
+    ggplot2::scale_x_continuous(
+      labels = scales::percent
+    ) +
+    ggplot2::scale_y_continuous(
+      labels = scales::percent,
+      breaks = scales::pretty_breaks()
+    ) +
+    ggplot2::labs(x = "Decision threshold",
+                  y = stringr::str_to_title(type),
+                  color = NULL) +
+    ggplot2::guides(
+      fill = 'none',
+      color = ggplot2::guide_legend(
+        keywidth = ggplot2::unit(0.5, 'cm')
+      )
+    )
+
+  return(.p)
+}
+

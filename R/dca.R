@@ -83,8 +83,9 @@
 #' @param priors A list with threshold- and model-specific priors
 #' should contain a vector for shape1 of prevalence (named `p1`)
 #' and shape2 (named `p2`). Similarly for Se1/Se2 and Sp1/Sp2, except
-#' these should be matrices with as many rows as thresholds and 
+#' these should be matrices with as many rows as thresholds and
 #' as many columns as models or tests.
+#' @param prior_only If set to TRUE, will produce prior DCA.
 #' @param summary_probs Probabilities used to compute credible intervals (defaults to a 95% Cr.I.).
 #' @param external_prevalence_data Vector with two positive integers giving number of diseased and
 #' non-diseased individuals, respectively, from external data (e.g., if analyzing nested case-control data,
@@ -106,8 +107,12 @@ dca <- function(.data,
                 prior_se = NULL,
                 prior_sp = NULL,
                 priors = NULL,
+                constant = TRUE,
+                shift = 0.45, slope = 0.025,
+                prior_sample_size = 5,
                 summary_probs = c(0.025, 0.975),
                 external_prevalence_data = NULL,
+                prior_only = FALSE,
                 refresh = 0,
                 ...) {
   if (colnames(.data)[1] != "outcomes") {
@@ -119,13 +124,20 @@ dca <- function(.data,
   n_thresholds = length(thresholds)
   n_models_or_tests = length(model_or_test_names)
   threshold_data <- .get_thr_data_list(.data = .data,
-                                       thresholds = thresholds)
+                                       thresholds = thresholds,
+                                       prior_only = prior_only)
   if (is.null(priors)) {
-    priors <- .get_prior_parameters(prior_p = prior_p,
-                                    prior_se = prior_se,
-                                    prior_sp = prior_sp,
-                                    n_thresholds = n_thresholds,
-                                    n_models_or_tests = n_models_or_tests)
+    priors <- .get_prior_parameters(
+      thresholds = thresholds,
+      constant = constant,
+      prior_p = prior_p,
+      prior_se = prior_se,
+      prior_sp = prior_sp,
+      n_models_or_tests = n_models_or_tests,
+      shift = shift,
+      slope = slope,
+      prior_sample_size = prior_sample_size
+    )
   }
   tp <- threshold_data %>%
     dplyr::select(thresholds, model_or_test, tp) %>%
@@ -168,8 +180,8 @@ dca <- function(.data,
   fit <- .dca_stan_list(
     n_thr = n_thresholds,
     n_models_or_tests = n_models_or_tests,
-    N = rep(N, n_thresholds),
-    d = rep(d, n_thresholds),
+    N = rep(ifelse(prior_only, 0, N), n_thresholds),
+    d = rep(ifelse(prior_only, 0, d), n_thresholds),
     tp = tp,
     tn = tn,
     thresholds = thresholds,
@@ -217,17 +229,19 @@ dca <- function(.data,
 #'
 #' @param outcomes Integer vector (0 or 1) with binary outcomes.
 #' @param predictions Numeric vector with predicted probabilities.
+#' @param prior_only If TRUE, returns all zeros to made prior DCA.
 #' @importFrom magrittr %>%
 #' @keywords internal
 .get_thr_data_list <- function(.data,
-                               thresholds = seq(0.01, 0.5, 0.01)) {
+                               thresholds = seq(0.01, 0.5, 0.01),
+                               prior_only = FALSE) {
   if (colnames(.data)[1] != "outcomes") {
     stop("Missing 'outcomes' column as the first column in input .data")
   }
   outcomes <- .data[['outcomes']]
   model_or_test_names <- colnames(.data)[-1]
-  N <- length(outcomes)
-  d <- sum(outcomes)
+  N <- ifelse(prior_only, 0, length(outcomes))
+  d <- ifelse(prior_only, 0, sum(outcomes))
 
   thr_data <- purrr::map(model_or_test_names, ~ {
     .predictions <- .data[[.x]]
@@ -249,8 +263,14 @@ dca <- function(.data,
           # }
 
           # for binary tests, this gives the same tp/tn for all thresholds
-          tp <- sum(.predictions[outcomes == 1] >= .thr)
-          tn <- sum(.predictions[outcomes == 0] < .thr)
+          # except thr = 0 in which case it gives `d`
+          if (isTRUE(prior_only)) {
+            tp <- 0
+            tn <- 0
+          } else {
+            tp <- sum(.predictions[outcomes == 1] >= .thr)
+            tn <- sum(.predictions[outcomes == 0] < .thr)
+          }
 
           return(list(tp = tp, tn = tn))
         })
@@ -261,49 +281,6 @@ dca <- function(.data,
     dplyr::bind_rows()
 
   return(thr_data)
-}
-
-#' @title Get prior parameters formated for Stan model
-#'
-#' @param n_thresholds Number of thresholds (int.).
-#' @param n_models_or_tests Number of models or tests (int.).
-#' @param prior_p,prior_se,prior_sp Non-negative shape values for
-#' Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
-#' Default is uniform prior for all parameters - Beta(1, 1).
-#' A single vector of the form `c(a, b)` can be provided for each.
-#' @importFrom magrittr %>%
-#' @keywords internal
-.get_prior_parameters <- function(n_thresholds,
-                                  n_models_or_tests,
-                                  prior_p = NULL,
-                                  prior_se = NULL,
-                                  prior_sp = NULL) {
-
-  if (is.null(prior_p)) prior_p <- c(1, 1)
-  if (is.null(prior_se)) prior_se <- c(1, 1)
-  if (is.null(prior_sp)) prior_sp <- c(1, 1)
-
-  stopifnot(
-    length(prior_p) == 2 & is.vector(prior_p)
-  )
-  stopifnot(
-    length(prior_se) == 2 & is.vector(prior_se)
-  )
-  stopifnot(
-    length(prior_sp) == 2 & is.vector(prior_sp)
-  )
-
-  se1 <- sapply(1:n_models_or_tests, function(i) rep(prior_se[1], n_thresholds))
-  se2 <- sapply(1:n_models_or_tests, function(i) rep(prior_se[2], n_thresholds))
-  sp1 <- sapply(1:n_models_or_tests, function(i) rep(prior_sp[1], n_thresholds))
-  sp2 <- sapply(1:n_models_or_tests, function(i) rep(prior_sp[2], n_thresholds))
-
-  .priors <- list(
-    p1 = prior_p[1], p2 = prior_p[2],
-    Se1 = se1, Se2 = se2,
-    Sp1 = sp1, Sp2 = sp2
-  )
-  return(.priors)
 }
 
 #' @title Get summary from BayesDCA fit

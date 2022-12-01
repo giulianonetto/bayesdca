@@ -4,9 +4,15 @@
 \alias{.get_thr_data_list}
 \title{Get Threshold Performance Data for DCA list}
 \usage{
-.get_thr_data_list(.data, thresholds = seq(0.01, 0.5, 0.01))
+.get_thr_data_list(
+  .data,
+  thresholds = seq(0.01, 0.5, 0.01),
+  prior_only = FALSE
+)
 }
 \arguments{
+\item{prior_only}{If TRUE, returns all zeros to made prior DCA.}
+
 \item{outcomes}{Integer vector (0 or 1) with binary outcomes.}
 
 \item{predictions}{Numeric vector with predicted probabilities.}

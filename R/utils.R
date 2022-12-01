@@ -396,3 +396,188 @@ get_positivity_posterior_parameters <- function(
   )
   return(.posterior_pars)
 }
+
+#' Get threshold-specific mean prior sensitivity
+#' @param thresholds Vector of decision thresholds.
+#' @param shift Scalar controlling height of prior Sensitivity curve
+#' @param slope Scalar controlling shape of prior Sensitivity curve
+#' @importFrom magrittr %>%
+#' @keywords internal
+get_prior_se_mu <- \(thresholds, shift = 0.45, slope = 0.025) {
+  x <- plogis(shift + slope * qlogis(1 - thresholds)^3)
+  x %>%
+    # prior mean cannot be exactly 0 or 1
+    pmax(0.1) %>%
+    pmin(0.9)
+}
+
+#' Get threshold-specific mean prior specificity
+#' @param thresholds Vector of decision thresholds.
+#' @param shift Scalar controlling height of prior Specificity curve
+#' @param slope Scalar controlling shape of prior Specificity curve
+#' @importFrom magrittr %>%
+#' @keywords internal
+get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025) {
+  x <- plogis(shift + slope * qlogis(thresholds)^3)
+  x %>%
+    # prior mean cannot be exactly 0 or 1
+    pmax(0.1) %>%
+    pmin(0.9)
+}
+
+#' @title Get priors for Bayesian DCA
+#'
+#' @param thresholds Vector of decision thresholds.
+#' @param shift Scalar controlling height of prior Specificity curve
+#' @param slope Scalar controlling shape of prior Specificity curve
+#' @importFrom magrittr %>%
+#' @export
+.get_prior_parameters <- function(
+    thresholds,
+    constant = TRUE,
+    n_thresholds = NULL,
+    n_models_or_tests = NULL,
+    prior_p = NULL,
+    prior_se = NULL,
+    prior_sp = NULL,
+    shift = 0.45,
+    slope = 0.025,
+    prior_sample_size = 5
+) {
+
+  if (isTRUE(constant)) {
+    .priors <- .get_constant_prior_parameters(
+      prior_p = prior_p,
+      prior_se = prior_se,
+      prior_sp = prior_sp,
+      n_thresholds = length(thresholds),
+      n_models_or_tests = n_models_or_tests
+    )
+  } else {
+    .priors <- .get_nonconstant_prior_parameters(
+      thresholds = thresholds,
+      n_models_or_tests = n_models_or_tests,
+      shift = shift,
+      slope = slope,
+      prior_sample_size = prior_sample_size
+    )
+  }
+
+  return(.priors)
+}
+
+#' @title Get constant priors for Bayesian DCA
+#'
+#' @param n_thresholds Number of thresholds (int.).
+#' @param n_models_or_tests Number of models or tests (int.).
+#' @param prior_p,prior_se,prior_sp Non-negative shape values for
+#' Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
+#' Default is uniform prior for all parameters - Beta(1, 1).
+#' A single vector of the form `c(a, b)` can be provided for each.
+#' @importFrom magrittr %>%
+#' @keywords internal
+.get_constant_prior_parameters <- function(n_thresholds,
+                                           n_models_or_tests,
+                                           prior_p = NULL,
+                                           prior_se = NULL,
+                                           prior_sp = NULL) {
+
+  if (is.null(prior_p)) prior_p <- c(1, 1)
+  if (is.null(prior_se)) prior_se <- c(1, 1)
+  if (is.null(prior_sp)) prior_sp <- c(1, 1)
+
+  stopifnot(
+    length(prior_p) == 2 & is.vector(prior_p)
+  )
+  stopifnot(
+    length(prior_se) == 2 & is.vector(prior_se)
+  )
+  stopifnot(
+    length(prior_sp) == 2 & is.vector(prior_sp)
+  )
+
+  se1 <- sapply(1:n_models_or_tests, function(i) rep(prior_se[1], n_thresholds))
+  se2 <- sapply(1:n_models_or_tests, function(i) rep(prior_se[2], n_thresholds))
+  sp1 <- sapply(1:n_models_or_tests, function(i) rep(prior_sp[1], n_thresholds))
+  sp2 <- sapply(1:n_models_or_tests, function(i) rep(prior_sp[2], n_thresholds))
+
+  .priors <- list(
+    p1 = prior_p[1], p2 = prior_p[2],
+    Se1 = se1, Se2 = se2,
+    Sp1 = sp1, Sp2 = sp2
+  )
+  return(.priors)
+}
+
+
+#' @title Get threshold- and model-specific priors for Bayesian DCA
+#'
+#' @param n_thresholds Number of thresholds (int.).
+#' @param n_models_or_tests Number of models or tests (int.).
+#' @param prior_p,prior_se,prior_sp Non-negative shape values for
+#' Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
+#' Default is uniform prior for all parameters - Beta(1, 1).
+#' A single vector of the form `c(a, b)` can be provided for each.
+#' @importFrom magrittr %>%
+#' @keywords internal
+.get_nonconstant_prior_parameters <- function(
+    thresholds,
+    n_models_or_tests,
+    shift = 0.45,
+    slope = 0.025,
+    prior_sample_size = 5,
+    prior_p = NULL
+  ) {
+
+  if (is.null(prior_p)) prior_p <- c(1, 1)
+
+  stopifnot(
+    "`shift` must be either a single number of a vector of size `n_models_or_tests`" = length(shift) == 1 | length(shift) == n_models_or_tests
+  )
+  stopifnot(
+    "`slope` must be either a single number of a vector of size `n_models_or_tests`" = length(slope) == 1 | length(slope) == n_models_or_tests
+  )
+  stopifnot(
+    "`prior_sample_size` must be either a single number of a vector of size `n_models_or_tests`" = length(prior_sample_size) == 1 | length(prior_sample_size) == n_models_or_tests
+  )
+
+  # if not model-specific, then use the first shift/slope
+  if (length(shift) == 1L) {
+    shift <- rep(shift, n_models_or_tests)
+  }
+  if (length(slope) == 1L) {
+    slope <- rep(slope, n_models_or_tests)
+  }
+  if (length(prior_sample_size) == 1L) {
+    prior_sample_size <- rep(prior_sample_size, n_models_or_tests)
+  }
+  n_thresholds <- length(thresholds)
+  .priors <- list(
+    p1 = prior_p[1],
+    p2 = prior_p[2],
+    Se1 = matrix(nrow = n_thresholds, ncol = n_models_or_tests),
+    Se2 = matrix(nrow = n_thresholds, ncol = n_models_or_tests),
+    Sp1 = matrix(nrow = n_thresholds, ncol = n_models_or_tests),
+    Sp2 = matrix(nrow = n_thresholds, ncol = n_models_or_tests)
+  )
+  for (m in 1:n_models_or_tests) {
+    se_mu <- get_prior_se_mu(
+      thresholds = thresholds,
+      shift = shift[m],
+      slope = slope[m]
+    )
+    sp_mu <- get_prior_sp_mu(
+      thresholds = thresholds,
+      shift = shift[m],
+      slope = slope[m]
+    )
+    smpl_size <- prior_sample_size[m]
+    .priors[["Se1"]][, m] <- se_mu * smpl_size
+    .priors[["Se2"]][, m] <- (1 - se_mu) * smpl_size
+    .priors[["Sp1"]][, m] <- sp_mu * smpl_size
+    .priors[["Sp2"]][, m] <- (1 - sp_mu) * smpl_size
+
+  }
+
+  return(.priors)
+}
