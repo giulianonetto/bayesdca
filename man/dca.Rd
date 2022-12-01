@@ -12,6 +12,7 @@ dca(
   prior_p = NULL,
   prior_se = NULL,
   prior_sp = NULL,
+  priors = NULL,
   summary_probs = c(0.025, 0.975),
   external_prevalence_data = NULL,
   refresh = 0,
@@ -37,6 +38,12 @@ the output (default is FALSE).}
 Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
 Default is uniform prior for all parameters - Beta(1, 1).
 A single vector of the form \code{c(a, b)} can be provided for each.}
+
+\item{priors}{A list with threshold- and model-specific priors
+should contain a vector for shape1 of prevalence (named \code{p1})
+and shape2 (named \code{p2}). Similarly for Se1/Se2 and Sp1/Sp2, except
+these should be matrices with as many rows as thresholds and
+as many columns as models or tests.}
 
 \item{summary_probs}{Probabilities used to compute credible intervals (defaults to a 95\% Cr.I.).}
 
