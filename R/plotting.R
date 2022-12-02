@@ -655,7 +655,7 @@ plot_classification <- function(
                                              all_or_none = FALSE)
   .p <- plot_data %>%
     dplyr::filter(
-      model_or_test_name %in% model_or_test_names
+      model_or_test_name %in% models_or_tests
     ) %>%
     ggplot2::ggplot() +
     # set x axis
