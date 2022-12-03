@@ -643,7 +643,8 @@ plot_classification <- function(
       dplyr::filter(model_or_test_name %in% models_or_tests)
 
   } else {
-
+    
+    models_or_tests <- obj$model_or_test_names
     plot_data <- obj$summary[[type]]
 
   }
