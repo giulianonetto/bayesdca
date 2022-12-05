@@ -9,7 +9,10 @@
   n_models_or_tests,
   shift = 0.45,
   slope = 0.025,
-  prior_sample_size = 5,
+  prior_sample_size = NULL,
+  min_prior_sample_size = 20,
+  max_prior_sample_size = 100,
+  slope_prior_sample_size = 300,
   prior_p = NULL,
   min_mean_se = 0.1,
   max_mean_se = 0.9,
@@ -19,6 +22,14 @@
 }
 \arguments{
 \item{n_models_or_tests}{Number of models or tests (int.).}
+
+\item{prior_sample_size}{Prior sample size or strength.}
+
+\item{min_prior_sample_size}{Minimum prior sample size or strength.}
+
+\item{max_prior_sample_size}{Maximum prior sample size or strength.}
+
+\item{slope_prior_sample_size}{Rate of change in prior sample size or strength.}
 
 \item{prior_p, prior_se, prior_sp}{Non-negative shape values for
 Beta(alpha, beta) priors used for p, Se, and Sp, respectively.

@@ -14,7 +14,10 @@
   prior_sp = NULL,
   shift = 0.45,
   slope = 0.025,
-  prior_sample_size = 5,
+  prior_sample_size = NULL,
+  min_prior_sample_size = 20,
+  max_prior_sample_size = 100,
+  slope_prior_sample_size = 300,
   min_mean_se = 0.1,
   max_mean_se = 0.9,
   min_mean_sp = 0.1,
@@ -24,12 +27,20 @@
 \arguments{
 \item{thresholds}{Vector of decision thresholds.}
 
-\item{shift}{Scalar controlling height of prior Specificity curve}
+\item{shift}{Scalar controlling height of prior Specificity curve. Only used if \code{constant=FALSE}.}
 
-\item{slope}{Scalar controlling shape of prior Specificity curve}
+\item{slope}{Scalar controlling shape of prior Specificity curve. Only used if \code{constant=FALSE}.}
 
-\item{min_mean_se, min_mean_sp, max_mean_se, max_mean_se}{Minimum
+\item{prior_sample_size}{Prior sample size of strength.}
+
+\item{min_prior_sample_size}{Minimum prior sample size or strength.}
+
+\item{max_prior_sample_size}{Maximum prior sample size or strength.}
+
+\item{slope_prior_sample_size}{Rate of change in prior sample size or strength.
 and maximum prior mean for sensitivity (se) and specificity (sp).}
+
+\item{min_mean_se, min_mean_sp, max_mean_se, max_mean_se}{Minimum}
 }
 \description{
 Get priors for Bayesian DCA

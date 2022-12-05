@@ -427,12 +427,38 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max =
     pmin(.max)
 }
 
+#' Get threshold-specific prior sample size or strength
+#' @param min_prior_sample_size Minimum prior sample size or strength.
+#' @param max_prior_sample_size Maximum prior sample size or strength.
+#' @param slope_prior_sample_size Rate of change in prior sample size or strength.
+#' @param thresholds Decision thresholds
+#' @keywords internal
+get_prior_sample_size <- \(
+  thresholds,
+  min_prior_sample_size = 20,
+  max_prior_sample_size = 100,
+  slope_prior_sample_size = 300
+) {
+  x <- (
+    max_prior_sample_size 
+    - slope_prior_sample_size * thresholds 
+    + slope_prior_sample_size * thresholds^2
+  )
+  x %>%
+    pmax(min_prior_sample_size) %>%
+    pmin(max_prior_sample_size)
+}
+
 #' @title Get priors for Bayesian DCA
 #'
 #' @param thresholds Vector of decision thresholds.
-#' @param shift Scalar controlling height of prior Specificity curve
-#' @param slope Scalar controlling shape of prior Specificity curve
+#' @param shift Scalar controlling height of prior Specificity curve. Only used if `constant=FALSE`.
+#' @param slope Scalar controlling shape of prior Specificity curve. Only used if `constant=FALSE`.
 #' @param min_mean_se,min_mean_sp,max_mean_se,max_mean_se Minimum
+#' @param prior_sample_size Prior sample size of strength.
+#' @param min_prior_sample_size Minimum prior sample size or strength.
+#' @param max_prior_sample_size Maximum prior sample size or strength.
+#' @param slope_prior_sample_size Rate of change in prior sample size or strength.
 #' and maximum prior mean for sensitivity (se) and specificity (sp).
 #' @importFrom magrittr %>%
 #' @export
@@ -446,7 +472,10 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max =
     prior_sp = NULL,
     shift = 0.45,
     slope = 0.025,
-    prior_sample_size = 5,
+    prior_sample_size = NULL,
+    min_prior_sample_size = 20,
+    max_prior_sample_size = 100,
+    slope_prior_sample_size = 300,
     min_mean_se = 0.1,
     max_mean_se = 0.9,
     min_mean_sp = 0.1,
@@ -468,6 +497,9 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max =
       shift = shift,
       slope = slope,
       prior_sample_size = prior_sample_size,
+      min_prior_sample_size = min_prior_sample_size,
+      max_prior_sample_size = max_prior_sample_size,
+      slope_prior_sample_size = slope_prior_sample_size,
       min_mean_se = min_mean_se,
       max_mean_se = max_mean_se,
       min_mean_sp = min_mean_sp,
@@ -532,6 +564,10 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max =
 #' A single vector of the form `c(a, b)` can be provided for each.
 #' @param min_mean_se,min_mean_sp,max_mean_se,max_mean_se Minimum
 #' and maximum prior mean for sensitivity (se) and specificity (sp).
+#' @param prior_sample_size Prior sample size or strength.
+#' @param min_prior_sample_size Minimum prior sample size or strength.
+#' @param max_prior_sample_size Maximum prior sample size or strength.
+#' @param slope_prior_sample_size Rate of change in prior sample size or strength.
 #' @importFrom magrittr %>%
 #' @keywords internal
 .get_nonconstant_prior_parameters <- function(
@@ -539,7 +575,10 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max =
     n_models_or_tests,
     shift = 0.45,
     slope = 0.025,
-    prior_sample_size = 5,
+    prior_sample_size = NULL,
+    min_prior_sample_size = 20,
+    max_prior_sample_size = 100,
+    slope_prior_sample_size = 300,
     prior_p = NULL,
     min_mean_se = 0.1,
     max_mean_se = 0.9,
@@ -556,7 +595,7 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max =
     "`slope` must be either a single number of a vector of size `n_models_or_tests`" = length(slope) == 1 | length(slope) == n_models_or_tests
   )
   stopifnot(
-    "`prior_sample_size` must be either a single number of a vector of size `n_models_or_tests`" = length(prior_sample_size) == 1 | length(prior_sample_size) == n_models_or_tests
+    "if given, `prior_sample_size` must be either a single number of a vector of size `n_models_or_tests`" = length(prior_sample_size) %in% c(0, 1, n_models_or_tests)
   )
 
   # if not model-specific, then use the first shift/slope
@@ -565,6 +604,14 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max =
   }
   if (length(slope) == 1L) {
     slope <- rep(slope, n_models_or_tests)
+  }
+  if (is.null(prior_sample_size)) {
+    prior_sample_size <- get_prior_sample_size(
+      thresholds = thresholds,
+      min_prior_sample_size = min_prior_sample_size,
+      max_prior_sample_size = max_prior_sample_size,
+      slope_prior_sample_size = slope_prior_sample_size
+    )
   }
   if (length(prior_sample_size) == 1L) {
     prior_sample_size <- rep(prior_sample_size, n_models_or_tests)
