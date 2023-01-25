@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-Perform Bayesian Decision Curve Analysis for clinical prediction models and diagnostic tests -- check out the [bayesDCA package website](https://giulianonetto.github.io/bayesdca).
+Perform Bayesian Decision Curve Analysis for clinical prediction models and diagnostic tests.
 
 When validating a clinical prediction model, you may end up with AUC 0.79 and a slight miscalibration. How do you know if that is good enough for your model to be clinically useful? The same question can be asked if you have, for instance, a binary diagnostic test with sensitivity of 75% and specificity of 68%. Decision Curve Analysis helps us find an answer - see [Vickers, van Calster & Steyerberg, 2019](https://diagnprognres.biomedcentral.com/articles/10.1186/s41512-019-0064-7) for an introduction to DCA. Here, we use Bayesian methods to accurately quantify uncertainty in our decisions curves - powered by [Stan](https://mc-stan.org/).
 
@@ -53,16 +53,23 @@ fit <- dca(PredModelData, cores = 4)
 plot(fit)
 ```
 
-# Interrogating the output
+# Interpreting Bayesian DCA
 
 Each decision curve represents the predictive performance of a decision strategy -- yes, treating all (or none) is a valid decision strategy. Given the estimated decision curves, we may want to ask several questions, such as:
 
 * What is the best decision strategy?
 * Are the strategies based on predictive models or tests useful *at all*?
 * Is the predictive model guaranteed to be better than the binary test?
-* What is the consequence of uncertainty imposed by the available data?
+* What is the consequence of the uncertainty imposed by the available data?
 
-Below we answer these questions using `bayesDCA`.
+The `bayesDCA` R package provides an easy workflow for answering these questions. 
+In particular, the "DCA part" of Bayesian DCA allows answering the
+first three questions; adding the "Bayesian part" allows quantifying uncertainty around those answers. 
+
+The best decision strategy is the one that maximizes the observed net benefit. However, if
+the uncertainty is large, more data may be necessary to increase confidence in our conclusions.
+The fourth question directly quantifies what we might lose, in terms of net benefit,
+by drawing conclusions under the current level of uncertainty.
 
 ### What is the best decision strategy?
 
@@ -71,6 +78,10 @@ Say you want to infer what is the best decision strategy among the prediction mo
 ```{r}
 compare_dca(fit, type = "best")
 ```
+
+For most decision thresholds, the model predictions maximize the observed net benefit (i.e., have the highest posterior means) and hence is the best decision strategy given the available data. 
+However, notice that uncertainty is quite large at least for thresholds
+below 30%, where conclusions might be noisy and more data could be beneficial.
 
 ### Are the prediction model or the binary test useful at all?
 
@@ -92,13 +103,13 @@ compare_dca(fit,
 
 ### What is the consequence of uncertainty?
 
-To answer that, we need an estimate of the *Expected Value of Perfect Information* (EVPI) as defined in [Sadatsafavi et al. (2022)](https://arxiv.org/abs/2208.03343). You may think of this as the price or consequence of uncertainty. Since we only have a sample dataset, we don't know for sure what is the best decision strategy for each threshold. The EVPI quantifies the expected loss in net benefit associated with that uncertainty. If it is high for a given threshold, then we would greatly benefit from more data to validate our decision strategies.
+To answer that, we need an estimate of the *Expected Value of Perfect Information* (EVPI) for model validation as defined in [Sadatsafavi et al. (2022)](https://arxiv.org/abs/2208.03343). You may think of this as the price or consequence of uncertainty. Since we only have a sample dataset, we don't know for sure what is the best decision strategy for each threshold. The EVPI quantifies the expected loss in net benefit associated with that uncertainty. If it is high for a given threshold, then we would greatly benefit from more data to validate our decision strategies.
 
 ```{r}
 compare_dca(fit, .evpi = TRUE)
 ```
 
-Notice that the EVPI follows closely the uncertainty around the best strategy.
+Notice that the EVPI follows closely the uncertainty around the best strategy: the larger the uncertainty, the more we are expected to benefit from accessing "perfect information".
 
 # Using external information to estimate prevalence
 
