@@ -68,7 +68,7 @@ plot(fit)
 
 ![](man/figures/README-unnamed-chunk-4-1.png)<!-- -->
 
-# Interrogating the output
+# Interpreting Bayesian DCA
 
 Each decision curve represents the predictive performance of a decision
 strategy – yes, treating all (or none) is a valid decision strategy.
@@ -80,10 +80,19 @@ questions, such as:
     all*?
 -   Is the predictive model guaranteed to be better than the binary
     test?
--   What is the consequence of uncertainty imposed by the available
+-   What is the consequence of the uncertainty imposed by the available
     data?
 
-Below we answer these questions using `bayesDCA`.
+The `bayesDCA` R package provides an easy workflow for answering these
+questions. In particular, the “DCA part” of Bayesian DCA allows
+answering the first three questions; adding the “Bayesian part” allows
+quantifying uncertainty around those answers.
+
+The best decision strategy is the one that maximizes the observed net
+benefit. However, if the uncertainty is large, more data may be
+necessary to increase confidence in our conclusions. The fourth question
+directly quantifies what we might lose, in terms of net benefit, by
+drawing conclusions under the current level of uncertainty.
 
 ### What is the best decision strategy?
 
@@ -96,6 +105,12 @@ compare_dca(fit, type = "best")
 ```
 
 ![](man/figures/README-unnamed-chunk-5-1.png)<!-- -->
+
+For most decision thresholds, the model predictions maximize the
+observed net benefit (i.e., have the highest posterior means) and hence
+is the best decision strategy given the available data. However, notice
+that uncertainty is quite large at least for thresholds below 30%, where
+conclusions might be noisy and more data could be beneficial.
 
 ### Are the prediction model or the binary test useful at all?
 
@@ -128,7 +143,7 @@ compare_dca(fit,
 ### What is the consequence of uncertainty?
 
 To answer that, we need an estimate of the *Expected Value of Perfect
-Information* (EVPI) as defined in [Sadatsafavi et
+Information* (EVPI) for model validation as defined in [Sadatsafavi et
 al. (2022)](https://arxiv.org/abs/2208.03343). You may think of this as
 the price or consequence of uncertainty. Since we only have a sample
 dataset, we don’t know for sure what is the best decision strategy for
@@ -144,7 +159,8 @@ compare_dca(fit, .evpi = TRUE)
 ![](man/figures/README-unnamed-chunk-8-1.png)<!-- -->
 
 Notice that the EVPI follows closely the uncertainty around the best
-strategy.
+strategy: the larger the uncertainty, the more we are expected to
+benefit from accessing “perfect information”.
 
 # Using external information to estimate prevalence
 
