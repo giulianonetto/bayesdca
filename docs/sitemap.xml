@@ -58,6 +58,12 @@
     <loc>/reference/dot-extract_dca_surv_summary.html</loc>
   </url>
   <url>
+    <loc>/reference/dot-get_constant_prior_parameters.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-get_nonconstant_prior_parameters.html</loc>
+  </url>
+  <url>
     <loc>/reference/dot-get_prior_parameters.html</loc>
   </url>
   <url>
@@ -91,6 +97,15 @@
     <loc>/reference/get_prior_parameters.html</loc>
   </url>
   <url>
+    <loc>/reference/get_prior_sample_size.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_prior_se_mu.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_prior_sp_mu.html</loc>
+  </url>
+  <url>
     <loc>/reference/get_survival_posterior_parameters.html</loc>
   </url>
   <url>
@@ -113,6 +128,9 @@
   </url>
   <url>
     <loc>/reference/plot.BayesDCASurv.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_classification.html</loc>
   </url>
   <url>
     <loc>/reference/plot_delta.html</loc>

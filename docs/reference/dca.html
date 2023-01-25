@@ -99,8 +99,16 @@ using their corresponding posterior draws.</p>
 <span>  prior_p <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  prior_se <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  prior_sp <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  priors <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  constant_prior <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  shift <span class="op">=</span> <span class="fl">0.45</span>,</span>
+<span>  slope <span class="op">=</span> <span class="fl">0.025</span>,</span>
+<span>  prior_sample_size <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  min_prior_mean <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  max_prior_mean <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  summary_probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>, <span class="fl">0.975</span><span class="op">)</span>,</span>
 <span>  external_prevalence_data <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  prior_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  refresh <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -137,6 +145,26 @@ Default is uniform prior for all parameters - Beta(1, 1).
 A single vector of the form <code>c(a, b)</code> can be provided for each.</p></dd>
 
 
+<dt>priors</dt>
+<dd><p>A list with threshold- and model-specific priors
+should contain a vector for shape1 of prevalence (named <code>p1</code>)
+and shape2 (named <code>p2</code>). Similarly for Se1/Se2 and Sp1/Sp2, except
+these should be matrices with as many rows as thresholds and
+as many columns as models or tests.</p></dd>
+
+
+<dt>constant_prior</dt>
+<dd><p>If TRUE (default), it will set a single
+prior for all models or tests in all thresholds.
+If FALSE, the prior will be threshold and, potentially, model/test-specific.</p></dd>
+
+
+<dt>min_prior_mean, max_prior_mean</dt>
+<dd><p>Minimum
+and maximum prior mean for sensitivity and specificity.
+Only used if <code>constant_prior = FALSE</code>.</p></dd>
+
+
 <dt>summary_probs</dt>
 <dd><p>Probabilities used to compute credible intervals (defaults to a 95% Cr.I.).</p></dd>
 
@@ -145,6 +173,10 @@ A single vector of the form <code>c(a, b)</code> can be provided for each.</p></
 <dd><p>Vector with two positive integers giving number of diseased and
 non-diseased individuals, respectively, from external data (e.g., if analyzing nested case-control data,
 this is the number of cases and non-cases in the source population).</p></dd>
+
+
+<dt>prior_only</dt>
+<dd><p>If set to TRUE, will produce prior DCA.</p></dd>
 
 
 <dt>refresh</dt>

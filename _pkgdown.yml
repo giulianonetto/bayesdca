@@ -48,6 +48,7 @@ reference:
   - plot_delta
   - plot_superiority_prob
   - plot_evpi
+  - .get_prior_parameters
   - matches("plot")
   - matches("print")
   - bayesDCA-package

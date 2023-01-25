@@ -91,7 +91,7 @@
 <span>  summary_probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>, <span class="fl">0.975</span><span class="op">)</span>,</span>
 <span>  cutpoints <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  prior_scaling_factor <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>,</span>
-<span>  use_median_surv <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  prior_means <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  refresh <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -109,10 +109,11 @@
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">dca_survival_data</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">dca_surv</span><span class="op">(</span><span class="va">dca_survival_data</span>, cores <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in get_cutpoints(prediction_time, event_times):</span> argument "prediction_time" is missing, with no default</span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">dca_surv</span><span class="op">(</span><span class="va">dca_survival_data</span>, prediction_time <span class="op">=</span> <span class="fl">1</span>, cores <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Survival estimation with the following intervals (total event counts):</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> [0,0.05]: 12  (0.05,0.1]: 14  (0.1,0.25]: 10  (0.25,0.5]: 16  (0.5,0.75]: 13  (0.75,0.9]: 4  (0.9,1]: 6  (1,Inf): 30</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in plot(fit):</span> object 'fit' not found</span>
+<span class="r-plt img"><img src="dca_surv-1.png" alt="" width="3600" height="2225"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>

@@ -10,7 +10,8 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 <!-- badges: end -->
 
 Perform Bayesian Decision Curve Analysis for clinical prediction models
-and diagnostic tests.
+and diagnostic tests – check out the [bayesDCA package
+website](https://giulianonetto.github.io/bayesdca).
 
 When validating a clinical prediction model, you may end up with AUC
 0.79 and a slight miscalibration. How do you know if that is good enough
