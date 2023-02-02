@@ -74,8 +74,8 @@ dca_surv <- function(.data,
 
   # avoid thresholds in {0, 1}
   thresholds <- thresholds %>%
-    pmin(0.999) %>%
-    pmax(0.00001)
+    pmin(0.99) %>%
+    pmax(1e-9)
 
   # preprocess .data
   model_or_test_names <- colnames(.data)[-1]
