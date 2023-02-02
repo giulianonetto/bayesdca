@@ -126,6 +126,10 @@ dca <- function(.data,
   if (colnames(.data)[1] != "outcomes") {
     stop("Missing 'outcomes' column as the first column in input .data")
   }
+  # avoid thresholds in {0, 1}
+  thresholds <- thresholds %>%
+    pmin(0.99) %>%
+    pmax(1e-9)
   model_or_test_names <- colnames(.data)[-1]
   N <- nrow(.data)
   d <- sum(.data[['outcomes']])
