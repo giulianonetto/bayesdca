@@ -7,7 +7,8 @@
 evpi(thresholds, ...)
 }
 \arguments{
-\item{...}{matrices of dimension n_draws * n_thresholds containing posterior net benefit}
+\item{...}{matrices of dimension n_draws * n_thresholds
+containing posterior net benefit}
 
 \item{obj}{BayesDCAList or BayesDCASurv object}
 }

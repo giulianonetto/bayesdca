@@ -18,7 +18,8 @@ get_prior_sample_size(
 
 \item{max_prior_sample_size}{Maximum prior sample size or strength.}
 
-\item{slope_prior_sample_size}{Rate of change in prior sample size or strength.}
+\item{slope_prior_sample_size}{Rate of change in
+prior sample size or strength.}
 }
 \description{
 Get threshold-specific prior sample size or strength

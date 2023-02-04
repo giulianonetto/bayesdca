@@ -1,72 +1,21 @@
 #' @title Compute Expected Value of Perfect Information (EVPI)
 #'
-#' @param obj BayesDCAList object
-#' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
-#' @importFrom magrittr %>%
-#' @keywords internal
-evpi_old <- function(obj, models_or_tests = NULL, type = c("best", "useful", "pairwise")) {
-  type <- match.arg(type)
-  if (type == "pairwise") {
-    stopifnot(
-      "Must specify two models_or_tests to plot pairwise comparison" = length(models_or_tests) == 2
-    )
-  }
-  if (is.null(obj$draws)) {
-    msg <- "Retrieving posterior draws."
-    if (inherits(obj, "BayesDCAList")) {
-      obj$draws <- .extract_dca_draws(fit = obj,
-                                      model_or_test_names = model_or_test_names)
-    } else {
-      obj$draws <- .extract_dca_surv_draws(fit = obj,
-                                           model_or_test_names = model_or_test_names)
-    }
-  }
-
-  if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_test_names))
-  } else {
-    stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
-      )
-    )
-  }
-
-  .evpi <- vector("numeric", length(obj$thresholds))
-  for (i in seq_along(obj$thresholds)) {
-    # get posterior NB for each strategy in i-th threshold
-    nb1 <- obj$draws$net_benefit[[models_or_tests[1]]][, i]
-    if (length(models_or_tests) == 2) {
-      nb2 <- obj$draws$net_benefit[[models_or_tests[2]]][, i]
-    } else {
-      nb2 <- obj$draws$treat_all[, i]
-    }
-    # EVPI equation in https://arxiv.org/abs/2208.03343 (p. 12)
-    ENB_perfect <- mean(pmax(0, nb1, nb2))
-    ENB_current <- max(0, mean(nb1), mean(nb2))
-    .evpi[i] <- ENB_perfect - ENB_current
-  }
-
-  return(.evpi)
-}
-
-#' @title Compute Expected Value of Perfect Information (EVPI)
-#'
 #' @param obj BayesDCAList or BayesDCASurv object
-#' @param ... matrices of dimension n_draws * n_thresholds containing posterior net benefit
+#' @param ... matrices of dimension n_draws * n_thresholds
+#' containing posterior net benefit
 #' @importFrom magrittr %>%
 #' @keywords internal
 evpi <- function(thresholds, ...) {
   .dots <- list(...)
   .evpi <- numeric(length = length(thresholds))
-  for (i in 1:length(thresholds)) {
+  for (i in seq_along(thresholds)) {
     .dots_i <- lapply(.dots, function(.d) .d[, i])
     mean_nbs <- unlist(lapply(.dots_i, function(nb_draws) mean(nb_draws)))
     max_nb_draws <- matrixStats::rowMaxs(
       cbind(0, do.call(cbind, .dots_i))
     )
-    ENB_perfect <- mean(max_nb_draws)
-    ENB_current <- max(0, mean_nbs)
+    ENB_perfect <- mean(max_nb_draws) # nolint
+    ENB_current <- max(0, mean_nbs) # nolint
     .evpi[i] <- ENB_perfect - ENB_current
   }
   return(.evpi)
@@ -75,7 +24,7 @@ evpi <- function(thresholds, ...) {
 #' @title Minimal events per interval
 #' @keywords internal
 min_events_per_interval <- function() {
-  return(3)
+  return(5)
 }
 
 #' @title Get cutpoints for survival estimation
@@ -84,13 +33,12 @@ min_events_per_interval <- function() {
 #' @keywords internal
 get_cutpoints <- function(.prediction_time, .event_times) {
   .cuts <- .prediction_time * c(
-    0.00, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 1
+    0.00, 0.25, 0.5, 0.75, 1
   )
 
   events_per_interval <- get_events_per_interval(.cuts, .event_times)
 
   return(.cuts[events_per_interval >= min_events_per_interval()])
-
 }
 
 #' @title Get events per intervals defined by set of cutpoints
@@ -98,9 +46,7 @@ get_cutpoints <- function(.prediction_time, .event_times) {
 #' @param .event_times times of observed events (non-censored)
 #' @keywords internal
 get_events_per_interval <- function(.cutpoints, .event_times) {
-
-  table(cut(.event_times, c(.cutpoints, Inf), include.lowest = T))
-
+  table(cut(.event_times, c(.cutpoints, Inf), include.lowest = TRUE))
 }
 
 
@@ -112,7 +58,10 @@ get_events_per_interval <- function(.cutpoints, .event_times) {
 #' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
 #' @keywords internal
-get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, labels = NULL, all_or_none = TRUE) {
+get_colors_and_labels <- function(obj,
+                                  models_or_tests = NULL,
+                                  colors = NULL, labels = NULL,
+                                  all_or_none = TRUE) {
   # decide which models/tests to include
   if (is.null(models_or_tests)) {
     model_or_test_names <- obj$model_or_test_names
@@ -135,16 +84,16 @@ get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, la
 
   n_colors <- length(model_or_test_names)
   if (n_colors < 9) {
-    palette <- RColorBrewer:::brewer.pal(max(c(n_colors, 3)), 'Dark2')
+    palette <- RColorBrewer:::brewer.pal(max(c(n_colors, 3)), "Dark2")
   } else {
     palette <- grDevices::colorRampPalette(
-      RColorBrewer:::brewer.pal(n_colors, 'Set2')
+      RColorBrewer:::brewer.pal(n_colors, "Set2")
     )(n_colors)
   }
   # set actual color values to use in scale_color_manual
   for (i in seq_len(n_colors)) {
     model_or_test <- model_or_test_names[i]
-    if (!is.null(colors) & model_or_test %in% names(colors)) {
+    if (!is.null(colors) && model_or_test %in% names(colors)) {
       color_values[model_or_test] <- colors[[model_or_test]]
     } else {
       color_values[model_or_test] <- palette[i]
@@ -181,13 +130,16 @@ get_colors_and_labels <- function(obj, models_or_tests = NULL, colors = NULL, la
 #' @keywords internal
 get_survival_time_exposed <- function(.prediction_time, .cutpoints) {
   time_exposed <- numeric(length = length(.cutpoints))
-  for (i in 1:(length(.cutpoints)-1) ) {
-    if (.prediction_time >= .cutpoints[i+1]) {
+  for (i in seq_len(length(.cutpoints))) {
+    .lower <- .cutpoints[i]
+    .upper <- c(.cutpoints, Inf)[i + 1]
+    if (.prediction_time >= .upper) {
       # if prediction time > upper bound, use interval length
-      time_exposed[i] <- .cutpoints[i+1] - .cutpoints[i]
-    } else if (.prediction_time >= .cutpoints[i]) {
-      # if prediction time > lower bound, use distance between pred time and lower bound
-      time_exposed[i] <- .prediction_time - .cutpoints[i]
+      time_exposed[i] <- .upper - .lower
+    } else if (.prediction_time > .lower) {
+      # if prediction time > lower bound,
+      # use distance between pred time and lower bound
+      time_exposed[i] <- .prediction_time - .lower
     } else {
       # otherwise, prediction time is before interval, exposure time is zero
       time_exposed[i] <- 0
@@ -196,35 +148,106 @@ get_survival_time_exposed <- function(.prediction_time, .cutpoints) {
   return(time_exposed)
 }
 
-#' @title Get posterior parameters for survival model
+#' @title Get death pseudo-counts
 #'
 #' @param .prediction_data Contains prognostic model predictions
-#' @param .surv_data Contains observed time to event (`.time` column) and event indicator (`.status` column)
+#' @param .surv_data Contains observed time to event
+#' (`.time` column) and event indicator (`.status` column)
 #' @param .cutpoints Survival cutpoints.
 #' @param .models_or_tests Names for models or tests.
 #' @param .thresholds DCA thresholds.
-#' @param .prior_scaling_factor Prior alpha = (0.69/median_surv)*.prior_scaling_factor, Prior beta = .prior_scaling_factor.
+#' @param .prior_scaling_factor Prior
+#' alpha = (0.69/median_surv)*.prior_scaling_factor,
+#' Prior beta = .prior_scaling_factor.
 #' @importFrom magrittr %>%
 #' @importFrom survival Surv
 #' @keywords internal
-get_survival_posterior_parameters <- function(
-    .prediction_data,
-    .surv_data,
-    .cutpoints,
-    .models_or_tests,
-    .thresholds,
-    .prior_scaling_factor,
-    .prior_means = NULL
-) {
+get_death_pseudo_counts <- function(.prediction_data, # nolint
+                                    .surv_data,
+                                    .cutpoints,
+                                    .models_or_tests,
+                                    .thresholds) {
+  n_cuts <- length(.cutpoints)
+  n_thr <- length(.thresholds)
+  death_pseudo_counts <- vector("list", length = length(.models_or_tests))
+  total_exposure_times <- vector("list", length = length(.models_or_tests))
 
+  for (i in seq_along(.models_or_tests)) {
+    .model <- .models_or_tests[i]
+    death_pseudo_counts[[i]] <- matrix(nrow = n_cuts, ncol = n_thr)
+    total_exposure_times[[i]] <- matrix(nrow = n_cuts, ncol = n_thr)
+    for (j in seq_along(.thresholds)) {
+      .thr <- .thresholds[j]
+      if (all(is.na(.prediction_data))) {
+        .positive_prediction <- 1 >= .thr # for S0, all positives
+      } else {
+        .predictions <- .prediction_data[[.model]]
+        .positive_prediction <- .predictions >= .thr
+      }
+
+      .d <- .surv_data[.positive_prediction, ]
+      stopifnot("no positive prediction not implemented" = nrow(.d) > 0)
+      .d$patient_id <- 1:nrow(.d) # nolint
+      .d_split <- survival::survSplit(
+        Surv(.time, .status) ~ 1, # nolint
+        data = .d,
+        cut = .cutpoints,
+        subset = 1:nrow(.d), # nolint
+        id = "patient_id",
+        start = "tstart",
+        end = "tstop"
+      ) %>%
+        dplyr::group_by(
+          interval_id = paste0(
+            "interval_", as.numeric(factor(tstart)) # nolint
+          )
+        ) %>%
+        dplyr::summarise(
+          total_events = sum(.status),
+          total_exposure_time = sum(tstop - tstart) # nolint
+        )
+      death_pseudo_counts[[i]][, j] <- .d_split$total_events
+      total_exposure_times[[i]][, j] <- .d_split$total_exposure_time
+    }
+  }
+  .output <- list(
+    death_pseudo_counts = death_pseudo_counts,
+    total_exposure_times = total_exposure_times
+  )
+  return(.output)
+}
+
+#' @title Get posterior parameters for survival model
+#'
+#' @param .prediction_data Contains prognostic model predictions
+#' @param .surv_data Contains observed time to event
+#' (`.time` column) and event indicator (`.status` column)
+#' @param .cutpoints Survival cutpoints.
+#' @param .models_or_tests Names for models or tests.
+#' @param .thresholds DCA thresholds.
+#' @param .prior_scaling_factor Prior
+#' alpha = (0.69/median_surv)*.prior_scaling_factor,
+#' Prior beta = .prior_scaling_factor.
+#' @importFrom magrittr %>%
+#' @importFrom survival Surv
+#' @keywords internal
+get_survival_posterior_parameters <- function(.prediction_data, # nolint
+                                              .surv_data,
+                                              .cutpoints,
+                                              .models_or_tests,
+                                              .thresholds,
+                                              .prior_scaling_factor,
+                                              .prior_means = NULL) {
   n_cuts <- length(.cutpoints)
   n_thr <- length(.thresholds)
   initialize_pars <- function() {
     lapply(
       seq_along(.models_or_tests),
       function(...) {
-        matrix(nrow = n_cuts,
-               ncol = n_thr)
+        matrix(
+          nrow = n_cuts,
+          ncol = n_thr
+        )
       }
     )
   }
@@ -233,14 +256,13 @@ get_survival_posterior_parameters <- function(
   all_posterior_betas <- initialize_pars()
 
   for (i in seq_along(.models_or_tests)) {
-
     .model <- .models_or_tests[i]
-    w <- .prior_scaling_factor  # might be updated for some thresholds
+    w <- .prior_scaling_factor # might be updated for some thresholds
     empty_thresholds <- 0
     for (j in seq_along(.thresholds)) {
       .thr <- .thresholds[j]
       if (all(is.na(.prediction_data))) {
-        .positive_prediction <- 1 >= .thr  # for S0, all positives
+        .positive_prediction <- 1 >= .thr # for S0, all positives
       } else {
         .predictions <- .prediction_data[[.model]]
         .positive_prediction <- .predictions >= .thr
@@ -248,10 +270,12 @@ get_survival_posterior_parameters <- function(
 
       .d <- .surv_data[.positive_prediction, ]
 
-      if (is.null(.prior_means)) {  # use median survival for prior mean
+      if (is.null(.prior_means)) { # use median survival for prior mean
         .n_events <- sum(.d$.status == 1L)
         if (.n_events > 0) {
-          .median_surv <- survival:::median.Surv(Surv(.d$.time, .d$.status))$quantile
+          .median_surv <- survival:::median.Surv(
+            Surv(.d$.time, .d$.status)
+          )$quantile
         } else {
           msg <- paste0(
             "Zero events among positive patients for model '",
@@ -274,8 +298,7 @@ get_survival_posterior_parameters <- function(
           .median_surv <- -log(0.5)
         }
 
-        .prior_mean <- -log(0.5)/.median_surv
-
+        .prior_mean <- -log(0.5) / .median_surv
       } else {
         .prior_mean <- .prior_means[j]
       }
@@ -283,12 +306,12 @@ get_survival_posterior_parameters <- function(
       .prior_beta <- w
 
       if (nrow(.d) > 0) {
-        .d$patient_id <- 1:nrow(.d)
+        .d$patient_id <- 1:nrow(.d) # nolint
         .d_split <- survival::survSplit(
-          Surv(.time, .status) ~ 1,
+          Surv(.time, .status) ~ 1, # nolint
           data = .d,
           cut = .cutpoints,
-          subset = 1:nrow(.d),
+          subset = 1:nrow(.d), # nolint
           id = "patient_id",
           start = "tstart",
           end = "tstop"
@@ -296,12 +319,12 @@ get_survival_posterior_parameters <- function(
           # TODO: might want to double check the calculation below
           dplyr::group_by(
             interval_id = paste0(
-              "interval_", as.numeric(factor(tstart))
+              "interval_", as.numeric(factor(tstart)) # nolint
             )
           ) %>%
           dplyr::summarise(
             total_events = sum(.status),
-            total_exposure_time = sum(tstop - tstart)
+            total_exposure_time = sum(tstop - tstart) # nolint
           )
 
         n_empty_intervals <- n_cuts - nrow(.d_split)
@@ -321,13 +344,12 @@ get_survival_posterior_parameters <- function(
           }
         }
 
-        all_posterior_alphas[[i]][ , j] <- .d_split$total_events + .prior_alpha
-        all_posterior_betas[[i]][ , j] <- .d_split$total_exposure_time + .prior_beta
+        all_posterior_alphas[[i]][, j] <- .d_split$total_events + .prior_alpha
+        all_posterior_betas[[i]][, j] <- .d_split$total_exposure_time + .prior_beta # nolint
       } else {
-        all_posterior_alphas[[i]][ , j] <- 0 + .prior_alpha
-        all_posterior_betas[[i]][ , j] <- 0 + .prior_beta
+        all_posterior_alphas[[i]][, j] <- 0 + .prior_alpha
+        all_posterior_betas[[i]][, j] <- 0 + .prior_beta
       }
-
     }
     if (empty_thresholds > 0) {
       msg <- paste0(
@@ -335,7 +357,7 @@ get_survival_posterior_parameters <- function(
         " thresholds with zero events among positive patients for model '",
         .model, "'"
       )
-      message(cli::col_red(msg))
+      message(cli::col_br_blue(msg))
     }
   }
 
@@ -349,8 +371,6 @@ get_survival_posterior_parameters <- function(
     .beta = all_posterior_betas
   )
   return(.posterior_pars)
-
-
 }
 
 
@@ -361,22 +381,23 @@ get_survival_posterior_parameters <- function(
 #' @param .prior_shape1 Shape 1 for beta prior.
 #' @param .prior_shape2 Shape 2 for beta prior.
 #' @keywords internal
-get_positivity_posterior_parameters <- function(
-    .prediction_data,
-    .thresholds,
-    .prior_shape1 = 0.5,
-    .prior_shape2 = 0.5
-) {
-
-  N <- nrow(.prediction_data)
+get_positivity_posterior_parameters <- function(.prediction_data, # nolint
+                                                .thresholds,
+                                                .prior_shape1 = 0.5,
+                                                .prior_shape2 = 0.5) {
+  N <- nrow(.prediction_data) # nolint
   n_models <- ncol(.prediction_data)
   .models_or_tests <- colnames(.prediction_data)
   n_thresholds <- length(.thresholds)
 
-  all_posterior_shape1 <- matrix(nrow = n_models,
-                                 ncol = n_thresholds)
-  all_posterior_shape2 <- matrix(nrow = n_models,
-                                 ncol = n_thresholds)
+  all_posterior_shape1 <- matrix(
+    nrow = n_models,
+    ncol = n_thresholds
+  )
+  all_posterior_shape2 <- matrix(
+    nrow = n_models,
+    ncol = n_thresholds
+  )
 
   for (i in seq_along(.models_or_tests)) {
     .model <- .models_or_tests[i]
@@ -404,7 +425,8 @@ get_positivity_posterior_parameters <- function(
 #' @param .min,.max Minimum and maximum prior mean
 #' @importFrom magrittr %>%
 #' @keywords internal
-get_prior_se_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max = 0.9) {
+get_prior_se_mu <- function(thresholds, shift = 0.45,
+                            slope = 0.025, .min = 0.1, .max = 0.9) {
   x <- plogis(shift + slope * qlogis(1 - thresholds)^3)
   x %>%
     # prior mean cannot be exactly 0 or 1
@@ -419,7 +441,8 @@ get_prior_se_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max =
 #' @param .min,.max Minimum and maximum prior mean
 #' @importFrom magrittr %>%
 #' @keywords internal
-get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max = 0.9) {
+get_prior_sp_mu <- function(thresholds, shift = 0.45,
+                            slope = 0.025, .min = 0.1, .max = 0.9) {
   x <- plogis(shift + slope * qlogis(thresholds)^3)
   x %>%
     # prior mean cannot be exactly 0 or 1
@@ -430,19 +453,18 @@ get_prior_sp_mu <- \(thresholds, shift = 0.45, slope = 0.025, .min = 0.1, .max =
 #' Get threshold-specific prior sample size or strength
 #' @param min_prior_sample_size Minimum prior sample size or strength.
 #' @param max_prior_sample_size Maximum prior sample size or strength.
-#' @param slope_prior_sample_size Rate of change in prior sample size or strength.
+#' @param slope_prior_sample_size Rate of change in
+#' prior sample size or strength.
 #' @param thresholds Decision thresholds
 #' @keywords internal
-get_prior_sample_size <- \(
-  thresholds,
-  min_prior_sample_size = 20,
-  max_prior_sample_size = 100,
-  slope_prior_sample_size = 300
-) {
+get_prior_sample_size <- function(thresholds,
+                                  min_prior_sample_size = 20,
+                                  max_prior_sample_size = 100,
+                                  slope_prior_sample_size = 300) {
   x <- (
-    max_prior_sample_size 
-    - slope_prior_sample_size * thresholds 
-    + slope_prior_sample_size * thresholds^2
+    max_prior_sample_size
+    - slope_prior_sample_size * thresholds
+      + slope_prior_sample_size * thresholds^2
   )
   x %>%
     pmax(min_prior_sample_size) %>%
@@ -452,36 +474,36 @@ get_prior_sample_size <- \(
 #' @title Get priors for Bayesian DCA
 #'
 #' @param thresholds Vector of decision thresholds.
-#' @param shift Scalar controlling height of prior Specificity curve. Only used if `constant=FALSE`.
-#' @param slope Scalar controlling shape of prior Specificity curve. Only used if `constant=FALSE`.
+#' @param shift Scalar controlling height of prior
+#' Specificity curve. Only used if `constant=FALSE`.
+#' @param slope Scalar controlling shape of prior
+#' Specificity curve. Only used if `constant=FALSE`.
 #' @param min_mean_se,min_mean_sp,max_mean_se,max_mean_se Minimum
 #' @param prior_sample_size Prior sample size of strength.
 #' @param min_prior_sample_size Minimum prior sample size or strength.
 #' @param max_prior_sample_size Maximum prior sample size or strength.
-#' @param slope_prior_sample_size Rate of change in prior sample size or strength.
+#' @param slope_prior_sample_size Rate of change in prior
+#' sample size or strength.
 #' and maximum prior mean for sensitivity (se) and specificity (sp).
 #' @importFrom magrittr %>%
 #' @export
-.get_prior_parameters <- function(
-    thresholds,
-    constant = TRUE,
-    n_thresholds = NULL,
-    n_models_or_tests = NULL,
-    prior_p = NULL,
-    prior_se = NULL,
-    prior_sp = NULL,
-    shift = 0.45,
-    slope = 0.025,
-    prior_sample_size = NULL,
-    min_prior_sample_size = 20,
-    max_prior_sample_size = 100,
-    slope_prior_sample_size = 300,
-    min_mean_se = 0.1,
-    max_mean_se = 0.9,
-    min_mean_sp = 0.1,
-    max_mean_sp = 0.9
-) {
-
+.get_prior_parameters <- function(thresholds,
+                                  constant = TRUE,
+                                  n_thresholds = NULL,
+                                  n_models_or_tests = NULL,
+                                  prior_p = NULL,
+                                  prior_se = NULL,
+                                  prior_sp = NULL,
+                                  shift = 0.45,
+                                  slope = 0.025,
+                                  prior_sample_size = NULL,
+                                  min_prior_sample_size = 20,
+                                  max_prior_sample_size = 100,
+                                  slope_prior_sample_size = 300,
+                                  min_mean_se = 0.1,
+                                  max_mean_se = 0.9,
+                                  min_mean_sp = 0.1,
+                                  max_mean_sp = 0.9) {
   if (isTRUE(constant)) {
     .priors <- .get_constant_prior_parameters(
       prior_p = prior_p,
@@ -525,7 +547,6 @@ get_prior_sample_size <- \(
                                            prior_p = NULL,
                                            prior_se = NULL,
                                            prior_sp = NULL) {
-
   if (is.null(prior_p)) prior_p <- c(1, 1)
   if (is.null(prior_se)) prior_se <- c(1, 1)
   if (is.null(prior_sp)) prior_sp <- c(1, 1)
@@ -567,35 +588,33 @@ get_prior_sample_size <- \(
 #' @param prior_sample_size Prior sample size or strength.
 #' @param min_prior_sample_size Minimum prior sample size or strength.
 #' @param max_prior_sample_size Maximum prior sample size or strength.
-#' @param slope_prior_sample_size Rate of change in prior sample size or strength.
+#' @param slope_prior_sample_size Rate of change in prior
+#' sample size or strength.
 #' @importFrom magrittr %>%
 #' @keywords internal
-.get_nonconstant_prior_parameters <- function(
-    thresholds,
-    n_models_or_tests,
-    shift = 0.45,
-    slope = 0.025,
-    prior_sample_size = NULL,
-    min_prior_sample_size = 20,
-    max_prior_sample_size = 100,
-    slope_prior_sample_size = 300,
-    prior_p = NULL,
-    min_mean_se = 0.1,
-    max_mean_se = 0.9,
-    min_mean_sp = 0.1,
-    max_mean_sp = 0.9
-  ) {
-
+.get_nonconstant_prior_parameters <- function(thresholds, # nolint
+                                              n_models_or_tests,
+                                              shift = 0.45,
+                                              slope = 0.025,
+                                              prior_sample_size = NULL,
+                                              min_prior_sample_size = 20,
+                                              max_prior_sample_size = 100,
+                                              slope_prior_sample_size = 300,
+                                              prior_p = NULL,
+                                              min_mean_se = 0.1,
+                                              max_mean_se = 0.9,
+                                              min_mean_sp = 0.1,
+                                              max_mean_sp = 0.9) {
   if (is.null(prior_p)) prior_p <- c(1, 1)
 
   stopifnot(
-    "`shift` must be either a single number of a vector of size `n_models_or_tests`" = length(shift) == 1 | length(shift) == n_models_or_tests
+    "`shift` must be either a single number of a vector of size `n_models_or_tests`" = length(shift) == 1 | length(shift) == n_models_or_tests # nolint
   )
   stopifnot(
-    "`slope` must be either a single number of a vector of size `n_models_or_tests`" = length(slope) == 1 | length(slope) == n_models_or_tests
+    "`slope` must be either a single number of a vector of size `n_models_or_tests`" = length(slope) == 1 | length(slope) == n_models_or_tests # nolint
   )
   stopifnot(
-    "if given, `prior_sample_size` must be either a single number of a vector of size `n_models_or_tests`" = length(prior_sample_size) %in% c(0, 1, n_models_or_tests)
+    "if given, `prior_sample_size` must be either a single number of a vector of size `n_models_or_tests`" = length(prior_sample_size) %in% c(0, 1, n_models_or_tests) # nolint
   )
 
   # if not model-specific, then use the first shift/slope
@@ -645,7 +664,6 @@ get_prior_sample_size <- \(
     .priors[["Se2"]][, m] <- (1 - se_mu) * smpl_size
     .priors[["Sp1"]][, m] <- sp_mu * smpl_size
     .priors[["Sp2"]][, m] <- (1 - sp_mu) * smpl_size
-
   }
 
   return(.priors)

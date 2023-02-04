@@ -9,7 +9,8 @@
 \arguments{
 \item{fit}{A stanfit object.}
 
-\item{model_or_test_names}{Vector of names of models or binary tests under assessment.}
+\item{model_or_test_names}{Vector of names of models
+or binary tests under assessment.}
 }
 \description{
 Get posterior draws from time-to-event DCA stanfit

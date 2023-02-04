@@ -27,9 +27,11 @@
 \arguments{
 \item{thresholds}{Vector of decision thresholds.}
 
-\item{shift}{Scalar controlling height of prior Specificity curve. Only used if \code{constant=FALSE}.}
+\item{shift}{Scalar controlling height of prior
+Specificity curve. Only used if \code{constant=FALSE}.}
 
-\item{slope}{Scalar controlling shape of prior Specificity curve. Only used if \code{constant=FALSE}.}
+\item{slope}{Scalar controlling shape of prior
+Specificity curve. Only used if \code{constant=FALSE}.}
 
 \item{prior_sample_size}{Prior sample size of strength.}
 
@@ -37,7 +39,8 @@
 
 \item{max_prior_sample_size}{Maximum prior sample size or strength.}
 
-\item{slope_prior_sample_size}{Rate of change in prior sample size or strength.
+\item{slope_prior_sample_size}{Rate of change in prior
+sample size or strength.
 and maximum prior mean for sensitivity (se) and specificity (sp).}
 
 \item{min_mean_se, min_mean_sp, max_mean_se, max_mean_se}{Minimum}

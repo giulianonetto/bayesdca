@@ -29,7 +29,8 @@
 
 \item{max_prior_sample_size}{Maximum prior sample size or strength.}
 
-\item{slope_prior_sample_size}{Rate of change in prior sample size or strength.}
+\item{slope_prior_sample_size}{Rate of change in prior
+sample size or strength.}
 
 \item{prior_p, prior_se, prior_sp}{Non-negative shape values for
 Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
