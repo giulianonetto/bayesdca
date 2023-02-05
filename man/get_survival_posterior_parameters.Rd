@@ -11,6 +11,7 @@ get_survival_posterior_parameters(
   .models_or_tests,
   .thresholds,
   .prior_scaling_factor,
+  .prior_only = FALSE,
   .prior_means = NULL
 )
 }
@@ -26,7 +27,9 @@ get_survival_posterior_parameters(
 
 \item{.thresholds}{DCA thresholds.}
 
-\item{.prior_scaling_factor}{Prior
+\item{.prior_scaling_factor}{Prior}
+
+\item{.prior_only}{If TRUE, will sample from prior only.
 alpha = (0.69/median_surv)*.prior_scaling_factor,
 Prior beta = .prior_scaling_factor.}
 }

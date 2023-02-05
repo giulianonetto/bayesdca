@@ -119,7 +119,7 @@
 #' data(dca_survival_data)
 #' fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
 #' plot(fit)
-dca_surv <- function(.data,
+dca_surv <- function(.data, # nolint
                      prediction_time,
                      thresholds = seq(0, 0.5, 0.02),
                      keep_draws = TRUE,
@@ -128,6 +128,7 @@ dca_surv <- function(.data,
                      cutpoints = NULL,
                      prior_scaling_factor = 1 / 3,
                      prior_means = NULL,
+                     prior_only = FALSE,
                      iter = 4000,
                      refresh = 0,
                      ...) {
@@ -136,7 +137,7 @@ dca_surv <- function(.data,
   }
 
   stopifnot(
-    "'outcomes' column must be a Surv object. " = survival::is.Surv(.data[["outcomes"]])
+    "'outcomes' column must be a Surv object. " = survival::is.Surv(.data[["outcomes"]]) # nolint
   )
 
   # avoid thresholds in {0, 1}
@@ -201,7 +202,8 @@ dca_surv <- function(.data,
     .cutpoints = cutpoints,
     .thresholds = thresholds,
     .prior_scaling_factor = prior_scaling_factor,
-    .prior_means = prior_means
+    .prior_means = prior_means,
+    .prior_only = prior_only
   )
   posterior_surv_pars0 <- get_survival_posterior_parameters(
     .prediction_data = NA,
@@ -210,11 +212,13 @@ dca_surv <- function(.data,
     .cutpoints = cutpoints,
     .thresholds = 0,
     .prior_scaling_factor = prior_scaling_factor,
-    .prior_means = prior_means
+    .prior_means = prior_means,
+    .prior_only = prior_only
   )
   posterior_positivity_pars <- get_positivity_posterior_parameters(
     .prediction_data = prediction_data,
-    .thresholds = thresholds
+    .thresholds = thresholds,
+    .prior_only = prior_only
   )
 
   other_models_indices <- lapply(
@@ -285,7 +289,7 @@ dca_surv <- function(.data,
 #' data(dca_survival_data)
 #' fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
 #' plot(fit)
-dca_surv2 <- function(.data,
+dca_surv2 <- function(.data, # nolint
                       prediction_time,
                       thresholds = seq(0, 0.5, 0.02),
                       keep_draws = TRUE,
@@ -367,11 +371,13 @@ dca_surv2 <- function(.data,
     .cutpoints = cutpoints,
     .thresholds = 0,
     .prior_scaling_factor = prior_scaling_factor,
-    .prior_means = prior_means
+    .prior_means = prior_means,
+    .prior_only = prior_only
   )
   posterior_positivity_pars <- get_positivity_posterior_parameters(
     .prediction_data = prediction_data,
-    .thresholds = thresholds
+    .thresholds = thresholds,
+    .prior_only = prior_only
   )
 
   other_models_indices <- lapply(

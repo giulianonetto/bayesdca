@@ -7,7 +7,7 @@
 dca_surv2(
   .data,
   prediction_time,
-  thresholds = seq(0.01, 0.5, 0.01),
+  thresholds = seq(0, 0.5, 0.02),
   keep_draws = TRUE,
   keep_fit = FALSE,
   summary_probs = c(0.025, 0.975),

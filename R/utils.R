@@ -226,6 +226,7 @@ get_death_pseudo_counts <- function(.prediction_data, # nolint
 #' @param .models_or_tests Names for models or tests.
 #' @param .thresholds DCA thresholds.
 #' @param .prior_scaling_factor Prior
+#' @param .prior_only If TRUE, will sample from prior only.
 #' alpha = (0.69/median_surv)*.prior_scaling_factor,
 #' Prior beta = .prior_scaling_factor.
 #' @importFrom magrittr %>%
@@ -237,6 +238,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
                                               .models_or_tests,
                                               .thresholds,
                                               .prior_scaling_factor,
+                                              .prior_only = FALSE,
                                               .prior_means = NULL) {
   n_cuts <- length(.cutpoints)
   n_thr <- length(.thresholds)
@@ -305,7 +307,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
       .prior_alpha <- .prior_mean * w
       .prior_beta <- w
 
-      if (nrow(.d) > 0) {
+      if (nrow(.d) > 0 && isFALSE(.prior_only)) {
         .d$patient_id <- 1:nrow(.d) # nolint
         .d_split <- survival::survSplit(
           Surv(.time, .status) ~ 1, # nolint
@@ -383,8 +385,9 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
 #' @keywords internal
 get_positivity_posterior_parameters <- function(.prediction_data, # nolint
                                                 .thresholds,
-                                                .prior_shape1 = 0.5,
-                                                .prior_shape2 = 0.5) {
+                                                .prior_shape1 = 1,
+                                                .prior_shape2 = 1,
+                                                .prior_only = FALSE) {
   N <- nrow(.prediction_data) # nolint
   n_models <- ncol(.prediction_data)
   .models_or_tests <- colnames(.prediction_data)
@@ -402,12 +405,17 @@ get_positivity_posterior_parameters <- function(.prediction_data, # nolint
   for (i in seq_along(.models_or_tests)) {
     .model <- .models_or_tests[i]
     for (j in seq_along(.thresholds)) {
-      .thr <- .thresholds[j]
-      .predictions <- .prediction_data[[.model]]
-      .positive_prediction <- .predictions >= .thr
-      total_positives <- sum(.positive_prediction)
-      all_posterior_shape1[i, j] <- total_positives + .prior_shape1
-      all_posterior_shape2[i, j] <- N - total_positives + .prior_shape2
+      if (isFALSE(.prior_only)) {
+        .thr <- .thresholds[j]
+        .predictions <- .prediction_data[[.model]]
+        .positive_prediction <- .predictions >= .thr
+        total_positives <- sum(.positive_prediction)
+        all_posterior_shape1[i, j] <- total_positives + .prior_shape1
+        all_posterior_shape2[i, j] <- N - total_positives + .prior_shape2
+      } else {
+        all_posterior_shape1[i, j] <- .prior_shape1
+        all_posterior_shape2[i, j] <- .prior_shape2
+      }
     }
   }
 

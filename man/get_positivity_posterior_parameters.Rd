@@ -7,8 +7,9 @@
 get_positivity_posterior_parameters(
   .prediction_data,
   .thresholds,
-  .prior_shape1 = 0.5,
-  .prior_shape2 = 0.5
+  .prior_shape1 = 1,
+  .prior_shape2 = 1,
+  .prior_only = FALSE
 )
 }
 \arguments{
