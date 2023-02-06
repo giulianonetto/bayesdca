@@ -28,8 +28,8 @@
 #'                                    true_se = 0.9,
 #'                                    true_sp = 0.9)
 #' head(d)
-simulate_diagnostic_test_data <- function(B = 100,
-                                          N = 500,
+simulate_diagnostic_test_data <- function(B = 100,  #nolint
+                                          N = 500,  #nolint
                                           true_p = 0.2,
                                           true_se = 0.9,
                                           true_sp = 0.9,
@@ -68,15 +68,15 @@ simulate_prognostic_model_data <- function(N = 200,
   sdef <- defSurv(sdef, varname = "censorTime", scale = 80, shape = 1)
 
   # Baseline data definitions
-  .dtSurv <- genData(N, def) %>%
+  .dtSurv <- genData(N, def) %>%  #nolint
     genSurv(
       sdef, timeName = "obsTime", censorName = "censorTime",
       eventName = "status", keepEvents = TRUE
     ) %>%
     dplyr::mutate(
-      survTime = ifelse(survTime > 0, survTime, 0.001),
-      censorTime = ifelse(censorTime > 0, censorTime, 0.001),
-      obsTime = ifelse(status > 0, survTime, censorTime)
+      survTime = ifelse(survTime > 0, survTime, 0.001),  #nolint
+      censorTime = ifelse(censorTime > 0, censorTime, 0.001),  #nolint
+      obsTime = ifelse(status > 0, survTime, censorTime)  #nolint
     )
 
   return(.dtSurv)

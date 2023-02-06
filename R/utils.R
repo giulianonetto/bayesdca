@@ -294,26 +294,26 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
       if (is.null(.prior_means)) { # use .prior_anchor for prior mean
         .n_events <- sum(.d$.status == 1L)
         if (.n_events > 0) {
+          max_observed_time <- max(.d$.time)
+          if (.prediction_time > max_observed_time) {
+            msg <- paste0(
+              "Prediction time (",
+              .prediction_time,
+              ") is greater than the largest observed survival time (",
+              max_observed_time,
+              ") for threshold ", .thr,
+              ".\n Observed median survival will be used as prior anchor."
+            )
+            message(cli::col_br_cyan(msg))
+            .prior_anchor <- "median"
+          }
+
           if (.prior_anchor == "median") {
             .median_surv <- survival:::median.Surv(
               Surv(.d$.time, .d$.status)
             )$quantile
             .prior_mean <- -log(0.5) / .median_surv
           } else { # prior anchor = "prediction_time"
-            max_observed_time <- max(.d$.time)
-            if (.prediction_time > max_observed_time) {
-              msg <- paste0(
-                "Prediction time (",
-                .prediction_time,
-                ") is greater than the largest observed time (",
-                max_observed_time,
-                ") for threshold ", .thr,
-                ".\n Either use decision thresholds lower than ",
-                .thr,
-                " or set .prior_anchor = 'median'."
-              )
-              stop(msg)
-            }
             obs_surv <- survival:::summary.survfit(
               survival:::survfit(Surv(.d$.time, .d$.status) ~ 1),
               time = .prediction_time,
@@ -327,7 +327,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
             .model, "' and threshold ", .thr,
             ". Using median survival as prior anchor."
           )
-          message(cli::col_red(msg))
+          message(cli::col_br_red(msg))
           empty_thresholds <- empty_thresholds + 1
           # positive patients with previous threshold
           thr_ix <- j - empty_thresholds
@@ -341,7 +341,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
 
         if (is.na(.prior_mean)) {
           msg <- "Failed to compute prior mean. Setting prior mean to 1."
-          message(cli::col_red(msg))
+          message(cli::col_br_red(msg))
           .prior_mean <- 1
         }
       } else {
@@ -378,7 +378,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
             "Got ", n_empty_intervals, " empty interval (s) for threshold ",
             .thresholds[j], " in model '", .model, "'"
           )
-          message(cli::col_cyan(msg))
+          message(cli::col_br_cyan(msg))
           for (k in 1:n_empty_intervals) {
             .d_split <- .d_split %>%
               dplyr::add_row(
