@@ -30,15 +30,31 @@ min_events_per_interval <- function() {
 #' @title Get cutpoints for survival estimation
 #' @param .prediction_time time point at which event is predicted to happen
 #' @param .event_times times of observed events (non-censored)
+#' @param .base_cutpoints vector of cutpoints to start with
 #' @keywords internal
-get_cutpoints <- function(.prediction_time, .event_times) {
-  .cuts <- .prediction_time * c(
-    0.00, 0.25, 0.5, 0.75, 1
+get_cutpoints <- function(.prediction_time,
+                          .event_times,
+                          .base_cutpoints = c(0.25, 0.5, 0.75, 1)) {
+  stopifnot("All event times must be positive." = all(.event_times > 0))
+  min_events <- min_events_per_interval()
+  .base_cutpoints <- .base_cutpoints[.base_cutpoints > 0]
+  events_above_cutpoint <- sapply(
+    .base_cutpoints, function(cutpoint) sum(.event_times > cutpoint)
   )
+  .base_cutpoints <- .base_cutpoints[events_above_cutpoint >= min_events]
+  # only keep cutpoints that correspond to
+  # intervals with at least `min_events` events
+  .previous <- new_cutpoints <- 0
+  for (i in seq_along(.base_cutpoints)) {
+    .current <- .base_cutpoints[i]
+    events <- sum(.event_times > .previous & .event_times <= .current)
+    if (events >= min_events) {
+      new_cutpoints <- c(new_cutpoints, .current)
+      .previous <- .current
+    }
+  }
 
-  events_per_interval <- get_events_per_interval(.cuts, .event_times)
-
-  return(.cuts[events_per_interval >= min_events_per_interval()])
+  return(new_cutpoints)
 }
 
 #' @title Get events per intervals defined by set of cutpoints

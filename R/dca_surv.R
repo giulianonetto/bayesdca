@@ -125,7 +125,7 @@ dca_surv <- function(.data, # nolint
                      keep_draws = TRUE,
                      keep_fit = FALSE,
                      summary_probs = c(0.025, 0.975),
-                     cutpoints = NULL,
+                     cutpoints = c(0.25, 0.5, 0.75, 1),
                      prior_scaling_factor = 1 / 3,
                      prior_means = NULL,
                      prior_only = FALSE,
@@ -159,16 +159,14 @@ dca_surv <- function(.data, # nolint
   event_times <- surv_data$.time[surv_data$.status > 0]
 
   # preprocess cutpoints
-  if (is.null(cutpoints)) {
-    cutpoints <- get_cutpoints(prediction_time, event_times)
-  }
+  cutpoints <- get_cutpoints(
+    .prediction_time = prediction_time,
+    .event_times = event_times,
+    .base_cutpoints = cutpoints
+  )
 
   # make sure zero is included and cutpoints are correctly ordered
   cutpoints <- sort(unique(c(0, cutpoints)))
-  # stopifnot(
-  #   "prediction_time must be at most max(cutpoints)" = prediction_time <= max(cutpoints)
-  # )
-
 
   events_per_interval <- get_events_per_interval(cutpoints, event_times)
   epi_text <- paste(
@@ -301,7 +299,7 @@ dca_surv2 <- function(.data, # nolint
                       keep_draws = TRUE,
                       keep_fit = FALSE,
                       summary_probs = c(0.025, 0.975),
-                      cutpoints = NULL,
+                      cutpoints = c(0.25, 0.5, 0.75, 1),
                       prior_scaling_factor = 1 / 50,
                       prior_means = NULL,
                       prior_only = FALSE,
@@ -333,9 +331,11 @@ dca_surv2 <- function(.data, # nolint
   event_times <- surv_data$.time[surv_data$.status > 0]
 
   # preprocess cutpoints
-  if (is.null(cutpoints)) {
-    cutpoints <- get_cutpoints(prediction_time, event_times)
-  }
+  cutpoints <- get_cutpoints(
+    .prediction_time = prediction_time,
+    .event_times = event_times,
+    .base_cutpoints = cutpoints
+  )
 
   # make sure zero is included and cutpoints are correctly ordered
   cutpoints <- sort(unique(c(0, cutpoints)))
