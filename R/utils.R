@@ -37,7 +37,7 @@ get_cutpoints <- function(.prediction_time,
                           .base_cutpoints = c(0.25, 0.5, 0.75, 1)) {
   stopifnot("All event times must be positive." = all(.event_times > 0))
   min_events <- min_events_per_interval()
-  .base_cutpoints <- .base_cutpoints[.base_cutpoints > 0]
+  .base_cutpoints <- .base_cutpoints[.base_cutpoints > 0] * .prediction_time
   events_above_cutpoint <- sapply(
     .base_cutpoints, function(cutpoint) sum(.event_times > cutpoint)
   )
@@ -62,7 +62,7 @@ get_cutpoints <- function(.prediction_time,
 #' @param .event_times times of observed events (non-censored)
 #' @keywords internal
 get_events_per_interval <- function(.cutpoints, .event_times) {
-  table(cut(.event_times, c(.cutpoints, Inf), include.lowest = TRUE))
+  table(cut(.event_times, c(.cutpoints, Inf)))
 }
 
 
