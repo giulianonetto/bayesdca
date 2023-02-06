@@ -15,6 +15,7 @@ dca_surv(
   prior_scaling_factor = 1/3,
   prior_means = NULL,
   prior_only = FALSE,
+  prior_anchor = c("median", "prediction_time"),
   iter = 4000,
   refresh = 0,
   ...

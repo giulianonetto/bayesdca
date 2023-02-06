@@ -129,9 +129,11 @@ dca_surv <- function(.data, # nolint
                      prior_scaling_factor = 1 / 3,
                      prior_means = NULL,
                      prior_only = FALSE,
+                     prior_anchor = c("median", "prediction_time"),
                      iter = 4000,
                      refresh = 0,
                      ...) {
+  prior_anchor <- match.arg(prior_anchor)
   if (colnames(.data)[1] != "outcomes") {
     stop("Missing 'outcomes' column as the first column in input .data")
   }
@@ -188,7 +190,7 @@ dca_surv <- function(.data, # nolint
     epi_text,
     collapse = "\n"
   )
-  message(msg)
+  message(cli::col_br_magenta(msg))
 
   n_models_or_tests <- ncol(prediction_data)
   n_thresholds <- length(thresholds)
@@ -202,7 +204,9 @@ dca_surv <- function(.data, # nolint
     .cutpoints = cutpoints,
     .thresholds = thresholds,
     .prior_scaling_factor = prior_scaling_factor,
+    .prediction_time = prediction_time,
     .prior_means = prior_means,
+    .prior_anchor = prior_anchor,
     .prior_only = prior_only
   )
   posterior_surv_pars0 <- get_survival_posterior_parameters(
@@ -212,7 +216,9 @@ dca_surv <- function(.data, # nolint
     .cutpoints = cutpoints,
     .thresholds = 0,
     .prior_scaling_factor = prior_scaling_factor,
+    .prediction_time = prediction_time,
     .prior_means = prior_means,
+    .prior_anchor = prior_anchor,
     .prior_only = prior_only
   )
   posterior_positivity_pars <- get_positivity_posterior_parameters(
@@ -354,7 +360,7 @@ dca_surv2 <- function(.data, # nolint
     epi_text,
     collapse = "\n"
   )
-  message(msg)
+  message(cli::col_br_magenta(msg))
 
   n_models_or_tests <- ncol(prediction_data)
   n_thresholds <- length(thresholds)
@@ -371,6 +377,8 @@ dca_surv2 <- function(.data, # nolint
     .cutpoints = cutpoints,
     .thresholds = 0,
     .prior_scaling_factor = prior_scaling_factor,
+    .prediction_time = prediction_time,
+    .prior_anchor = "median",
     .prior_means = prior_means,
     .prior_only = prior_only
   )

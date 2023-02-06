@@ -11,6 +11,8 @@ get_survival_posterior_parameters(
   .models_or_tests,
   .thresholds,
   .prior_scaling_factor,
+  .prediction_time,
+  .prior_anchor = c("median", "prediction_time"),
   .prior_only = FALSE,
   .prior_means = NULL
 )

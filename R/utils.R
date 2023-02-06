@@ -238,8 +238,11 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
                                               .models_or_tests,
                                               .thresholds,
                                               .prior_scaling_factor,
+                                              .prediction_time,
+                                              .prior_anchor = c("median", "prediction_time"), # nolint
                                               .prior_only = FALSE,
                                               .prior_means = NULL) {
+  .prior_anchor <- match.arg(.prior_anchor)
   n_cuts <- length(.cutpoints)
   n_thr <- length(.thresholds)
   initialize_pars <- function() {
@@ -259,7 +262,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
 
   for (i in seq_along(.models_or_tests)) {
     .model <- .models_or_tests[i]
-    w <- .prior_scaling_factor # might be updated for some thresholds
+    w_inv <- .prior_scaling_factor # might be updated for some thresholds
     empty_thresholds <- 0
     for (j in seq_along(.thresholds)) {
       .thr <- .thresholds[j]
@@ -272,16 +275,41 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
 
       .d <- .surv_data[.positive_prediction, ]
 
-      if (is.null(.prior_means)) { # use median survival for prior mean
+      if (is.null(.prior_means)) { # use .prior_anchor for prior mean
         .n_events <- sum(.d$.status == 1L)
         if (.n_events > 0) {
-          .median_surv <- survival:::median.Surv(
-            Surv(.d$.time, .d$.status)
-          )$quantile
+          if (.prior_anchor == "median") {
+            .median_surv <- survival:::median.Surv(
+              Surv(.d$.time, .d$.status)
+            )$quantile
+            .prior_mean <- -log(0.5) / .median_surv
+          } else { # prior anchor = "prediction_time"
+            max_observed_time <- max(.d$.time)
+            if (.prediction_time > max_observed_time) {
+              msg <- paste0(
+                "Prediction time (",
+                .prediction_time,
+                ") is greater than the largest observed time (",
+                max_observed_time,
+                ") for threshold ", .thr,
+                ".\n Either use decision thresholds lower than ",
+                .thr,
+                " or set .prior_anchor = 'median'."
+              )
+              stop(msg)
+            }
+            obs_surv <- survival:::summary.survfit(
+              survival:::survfit(Surv(.d$.time, .d$.status) ~ 1),
+              time = .prediction_time,
+              extend = TRUE
+            )[["surv"]]
+            .prior_mean <- -log(obs_surv) / .prediction_time
+          }
         } else {
           msg <- paste0(
             "Zero events among positive patients for model '",
-            .model, "' and threshold ", .thr
+            .model, "' and threshold ", .thr,
+            ". Using median survival as prior anchor."
           )
           message(cli::col_red(msg))
           empty_thresholds <- empty_thresholds + 1
@@ -291,21 +319,20 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
           .median_surv <- survival:::median.Surv(
             Surv(.d_previous$.time, .d_previous$.status)
           )$quantile
-          w <- w * 2
+          .prior_mean <- -log(0.5) / .median_surv
+          w_inv <- w_inv / 2
         }
 
-        if (is.na(.median_surv)) {
-          msg <- "Failed to compute median survival. Setting prior mean to 1."
+        if (is.na(.prior_mean)) {
+          msg <- "Failed to compute prior mean. Setting prior mean to 1."
           message(cli::col_red(msg))
-          .median_surv <- -log(0.5)
+          .prior_mean <- 1
         }
-
-        .prior_mean <- -log(0.5) / .median_surv
       } else {
         .prior_mean <- .prior_means[j]
       }
-      .prior_alpha <- .prior_mean * w
-      .prior_beta <- w
+      .prior_alpha <- .prior_mean * w_inv
+      .prior_beta <- w_inv
 
       if (nrow(.d) > 0 && isFALSE(.prior_only)) {
         .d$patient_id <- 1:nrow(.d) # nolint
@@ -359,7 +386,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
         " thresholds with zero events among positive patients for model '",
         .model, "'"
       )
-      message(cli::col_br_blue(msg))
+      message(cli::col_br_red(msg))
     }
   }
 
