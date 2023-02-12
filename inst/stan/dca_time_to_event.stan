@@ -26,18 +26,6 @@ parameters {
   vector<lower=0>[n_intervals] lambda0;
 }
 
-transformed parameters {
-  vector<lower=0, upper=1>[n_thr] St_positives[n_models];
-  real<lower=0, upper=1> St_marginal;
-
-  for (model_j in 1:n_models) {
-    St_positives[model_j] = exp(-(time_exposed * lambda[model_j]))'; // S(t) = exp(-H(t)), matrix * vector product
-  }
-
-  St_marginal = exp(-(time_exposed*lambda0))';
-
-}
-
 model {
   // one lambda parameter for each interval
   // computed using analytical posterior distribution
@@ -54,7 +42,9 @@ model {
 }
 
 generated quantities {
-
+  // Survival estimates
+  vector<lower=0, upper=1>[n_thr] St_positives[n_models];
+  real<lower=0, upper=1> St_marginal;
   // Treat all (same for all models)
   vector[n_thr] treat_all;
   // Record higher net benefit fot each threshold
@@ -67,11 +57,13 @@ generated quantities {
   // for each threshold, each model
   matrix<lower=0, upper = 1>[n_thr, n_models] prob_better_than_soc;
   // Treat all
+  St_marginal = exp(-(time_exposed*lambda0))';
   treat_all = (1-St_marginal) - St_marginal*odds_thrs; // (1 - St_marginal)*1 - St_marginal*1*odds(thr)
 
   for (model_j in 1:n_models) {
     // NB for model j, all thresholds
-      net_benefit[, model_j] = (1-St_positives[model_j]).*positivity[model_j] - St_positives[model_j].*positivity[model_j].*odds_thrs;
+    St_positives[model_j] = exp(-(time_exposed * lambda[model_j]))';
+    net_benefit[, model_j] = (1-St_positives[model_j]).*positivity[model_j] - St_positives[model_j].*positivity[model_j].*odds_thrs;
   }
 
   for (thr_i in 1:n_thr) {

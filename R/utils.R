@@ -21,12 +21,6 @@ evpi <- function(thresholds, ...) {
   return(.evpi)
 }
 
-#' @title Minimal events per interval
-#' @keywords internal
-min_events_per_interval <- function() {
-  return(5)
-}
-
 #' @title Get cutpoints for survival estimation
 #' @param .prediction_time time point at which event is predicted to happen
 #' @param .event_times times of observed events (non-censored)
@@ -34,21 +28,27 @@ min_events_per_interval <- function() {
 #' @keywords internal
 get_cutpoints <- function(.prediction_time,
                           .event_times,
-                          .base_cutpoints = c(0.25, 0.5, 0.75, 1)) {
+                          .min_events = 10,
+                          .base_cutpoints = NULL) {
   stopifnot("All event times must be positive." = all(.event_times > 0))
-  min_events <- min_events_per_interval()
-  .base_cutpoints <- .base_cutpoints[.base_cutpoints > 0] * .prediction_time
+  if (is.null(.base_cutpoints)) {
+    .base_cutpoints <- seq(
+      0.1, 1,
+      length = 10
+    ) * .prediction_time
+  }
+  .base_cutpoints <- .base_cutpoints[.base_cutpoints > 0]
   events_above_cutpoint <- sapply(
     .base_cutpoints, function(cutpoint) sum(.event_times > cutpoint)
   )
-  .base_cutpoints <- .base_cutpoints[events_above_cutpoint >= min_events]
+  .base_cutpoints <- .base_cutpoints[events_above_cutpoint >= .min_events]
   # only keep cutpoints that correspond to
-  # intervals with at least `min_events` events
+  # intervals with at least `.min_events` events
   .previous <- new_cutpoints <- 0
   for (i in seq_along(.base_cutpoints)) {
     .current <- .base_cutpoints[i]
     events <- sum(.event_times > .previous & .event_times <= .current)
-    if (events >= min_events) {
+    if (events >= .min_events) {
       new_cutpoints <- c(new_cutpoints, .current)
       .previous <- .current
     }
@@ -255,6 +255,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
                                               .thresholds,
                                               .prior_scaling_factor,
                                               .prediction_time,
+                                              .keep_prior = FALSE,
                                               .prior_anchor = c("median", "prediction_time"), # nolint
                                               .prior_only = FALSE,
                                               .prior_means = NULL) {
@@ -275,6 +276,9 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
 
   all_posterior_alphas <- initialize_pars()
   all_posterior_betas <- initialize_pars()
+  all_prior_alphas <- initialize_pars()
+  all_prior_betas <- initialize_pars()
+  all_prior_means <- initialize_pars()
 
   for (i in seq_along(.models_or_tests)) {
     .model <- .models_or_tests[i]
@@ -395,6 +399,11 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
         all_posterior_alphas[[i]][, j] <- 0 + .prior_alpha
         all_posterior_betas[[i]][, j] <- 0 + .prior_beta
       }
+      if (isTRUE(.keep_prior)) {
+        all_prior_alphas[[i]][, j] <- .prior_alpha
+        all_prior_betas[[i]][, j] <- .prior_beta
+        all_prior_means[[i]][, j] <- .prior_mean
+      }
     }
     if (empty_thresholds > 0) {
       msg <- paste0(
@@ -415,6 +424,13 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
     .alpha = all_posterior_alphas,
     .beta = all_posterior_betas
   )
+  if (isTRUE(.keep_prior)) {
+    .posterior_pars[["priors"]] <- list(
+      .alpha = all_prior_alphas,
+      .beta = all_prior_betas,
+      .mean = all_prior_means
+    )
+  }
   return(.posterior_pars)
 }
 

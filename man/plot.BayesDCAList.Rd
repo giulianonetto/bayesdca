@@ -17,7 +17,11 @@
 \arguments{
 \item{obj}{BayesDCAList object}
 
-\item{models_or_tests}{Character vector with models or tests to compare. If null, compares either first two in \code{obj$model_or_test_names} or the first one against Treat all/none (if only one available).}
+\item{models_or_tests}{Character vector with
+models or tests to compare. If null, compares
+either first two in \code{obj$model_or_test_names}
+or the first one against Treat all/none
+(if only one available).}
 
 \item{colors}{Named vector with color for each model or test. If provided
 for a subset of models or tests, only that subset will be plotted.}

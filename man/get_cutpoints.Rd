@@ -4,12 +4,19 @@
 \alias{get_cutpoints}
 \title{Get cutpoints for survival estimation}
 \usage{
-get_cutpoints(.prediction_time, .event_times)
+get_cutpoints(
+  .prediction_time,
+  .event_times,
+  .min_events = 10,
+  .base_cutpoints = NULL
+)
 }
 \arguments{
 \item{.prediction_time}{time point at which event is predicted to happen}
 
 \item{.event_times}{times of observed events (non-censored)}
+
+\item{.base_cutpoints}{vector of cutpoints to start with}
 }
 \description{
 Get cutpoints for survival estimation
