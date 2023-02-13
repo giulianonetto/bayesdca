@@ -296,7 +296,6 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
           start = "tstart",
           end = "tstop"
         ) %>%
-          # TODO: might want to double check the calculation below
           dplyr::group_by(
             interval_id = tstart # nolint
           ) %>%
@@ -312,10 +311,10 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
             .thresholds[j], " in model '", .model, "'"
           )
           message(cli::col_br_cyan(msg))
-          for (k in 1:n_empty_intervals) {
+          for (k in seq_len(n_empty_intervals)) {
             .d_split <- .d_split %>%
               dplyr::add_row(
-                interval_id = paste0("interval_", nrow(.d_split) + k),
+                interval_id = .cutpoints[nrow(.d_split) + k],
                 total_events = 0,
                 total_exposure_time = 0
               )
