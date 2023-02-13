@@ -83,29 +83,27 @@ model {
 }
 
 generated quantities {
-  real<lower=0> sigma[n_models, n_thr];
-  real<lower=0> sigma_marginal;
-
   real<lower=0, upper=1> St_marginal;
+  real<lower=0, upper=1> St_positives[n_models, n_thr];
   // Treat all (same for all models)
-  vector[n_thr] treat_all;
+  vector<upper=1>[n_thr] treat_all;
   // Record higher net benefit fot each threshold
   matrix[n_thr, n_models] highest_nb_other_than_model_j;
   // Net benefir calculation for each threshold, each model
-  matrix[n_thr, n_models] net_benefit;
+  matrix<upper=1>[n_thr, n_models] net_benefit;
   // Delta NB calculation (against treat all/none) for each threshold, each model
   matrix[n_thr, n_models] delta;
   // Probability of being useful
   // for each threshold, each model
-  matrix<lower=0, upper = 1>[n_thr, n_models] prob_better_than_soc;
+  matrix<lower=0, upper=1>[n_thr, n_models] prob_better_than_soc;
   // Treat all
   St_marginal = exp((-1) * ( prediction_time / exp((-1) * (mu_marginal / alpha_marginal) ) )^alpha_marginal);
   treat_all = (1-St_marginal) * 1 - St_marginal * 1 * odds_thrs;
 
   for (model_j in 1:n_models) {
     for (thr_m in 1:n_thr) {
-        real surv = exp( (-1) * (( prediction_time / exp( (-1) * mu[model_j, thr_m] / alpha[model_j, thr_m] ) )^alpha[model_j, thr_m]) );  // survival at prediction time
-        net_benefit[thr_m, model_j] = ((1 - surv) * positivity[model_j, thr_m]) - ((surv * positivity[model_j, thr_m]) * odds_thrs[thr_m]);
+        St_positives[model_j, thr_m] = exp( (-1) * ( ( prediction_time / exp( (-1) * (mu[model_j, thr_m] / alpha[model_j, thr_m]) ) )^alpha[model_j, thr_m] ) );  // survival at prediction time
+        net_benefit[thr_m, model_j] = ((1 - St_positives[model_j, thr_m]) * positivity[model_j, thr_m]) - ((St_positives[model_j, thr_m] * positivity[model_j, thr_m]) * odds_thrs[thr_m]);
     }
   }
 
