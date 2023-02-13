@@ -13,7 +13,7 @@ get_survival_posterior_parameters(
   .prior_scaling_factor,
   .prediction_time,
   .keep_prior = FALSE,
-  .prior_anchor = c("median", "prediction_time"),
+  .prior_anchor = c("prediction_time", "median"),
   .prior_only = FALSE,
   .prior_means = NULL
 )

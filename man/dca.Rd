@@ -60,18 +60,24 @@ If FALSE, the prior will be threshold and, potentially, model/test-specific.}
 and maximum prior mean for sensitivity and specificity.
 Only used if \code{constant_prior = FALSE}.}
 
-\item{summary_probs}{Probabilities used to compute credible intervals (defaults to a 95\% Cr.I.).}
+\item{summary_probs}{Probabilities used to compute credible
+intervals (defaults to a 95\% Cr.I.).}
 
-\item{external_prevalence_data}{Vector with two positive integers giving number of diseased and
-non-diseased individuals, respectively, from external data (e.g., if analyzing nested case-control data,
-this is the number of cases and non-cases in the source population).}
+\item{external_prevalence_data}{Vector with two positive
+integers giving number of diseased and
+non-diseased individuals, respectively, from external data
+(e.g., if analyzing nested case-control data,
+this is the number of cases and non-cases in the source
+population).}
 
 \item{prior_only}{If set to TRUE, will produce prior DCA.}
 
-\item{refresh}{Control verbosity of \code{rstan::sampling} (check its help
+\item{refresh}{Control verbosity of \code{rstan::sampling}
+(check its help
 page for details).}
 
-\item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter, chains).}
+\item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter,
+chains).}
 }
 \value{
 An object of class \code{BayesDCAList}

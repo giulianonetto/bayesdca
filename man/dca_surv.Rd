@@ -2,12 +2,13 @@
 % Please edit documentation in R/dca_surv.R
 \name{dca_surv}
 \alias{dca_surv}
-\title{Bayesian Decision Curve Analysis for Predictive Models and Binary tests}
+\title{Bayesian Decision Curve Analysis for
+Survival outcomes}
 \usage{
 dca_surv(
   .data,
   prediction_time,
-  thresholds = seq(0, 0.5, 0.02),
+  thresholds = seq(0, 0.5, length = 51),
   keep_draws = TRUE,
   keep_fit = FALSE,
   summary_probs = c(0.025, 0.975),
@@ -18,7 +19,7 @@ dca_surv(
   prior_only = FALSE,
   prior_anchor = c("prediction_time", "median"),
   keep_prior = FALSE,
-  iter = 4000,
+  iter = 2000,
   refresh = 0,
   ...
 )
@@ -27,7 +28,8 @@ dca_surv(
 An object of class \code{BayesDCASurv}
 }
 \description{
-Bayesian Decision Curve Analysis for Predictive Models and Binary tests
+Bayesian Decision Curve Analysis for
+Survival outcomes
 }
 \examples{
 data(dca_survival_data)

@@ -2,7 +2,8 @@
 % Please edit documentation in R/dca.R
 \name{.dca_stan_list}
 \alias{.dca_stan_list}
-\title{Fit Bayesian Decision Curve Analysis using Stan for list of models or binary tests}
+\title{Fit Bayesian Decision Curve Analysis using
+Stan for list of models or binary tests}
 \usage{
 .dca_stan_list(
   n_thr,
@@ -32,29 +33,41 @@
 
 \item{N}{Sample size (vector of integers of length \code{n_thr}).}
 
-\item{d}{Diseased: number of diseased persons or events (vector of integers of length \code{n_thr}).}
+\item{d}{Diseased: number of diseased persons or
+events (vector of integers of length \code{n_thr}).}
 
 \item{tp}{True Positives: number of diseased persons correctly
-identified as such by the diagnostic test of prediction model (matrix of integers of size \code{n_thr} by \code{n_models_or_tests}).}
+identified as such by the diagnostic test of prediction
+model (matrix of integers of size \code{n_thr} by \code{n_models_or_tests}).}
 
 \item{tn}{True Negatives: number of diseased persons correctly
-identified as such by the diagnostic test of prediction model (matrix of integers of size \code{n_thr} by \code{n_models_or_tests}).}
+identified as such by the diagnostic test of prediction
+model (matrix of integers of size \code{n_thr} by
+\code{n_models_or_tests}).}
 
 \item{thresholds}{Numeric vector with probability thresholds with which
 the net benefit should be computed (default is \code{seq(0.01, 0.5, 0.01)}).}
 
-\item{N_ext, d_ext}{External sample size and number of diseased individuals (or cases), respectively, used to adjust prevalence.}
+\item{N_ext, d_ext}{External sample size and number of
+diseased individuals (or cases), respectively, used to
+adjust prevalence.}
 
-\item{refresh}{Control verbosity of \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.}
+\item{refresh}{Control verbosity of
+\href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.}
 
-\item{...}{Arguments passed to \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains).}
+\item{...}{Arguments passed to
+\href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains).}
 
-\item{prior_p, prior_se, prior_sp}{Prior parameters for prevalence, sensitivity, and specificity (numeric matrices of size \code{n_thr} by \code{n_models_or_tests}).}
+\item{prior_p, prior_se, prior_sp}{Prior parameters for
+prevalence, sensitivity, and specificity (numeric matrices
+of size \code{n_thr} by \code{n_models_or_tests}).}
 }
 \value{
-An object of class \href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} returned by \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains)
+An object of class
+\href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} returned by \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains)
 }
 \description{
-Fit Bayesian Decision Curve Analysis using Stan for list of models or binary tests
+Fit Bayesian Decision Curve Analysis using
+Stan for list of models or binary tests
 }
 \keyword{internal}

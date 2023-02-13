@@ -2,7 +2,8 @@
 % Please edit documentation in R/dca_surv.R
 \name{.dca_stan_surv}
 \alias{.dca_stan_surv}
-\title{Fit Bayesian Decision Curve Analysis using Stan for survival outcomes}
+\title{Fit Bayesian Decision Curve Analysis
+using Stan for survival outcomes}
 \usage{
 .dca_stan_surv(
   n_thr,
@@ -31,6 +32,7 @@
 An object of class \href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} returned by \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains)
 }
 \description{
-Fit Bayesian Decision Curve Analysis using Stan for survival outcomes
+Fit Bayesian Decision Curve Analysis
+using Stan for survival outcomes
 }
 \keyword{internal}

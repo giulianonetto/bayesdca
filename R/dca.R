@@ -1,20 +1,32 @@
-#' Fit Bayesian Decision Curve Analysis using Stan for list of models or binary tests
+#' Fit Bayesian Decision Curve Analysis using
+#' Stan for list of models or binary tests
 #'
 #' @param n_thr Number of thresholds (int.).
 #' @param n_models_or_tests Number of models or binary tests (int.).
 #' @param N Sample size (vector of integers of length `n_thr`).
-#' @param d Diseased: number of diseased persons or events (vector of integers of length `n_thr`).
+#' @param d Diseased: number of diseased persons or
+#' events (vector of integers of length `n_thr`).
 #' @param tp True Positives: number of diseased persons correctly
-#' identified as such by the diagnostic test of prediction model (matrix of integers of size `n_thr` by `n_models_or_tests`).
+#' identified as such by the diagnostic test of prediction
+#' model (matrix of integers of size `n_thr` by `n_models_or_tests`).
 #' @param tn True Negatives: number of diseased persons correctly
-#' identified as such by the diagnostic test of prediction model (matrix of integers of size `n_thr` by `n_models_or_tests`).
+#' identified as such by the diagnostic test of prediction
+#' model (matrix of integers of size `n_thr` by
+#' `n_models_or_tests`).
 #' @param thresholds Numeric vector with probability thresholds with which
 #' the net benefit should be computed (default is `seq(0.01, 0.5, 0.01)`).
-#' @param N_ext,d_ext External sample size and number of diseased individuals (or cases), respectively, used to adjust prevalence.
-#' @param prior_p,prior_se,prior_sp Prior parameters for prevalence, sensitivity, and specificity (numeric matrices of size `n_thr` by `n_models_or_tests`).
-#' @param refresh Control verbosity of [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).
-#' @param ... Arguments passed to [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).
-#' @return An object of class [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)
+#' @param N_ext,d_ext External sample size and number of
+#' diseased individuals (or cases), respectively, used to
+#' adjust prevalence.
+#' @param prior_p,prior_se,prior_sp Prior parameters for
+#' prevalence, sensitivity, and specificity (numeric matrices
+#' of size `n_thr` by `n_models_or_tests`).
+#' @param refresh Control verbosity of
+#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).
+#' @param ... Arguments passed to
+#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).
+#' @return An object of class
+#' [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)
 #' @keywords internal
 .dca_stan_list <- function(n_thr,
                            n_models_or_tests,
@@ -30,8 +42,7 @@
                            d_ext,
                            other_models_indices,
                            refresh = 0, ...) {
-
-  thresholds <- pmin(thresholds, 0.999)  # odds(1) = Inf
+  thresholds <- pmin(thresholds, 0.999) # odds(1) = Inf
 
   standata <- list(
     n_thr = n_thr,
@@ -53,8 +64,10 @@
   )
 
   .model <- stanmodels$dca_list_model
-  stanfit <- rstan::sampling(.model, data = standata,
-                             refresh = refresh, ...)
+  stanfit <- rstan::sampling(.model,
+    data = standata,
+    refresh = refresh, ...
+  )
   return(stanfit)
 }
 
@@ -92,13 +105,19 @@
 #' @param min_prior_mean,max_prior_mean Minimum
 #' and maximum prior mean for sensitivity and specificity.
 #' Only used if `constant_prior = FALSE`.
-#' @param summary_probs Probabilities used to compute credible intervals (defaults to a 95% Cr.I.).
-#' @param external_prevalence_data Vector with two positive integers giving number of diseased and
-#' non-diseased individuals, respectively, from external data (e.g., if analyzing nested case-control data,
-#' this is the number of cases and non-cases in the source population).
-#' @param refresh Control verbosity of `rstan::sampling` (check its help
+#' @param summary_probs Probabilities used to compute credible
+#' intervals (defaults to a 95% Cr.I.).
+#' @param external_prevalence_data Vector with two positive
+#' integers giving number of diseased and
+#' non-diseased individuals, respectively, from external data
+#' (e.g., if analyzing nested case-control data,
+#' this is the number of cases and non-cases in the source
+#' population).
+#' @param refresh Control verbosity of `rstan::sampling`
+#' (check its help
 #' page for details).
-#' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
+#' @param ... Arguments passed to `rstan::sampling` (e.g. iter,
+#' chains).
 #' @return An object of class `BayesDCAList`
 #' @importFrom magrittr %>%
 #' @examples
@@ -132,12 +151,14 @@ dca <- function(.data,
     pmax(1e-9)
   model_or_test_names <- colnames(.data)[-1]
   N <- nrow(.data)
-  d <- sum(.data[['outcomes']])
-  n_thresholds = length(thresholds)
-  n_models_or_tests = length(model_or_test_names)
-  threshold_data <- .get_thr_data_list(.data = .data,
-                                       thresholds = thresholds,
-                                       prior_only = prior_only)
+  d <- sum(.data[["outcomes"]])
+  n_thresholds <- length(thresholds)
+  n_models_or_tests <- length(model_or_test_names)
+  threshold_data <- .get_thr_data_list(
+    .data = .data,
+    thresholds = thresholds,
+    prior_only = prior_only
+  )
   if (is.null(priors)) {
     priors <- .get_prior_parameters(
       thresholds = thresholds,
@@ -156,25 +177,26 @@ dca <- function(.data,
     )
   }
   tp <- threshold_data %>%
-    dplyr::select(thresholds, model_or_test, tp) %>%
-    tidyr::pivot_wider(names_from = model_or_test,
-                       values_from = tp) %>%
+    dplyr::select(thresholds, model_or_test, tp) %>%  #nolint
+    tidyr::pivot_wider(
+      names_from = model_or_test,
+      values_from = tp
+    ) %>%
     dplyr::select(-thresholds) %>%
     as.matrix()
 
   tn <- threshold_data %>%
-    dplyr::select(thresholds, model_or_test, tn) %>%
-    tidyr::pivot_wider(names_from = model_or_test,
-                       values_from = tn) %>%
+    dplyr::select(thresholds, model_or_test, tn) %>%  #nolint
+    tidyr::pivot_wider(
+      names_from = model_or_test,
+      values_from = tn
+    ) %>%
     dplyr::select(-thresholds) %>%
     as.matrix()
 
   if (is.null(external_prevalence_data)) {
-
     d_ext <- N_ext <- rep(0, n_thresholds)
-
   } else {
-
     if (any(external_prevalence_data < 0 | external_prevalence_data %% 1 != 0)) {
       stop("`external_prevalence_data` must be a vector with two non-negative integers")
     }
@@ -187,11 +209,10 @@ dca <- function(.data,
 
     d_ext <- rep(external_prevalence_data[1], n_thresholds)
     N_ext <- rep(external_prevalence_data[2], n_thresholds)
-
   }
   other_models_indices <- lapply(
     1:n_models_or_tests,
-    function(i)  (1:n_models_or_tests)[-i]
+    function(i) (1:n_models_or_tests)[-i]
   )
   fit <- .dca_stan_list(
     n_thr = n_thresholds,
@@ -203,21 +224,23 @@ dca <- function(.data,
     thresholds = thresholds,
     N_ext = N_ext,
     d_ext = d_ext,
-    prior_p1 = priors[['p1']],
-    prior_p2 = priors[['p2']],
-    prior_Se1 = priors[['Se1']],
-    prior_Se2 = priors[['Se2']],
-    prior_Sp1 = priors[['Sp1']],
-    prior_Sp2 = priors[['Sp2']],
+    prior_p1 = priors[["p1"]],
+    prior_p2 = priors[["p2"]],
+    prior_Se1 = priors[["Se1"]],
+    prior_Se2 = priors[["Se2"]],
+    prior_Sp1 = priors[["Sp1"]],
+    prior_Sp2 = priors[["Sp2"]],
     other_models_indices = other_models_indices,
     refresh = refresh,
     ...
   )
 
-  dca_summary <- .extract_dca_summary(fit = fit,
-                                      summary_probs = summary_probs,
-                                      thresholds = thresholds,
-                                      model_or_test_names = model_or_test_names)
+  dca_summary <- .extract_dca_summary(
+    fit = fit,
+    summary_probs = summary_probs,
+    thresholds = thresholds,
+    model_or_test_names = model_or_test_names
+  )
 
   output_data <- list(
     summary = dca_summary,
@@ -229,12 +252,14 @@ dca <- function(.data,
   )
 
   if (isTRUE(keep_fit)) {
-    output_data[['fit']] <- fit
+    output_data[["fit"]] <- fit
   }
 
   if (isTRUE(keep_draws)) {
-    output_data[['draws']] <- .extract_dca_draws(fit = fit,
-                                                 model_or_test_names = model_or_test_names)
+    output_data[["draws"]] <- .extract_dca_draws(
+      fit = fit,
+      model_or_test_names = model_or_test_names
+    )
   }
 
   .output <- structure(output_data, class = "BayesDCAList")
@@ -254,10 +279,10 @@ dca <- function(.data,
   if (colnames(.data)[1] != "outcomes") {
     stop("Missing 'outcomes' column as the first column in input .data")
   }
-  outcomes <- .data[['outcomes']]
+  outcomes <- .data[["outcomes"]]
   model_or_test_names <- colnames(.data)[-1]
-  N <- ifelse(prior_only, 0, length(outcomes))
-  d <- ifelse(prior_only, 0, sum(outcomes))
+  N <- ifelse(prior_only, 0, length(outcomes))  #nolint
+  d <- ifelse(prior_only, 0, sum(outcomes))     #nolint
 
   thr_data <- purrr::map(model_or_test_names, ~ {
     .predictions <- .data[[.x]]
@@ -267,7 +292,6 @@ dca <- function(.data,
     ) %>%
       dplyr:::mutate(
         thr_perf = purrr::map(thresholds, function(.thr) {
-
           # # TODO: does the commented code below make sense?
           # if (.thr > 0.0) {
           #   # for binary tests, this gives the same tp/tn for all thresholds
@@ -307,58 +331,60 @@ dca <- function(.data,
 #' @param thresholds Vector of thresholds for DCA.
 #' @importFrom magrittr %>%
 #' @keywords internal
-.extract_dca_summary <- function(fit,
+.extract_dca_summary <- function(fit,                 #nolint
                                  model_or_test_names,
                                  summary_probs,
                                  thresholds) {
-
   # overall summary
   fit_summary <- rstan::summary(
-    fit, probs = summary_probs
+    fit,
+    probs = summary_probs
   )$summary %>%
     tibble::as_tibble(rownames = "par_name") %>%
-    dplyr::select(-se_mean) %>%
-    dplyr::rename(estimate := mean) %>%
+    dplyr::select(-se_mean) %>%                       #nolint
+    dplyr::rename(estimate := mean) %>%               #nolint
     dplyr::mutate(
-      threshold_ix = stringr::str_extract(par_name, "\\[\\d+") %>%
-        stringr::str_remove(string = ., pattern = "\\[") %>%
+      threshold_ix = stringr::str_extract(par_name, "\\[\\d+") %>%  #nolint
+        stringr::str_remove(string = ., pattern = "\\[") %>%        #nolint
         as.integer(),
       model_or_test_ix = stringr::str_extract(par_name, ",\\d+\\]") %>%
         stringr::str_remove_all(string = ., pattern = "\\]|,") %>%
         as.integer(),
-      threshold = thresholds[threshold_ix],
-      model_or_test_name = model_or_test_names[model_or_test_ix]
+      threshold = thresholds[threshold_ix],                         #nolint
+      model_or_test_name = model_or_test_names[model_or_test_ix]    #nolint
     ) %>%
-    dplyr::select(par_name, threshold, model_or_test_name,
-                  dplyr::everything(), -dplyr::contains("ix"))
+    dplyr::select(
+      par_name, threshold, model_or_test_name,                      #nolint
+      dplyr::everything(), -dplyr::contains("ix")
+    )
 
   # prevalence
   prevalence <- fit_summary %>%
     dplyr::filter(
-      par_name == "p"
+      par_name == "p" #nolint
     ) %>%
-    dplyr::select(-threshold, -model_or_test_name)
+    dplyr::select(-threshold, -model_or_test_name)  #nolint
 
   # sensitivity
   sensitivity <- fit_summary %>%
     dplyr::filter(
-      stringr::str_detect(par_name, "Se")
+      stringr::str_detect(par_name, "Se")  #nolint
     )
 
   # specificity
   specificity <- fit_summary %>%
     dplyr::filter(
-      stringr::str_detect(par_name, "Sp")
+      stringr::str_detect(par_name, "Sp")  #nolint
     )
 
   # net benefit
   net_benefit <- fit_summary %>%
-    dplyr::filter(stringr::str_detect(par_name, "net_benefit"))
+    dplyr::filter(stringr::str_detect(par_name, "net_benefit"))  #nolint
 
   # treat all (net benefit for treat all strategy)
   treat_all <- fit_summary %>%
-    dplyr::filter(stringr::str_detect(par_name, "treat_all")) %>%
-    dplyr::select(-model_or_test_name)
+    dplyr::filter(stringr::str_detect(par_name, "treat_all")) %>%  #nolint
+    dplyr::select(-model_or_test_name)  #nolint
 
   .summary <- structure(
     list(
@@ -367,7 +393,8 @@ dca <- function(.data,
       prevalence = prevalence,
       sensitivity = sensitivity,
       specificity = specificity
-    ), class = "BayesDCASummary"
+    ),
+    class = "BayesDCASummary"
   )
   return(.summary)
 }
@@ -375,11 +402,11 @@ dca <- function(.data,
 #' @title Get posterior draws from DCA stanfit
 #'
 #' @param fit A stanfit object.
-#' @param model_or_test_names Vector of names of models or binary tests under assessment.
+#' @param model_or_test_names Vector of names of models or
+#' binary tests under assessment.
 #' @keywords internal
 .extract_dca_draws <- function(fit,
                                model_or_test_names) {
-
   stan_draws <- rstan::extract(fit)
 
   .draws <- list(
@@ -394,11 +421,11 @@ dca <- function(.data,
 
   for (i in seq_along(model_or_test_names)) {
     .name <- model_or_test_names[i]
-    .draws[['net_benefit']][[.name]] <- stan_draws$net_benefit[,,i]
-    .draws[['delta_default']][[.name]] <- stan_draws$delta[,,i]
-    .draws[['prob_best']][[.name]] <- stan_draws$prob_better_than_soc[,,i]
-    .draws[['Se']][[.name]] <- stan_draws$Se[,,i]
-    .draws[['Sp']][[.name]] <- stan_draws$Sp[,,i]
+    .draws[["net_benefit"]][[.name]] <- stan_draws$net_benefit[, , i]
+    .draws[["delta_default"]][[.name]] <- stan_draws$delta[, , i]
+    .draws[["prob_best"]][[.name]] <- stan_draws$prob_better_than_soc[, , i]
+    .draws[["Se"]][[.name]] <- stan_draws$Se[, , i]
+    .draws[["Sp"]][[.name]] <- stan_draws$Sp[, , i]
   }
 
   return(.draws)
@@ -435,7 +462,6 @@ print.BayesDCAList <- function(obj, ...) {
 get_thr_data <- function(outcomes,
                          predictions,
                          thresholds = seq(0.01, 0.5, 0.01)) {
-
   thr_data <- tibble::tibble(
     N = length(outcomes),
     d = sum(outcomes),
@@ -443,14 +469,12 @@ get_thr_data <- function(outcomes,
   ) %>%
     dplyr:::mutate(
       thr_perf = purrr::map(thresholds, function(.thr) {
-        tp <- sum(predictions[outcomes == 1] >= .thr)
-        tn <- sum(predictions[outcomes == 0] < .thr)
+        tp <- sum(predictions[outcomes == 1] >= .thr)  #nolint
+        tn <- sum(predictions[outcomes == 0] < .thr)   #nolint
         return(list(tp = tp, tn = tn))
       })
     ) %>%
-    tidyr::unnest_wider(col = thr_perf) %>%
-    dplyr::select(N, d, tp, tn, thresholds)
+    tidyr::unnest_wider(col = thr_perf) %>%  #nolint
+    dplyr::select(N, d, tp, tn, thresholds)  #nolint
   return(thr_data)
 }
-
-

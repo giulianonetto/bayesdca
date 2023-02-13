@@ -2,7 +2,8 @@
 % Please edit documentation in R/dca_surv.R
 \name{.dca_stan_surv_weibull}
 \alias{.dca_stan_surv_weibull}
-\title{Fit Bayesian Decision Curve Analysis using Stan for survival outcomes (Weibull model)}
+\title{Fit Bayesian Decision Curve Analysis
+using Stan for survival outcomes (Weibull model)}
 \usage{
 .dca_stan_surv_weibull(
   sample_size,
@@ -29,21 +30,25 @@
   mean_log_alpha = 1,
   sd_log_alpha = 2.25,
   mean_mu = 0,
-  sd_mu = 1e-04,
+  sd_mu = 2,
   iter = 2000,
   refresh = 0,
   ...
 )
 }
 \arguments{
-\item{refresh}{Control verbosity of \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.}
+\item{refresh}{Control verbosity of
+\href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.}
 
-\item{...}{Arguments passed to \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains).}
+\item{...}{Arguments passed to
+\href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains).}
 }
 \value{
-An object of class \href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} returned by \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains)
+An object of class
+\href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} returned by \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains)
 }
 \description{
-Fit Bayesian Decision Curve Analysis using Stan for survival outcomes (Weibull model)
+Fit Bayesian Decision Curve Analysis
+using Stan for survival outcomes (Weibull model)
 }
 \keyword{internal}

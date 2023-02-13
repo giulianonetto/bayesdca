@@ -34,7 +34,7 @@ get_cutpoints <- function(.prediction_time,
   if (is.null(.base_cutpoints)) {
     .base_cutpoints <- seq(
       0.1, 1,
-      length = 10
+      length = 15
     ) * .prediction_time
   }
   .base_cutpoints <- .base_cutpoints[.base_cutpoints > 0]
@@ -164,75 +164,6 @@ get_survival_time_exposed <- function(.prediction_time, .cutpoints) {
   return(time_exposed)
 }
 
-#' @title Get death pseudo-counts
-#'
-#' @param .prediction_data Contains prognostic model predictions
-#' @param .surv_data Contains observed time to event
-#' (`.time` column) and event indicator (`.status` column)
-#' @param .cutpoints Survival cutpoints.
-#' @param .models_or_tests Names for models or tests.
-#' @param .thresholds DCA thresholds.
-#' @param .prior_scaling_factor Prior
-#' alpha = (0.69/median_surv)*.prior_scaling_factor,
-#' Prior beta = .prior_scaling_factor.
-#' @importFrom magrittr %>%
-#' @importFrom survival Surv
-#' @keywords internal
-get_death_pseudo_counts <- function(.prediction_data, # nolint
-                                    .surv_data,
-                                    .cutpoints,
-                                    .models_or_tests,
-                                    .thresholds) {
-  n_cuts <- length(.cutpoints)
-  n_thr <- length(.thresholds)
-  death_pseudo_counts <- vector("list", length = length(.models_or_tests))
-  total_exposure_times <- vector("list", length = length(.models_or_tests))
-
-  for (i in seq_along(.models_or_tests)) {
-    .model <- .models_or_tests[i]
-    death_pseudo_counts[[i]] <- matrix(nrow = n_cuts, ncol = n_thr)
-    total_exposure_times[[i]] <- matrix(nrow = n_cuts, ncol = n_thr)
-    for (j in seq_along(.thresholds)) {
-      .thr <- .thresholds[j]
-      if (all(is.na(.prediction_data))) {
-        .positive_prediction <- 1 >= .thr # for S0, all positives
-      } else {
-        .predictions <- .prediction_data[[.model]]
-        .positive_prediction <- .predictions >= .thr
-      }
-
-      .d <- .surv_data[.positive_prediction, ]
-      stopifnot("no positive prediction not implemented" = nrow(.d) > 0)
-      .d$patient_id <- 1:nrow(.d) # nolint
-      .d_split <- survival::survSplit(
-        Surv(.time, .status) ~ 1, # nolint
-        data = .d,
-        cut = .cutpoints,
-        subset = 1:nrow(.d), # nolint
-        id = "patient_id",
-        start = "tstart",
-        end = "tstop"
-      ) %>%
-        dplyr::group_by(
-          interval_id = paste0(
-            "interval_", as.numeric(factor(tstart)) # nolint
-          )
-        ) %>%
-        dplyr::summarise(
-          total_events = sum(.status),
-          total_exposure_time = sum(tstop - tstart) # nolint
-        )
-      death_pseudo_counts[[i]][, j] <- .d_split$total_events
-      total_exposure_times[[i]][, j] <- .d_split$total_exposure_time
-    }
-  }
-  .output <- list(
-    death_pseudo_counts = death_pseudo_counts,
-    total_exposure_times = total_exposure_times
-  )
-  return(.output)
-}
-
 #' @title Get posterior parameters for survival model
 #'
 #' @param .prediction_data Contains prognostic model predictions
@@ -256,7 +187,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
                                               .prior_scaling_factor,
                                               .prediction_time,
                                               .keep_prior = FALSE,
-                                              .prior_anchor = c("median", "prediction_time"), # nolint
+                                              .prior_anchor = c("prediction_time", "median"), # nolint
                                               .prior_only = FALSE,
                                               .prior_means = NULL) {
   .prior_anchor <- match.arg(.prior_anchor)
@@ -367,9 +298,10 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
         ) %>%
           # TODO: might want to double check the calculation below
           dplyr::group_by(
-            interval_id = paste0(
-              "interval_", as.numeric(factor(tstart)) # nolint
-            )
+            # interval_id = paste0(
+            #   "interval_", as.numeric(factor(tstart)) # nolint
+            # )
+            interval_id = tstart
           ) %>%
           dplyr::summarise(
             total_events = sum(.status),

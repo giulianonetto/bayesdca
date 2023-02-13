@@ -2,7 +2,8 @@
 % Please edit documentation in R/dca_surv.R
 \name{dca_surv_weibull}
 \alias{dca_surv_weibull}
-\title{Bayesian Decision Curve Analysis for Survival outcomes (Weibull)}
+\title{Bayesian Decision Curve Analysis
+for Survival outcomes (Weibull)}
 \usage{
 dca_surv_weibull(
   .data,
@@ -26,7 +27,8 @@ dca_surv_weibull(
 An object of class \code{BayesDCASurv}
 }
 \description{
-Bayesian Decision Curve Analysis for Survival outcomes (Weibull)
+Bayesian Decision Curve Analysis
+for Survival outcomes (Weibull)
 }
 \examples{
 data(dca_survival_data)
