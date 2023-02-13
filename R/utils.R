@@ -149,7 +149,7 @@ get_survival_time_exposed <- function(.prediction_time, .cutpoints) {
   for (i in seq_len(length(.cutpoints))) {
     .lower <- .cutpoints[i]
     .upper <- c(.cutpoints, Inf)[i + 1]
-    if (.prediction_time >= .upper) {
+    if (.prediction_time > .upper) {
       # if prediction time > upper bound, use interval length
       time_exposed[i] <- .upper - .lower
     } else if (.prediction_time > .lower) {
@@ -298,10 +298,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
         ) %>%
           # TODO: might want to double check the calculation below
           dplyr::group_by(
-            # interval_id = paste0(
-            #   "interval_", as.numeric(factor(tstart)) # nolint
-            # )
-            interval_id = tstart
+            interval_id = tstart # nolint
           ) %>%
           dplyr::summarise(
             total_events = sum(.status),
