@@ -203,7 +203,8 @@ dca_surv <- function(.data, # nolint
   cutpoints <- get_cutpoints(
     .prediction_time = prediction_time,
     .event_times = event_times,
-    .base_cutpoints = cutpoints
+    .base_cutpoints = cutpoints,
+    .min_events = min_events
   )
 
   # make sure zero is included and cutpoints are correctly ordered
@@ -346,15 +347,15 @@ dca_surv <- function(.data, # nolint
 #' plot(fit)
 dca_surv_weibull <- function(.data, # nolint
                              prediction_time,
-                             thresholds = seq(0, 0.5, 0.02),
+                             thresholds = seq(0, 0.5, length = 51),
                              keep_draws = TRUE,
                              keep_fit = FALSE,
                              summary_probs = c(0.025, 0.975),
                              positivity_prior = c(1, 1),
                              mean_log_alpha = 1,
-                             sd_log_alpha = 2.25,
+                             sd_log_alpha = 1,
                              mean_mu = 0,
-                             sd_mu = 1e-4,
+                             sd_mu = 5,
                              prior_only = FALSE,
                              iter = 4000,
                              refresh = 0,
