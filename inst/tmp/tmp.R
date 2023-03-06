@@ -1,41 +1,75 @@
-library(rstan)
-library(tidyverse)
 
-thresholds = seq(0, .5, .01)
-names(thresholds) <- thresholds
-model <- stan_model("inst/stan/dca.stan")
-.data <- list(
-  N = 1e3, d = 100, tp = 95, tn = 810,
-  # n_thresholds = length(thresholds), thresholds = thresholds
-  n_thresholds = 1, thresholds = array(.2)
+priors <- expand.grid(
+  alphas = c(1, 2, 2.5, 5, 10),
+  sigmas = c(1, 2, 2.5, 5, 10)
 )
-fit <- sampling(model, data=.data, refresh=0)
-s <- rstan::summary(fit)$summary %>%
-  data.frame(check.names = FALSE) %>%
-  rownames_to_column("par_name")
 
-true_nb <- map(.data$thresholds, ~ {
-  tibble(nb = .9*.1 - .1*.9*(.x/(1-.x)))
-}) %>% bind_rows(.id = "thr") %>%
-  mutate(thr = as.numeric(thr))
-
-d <- s %>% as_tibble() %>%
-  filter(str_detect(par_name, "net_benefit")) %>%
-  mutate(
-    i = str_extract(par_name, "\\d+") %>% as.numeric(),
-    thr = thresholds[i]
+surv_plots <- vector("list", nrow(priors))
+par(mfrow = c(5, 5))
+for (i in seq_len(nrow(priors))) {
+  a <- priors[i, "alphas"]
+  s <- priors[i, "sigmas"]
+  cat(paste0("alpha sd ", a, " sigma sd ", s))
+  .standata <- list(
+    n_events = sum(d$status),
+    n_censored = sum(d$status == 0L),
+    event_times = d$obsTime[d$status == 1L],
+    censored_times = d$obsTime[d$status == 0L],
+    pred_time = pred_time,
+    prior_scale = s,
+    prior_sd = a,
+    prior_only = 1
   )
-ggplot(d, aes(thr)) +
-  geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), alpha = 0.3) +
-  geom_line(aes(y=mean)) +
-  geom_line(
-    data = true_nb,
-    aes(thr, nb),
-    inherit.aes = FALSE,
-    linetype = "longdash",
-    color = "red"
-  ) +
-  geom_hline(yintercept = c(0,.1),
-             linetype = "dashed") +
-  theme_bw()
+  .stanfit <- sampling(
+    m2,
+    data = .standata,
+    chains = 2, iter = 5000,
+    cores = 2, refresh = 0
+  )
+  .draws <- tidybayes::tidy_draws(.stanfit) %>%
+    select(.draw, alpha, sigma) %>%
+    mutate(
+      posterior_surv = purrr::pmap(
+        list(alpha, sigma),
+        function(a, s) {
+          tibble(ts = times, s = exp(-(times / s)^a))
+        }
+      )
+    )
 
+  .lab <- paste0(
+    "alpha=", a, " sigma=", s
+  )
+  hist(.draws$sigma, breaks = 200, xlim = c(0, 50), main = .lab)
+  hist(.draws$alpha, breaks = 200, xlim = c(0, 50), add = TRUE, col = "red")
+  surv_plots[[i]] <- .draws %>%
+    unnest(posterior_surv) %>%
+    filter(near(round(ts, 3), 1, .006)) %>%
+    ggplot(aes(alpha, sigma, color = s)) +
+    geom_point() +
+    coord_cartesian(ylim = c(0, 20), xlim = c(0, 20)) +
+    facet_wrap(~ts) +
+    scale_color_viridis_b(breaks = seq(0, 1, .2)) +
+    theme(legend.key.height = unit(2, "cm")) +
+    geom_rug()
+}
+
+
+
+system.time({
+  x <- dca_surv_weibull(
+    d,
+    prediction_time = 12,
+    iter = 3000,
+    cores = 2,
+    chains = 2,
+    refresh = 1,
+    thresholds = seq(0, .9, length = 51),
+    mean_mu = 0,
+    sd_mu = 5,
+    mean_log_alpha = 1,
+    sd_log_alpha = 1,
+    prior_only = FALSE,
+    keep_fit = TRUE
+  )
+})
