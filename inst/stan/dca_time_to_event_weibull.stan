@@ -60,8 +60,12 @@ model {
     for (model_j in 1:n_models) {
         for (thr_m in 1:n_thr) {
             if (prior_only == 0) {
-                segment(event_times_stacked, event_times_start_positions[model_j, thr_m], event_times_sizes[model_j, thr_m]) ~ weibull(alpha[model_j, thr_m], exp( (-1) * (mu[model_j, thr_m] / alpha[model_j, thr_m]) ) );
-                target += weibull_lccdf(segment(censored_times_stacked, censored_times_start_positions[model_j, thr_m], censored_times_sizes[model_j, thr_m]) | alpha[model_j, thr_m], exp( (-1) * (mu[model_j, thr_m] / alpha[model_j, thr_m]) ) );
+                if (event_times_sizes[model_j, thr_m] > 0) {
+                    segment(event_times_stacked, event_times_start_positions[model_j, thr_m], event_times_sizes[model_j, thr_m]) ~ weibull(alpha[model_j, thr_m], exp( (-1) * (mu[model_j, thr_m] / alpha[model_j, thr_m]) ) );
+                }  // else: no positives for this model at this threshold with observed event times
+                if (censored_times_sizes[model_j, thr_m] > 0) {
+                    target += weibull_lccdf(segment(censored_times_stacked, censored_times_start_positions[model_j, thr_m], censored_times_sizes[model_j, thr_m]) | alpha[model_j, thr_m], exp( (-1) * (mu[model_j, thr_m] / alpha[model_j, thr_m]) ) );
+                }  // else: no positives for this model at this threshold with censored event times
             }
             // Prior statements
             alpha_raw[model_j, thr_m] ~ normal(0.0, 1.0);

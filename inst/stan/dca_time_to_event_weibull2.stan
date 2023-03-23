@@ -19,8 +19,8 @@ data {
   vector<lower=0>[total_event_times] event_times_marginal;
   vector<lower=0>[total_censored_times] censored_times_marginal;
   int<lower=1> other_models_indices[n_models, n_models-1];  // for each model, indices to capture all models but itself
-  real<lower=0> prior_sd_alpha;
-  real<lower=0> prior_sd_sigma;
+  real<lower=0> prior_scale_alpha;
+  real<lower=0> prior_scale_sigma;
   int<lower=0, upper=1> prior_only;
 }
 
@@ -44,12 +44,16 @@ model {
     for (model_j in 1:n_models) {
         for (thr_m in 1:n_thr) {
             if (prior_only == 0) {
-                segment(event_times_stacked, event_times_start_positions[model_j, thr_m], event_times_sizes[model_j, thr_m]) ~ weibull(alpha[model_j, thr_m], sigma[model_j, thr_m]);
-                target += weibull_lccdf(segment(censored_times_stacked, censored_times_start_positions[model_j, thr_m], censored_times_sizes[model_j, thr_m]) | alpha[model_j, thr_m], sigma[model_j, thr_m] );
+                if (event_times_sizes[model_j, thr_m] > 0) {
+                    segment(event_times_stacked, event_times_start_positions[model_j, thr_m], event_times_sizes[model_j, thr_m]) ~ weibull(alpha[model_j, thr_m], sigma[model_j, thr_m]);
+                }  // else: no positives for this model at this threshold with observed event times
+                if (censored_times_sizes[model_j, thr_m] > 0) {
+                    target += weibull_lccdf(segment(censored_times_stacked, censored_times_start_positions[model_j, thr_m], censored_times_sizes[model_j, thr_m]) | alpha[model_j, thr_m], sigma[model_j, thr_m] );
+                }  // else: no positives for this model at this threshold with censored event times
             }
             // Prior statements
-            alpha[model_j, thr_m] ~ student_t(3, 0, prior_sd_alpha);
-            sigma[model_j, thr_m] ~ student_t(3, 0, prior_sd_sigma);
+            alpha[model_j, thr_m] ~ cauchy(0, prior_scale_alpha);
+            sigma[model_j, thr_m] ~ student_t(3, 0, prior_scale_sigma);
             // P(+ | prediction > threshold)
             positivity[model_j][thr_m] ~ beta(pos_post1[model_j, thr_m], pos_post2[model_j, thr_m]);    
         }
@@ -60,8 +64,8 @@ model {
       target += weibull_lccdf(censored_times_marginal | alpha_marginal, sigma_marginal );
     }
 
-    alpha_marginal ~ student_t(3, 0, prior_sd_alpha);
-    sigma_marginal ~ student_t(3, 0, prior_sd_sigma);
+    alpha_marginal ~ cauchy(0, prior_scale_alpha);
+    sigma_marginal ~ student_t(3, 0, prior_scale_alpha);
     
 
 

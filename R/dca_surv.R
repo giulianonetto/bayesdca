@@ -181,8 +181,8 @@
                                     censored_times_marginal,
                                     other_models_indices,
                                     prior_only,
-                                    prior_sd_alpha,
-                                    prior_sd_sigma,
+                                    prior_scale_alpha,
+                                    prior_scale_sigma,
                                     iter = 2000,
                                     refresh = 0,
                                     ...) {
@@ -210,8 +210,8 @@
     censored_times_marginal = censored_times_marginal,
     other_models_indices = other_models_indices,
     prior_only = prior_only,
-    prior_sd_alpha = prior_sd_alpha,
-    prior_sd_sigma = prior_sd_sigma,
+    prior_scale_alpha = prior_scale_alpha,
+    prior_scale_sigma = prior_scale_sigma,
     iter = iter,
     refresh = refresh
   )
@@ -625,8 +625,8 @@ dca_surv_weibull2 <- function(.data, # nolint
                               keep_fit = FALSE,
                               summary_probs = c(0.025, 0.975),
                               positivity_prior = c(1, 1),
-                              prior_sd_alpha = 100,
-                              prior_sd_sigma = 100,
+                              prior_scale_alpha = 1,
+                              prior_scale_sigma = 100,
                               prior_only = FALSE,
                               prediction_time_scaling = TRUE,
                               iter = 4000,
@@ -751,8 +751,8 @@ dca_surv_weibull2 <- function(.data, # nolint
     censored_times_marginal = censored_times_marginal,
     other_models_indices = other_models_indices,
     prior_only = as.numeric(prior_only),
-    prior_sd_alpha = prior_sd_alpha,
-    prior_sd_sigma = prior_sd_sigma,
+    prior_scale_alpha = prior_scale_alpha,
+    prior_scale_sigma = prior_scale_sigma,
     iter = iter,
     refresh = refresh,
     ...
