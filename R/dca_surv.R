@@ -443,7 +443,7 @@ dca_surv_weibull <- function(.data, # nolint
                              mean_mu = 0,
                              sd_mu = 5,
                              prior_only = FALSE,
-                             prediction_time_scaling = TRUE,
+                             prediction_time_scaling = FALSE,
                              iter = 4000,
                              refresh = 0,
                              ...) {
@@ -628,7 +628,7 @@ dca_surv_weibull2 <- function(.data, # nolint
                               prior_scale_alpha = 1,
                               prior_scale_sigma = 100,
                               prior_only = FALSE,
-                              prediction_time_scaling = TRUE,
+                              prediction_time_scaling = FALSE,
                               iter = 4000,
                               refresh = 0,
                               ...) {

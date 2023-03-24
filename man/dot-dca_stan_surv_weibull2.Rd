@@ -27,8 +27,8 @@ using Stan for survival outcomes (Weibull model)}
   censored_times_marginal,
   other_models_indices,
   prior_only,
-  prior_sd_alpha,
-  prior_sd_sigma,
+  prior_scale_alpha,
+  prior_scale_sigma,
   iter = 2000,
   refresh = 0,
   ...
