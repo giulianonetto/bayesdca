@@ -1,9 +1,9 @@
 #' @title Fit Bayesian Decision Curve Analysis
 #' using Stan for survival outcomes
 #'
-#' @param refresh Control verbosity of [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).
-#' @param ... Arguments passed to [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).
-#' @return An object of class [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)
+#' @param refresh Control verbosity of [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).  # nolint
+#' @param ... Arguments passed to [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains). # nolint
+#' @return An object of class [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)  # nolint
 #' @keywords internal
 .dca_stan_surv <- function(n_thr,
                            n_models_or_tests,
@@ -20,7 +20,7 @@
                            iter = 4000,
                            refresh = 0,
                            ...) {
-  thresholds <- pmin(thresholds, 0.9999) # odds(1) = Inf
+  thresholds <- pmin(thresholds, 0.9999) # odds(1) = Inf  # nolint
 
   standata <- list(
     n_thr = n_thr,
@@ -66,11 +66,11 @@
 #' using Stan for survival outcomes (Weibull model)
 #'
 #' @param refresh Control verbosity of
-#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).
+#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html). # nolint
 #' @param ... Arguments passed to
-#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).
+#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).  # nolint
 #' @return An object of class
-#' [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)
+#' [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)  # nolint
 #' @keywords internal
 .dca_stan_surv_weibull <- function(sample_size, # nolint
                                    n_thr,
@@ -154,11 +154,11 @@
 #' using Stan for survival outcomes (Weibull model)
 #'
 #' @param refresh Control verbosity of
-#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).
+#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).  # nolint
 #' @param ... Arguments passed to
-#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).
+#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).  # nolint
 #' @return An object of class
-#' [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)
+#' [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)  # nolint
 #' @keywords internal
 .dca_stan_surv_weibull2 <- function(sample_size, # nolint
                                     n_thr,
@@ -235,31 +235,32 @@
 }
 
 #' @title Bayesian Decision Curve Analysis for
-#' Survival outcomes
+#' Survival outcomes (deprecated)
 #'
 #' @export
 #' @return An object of class `BayesDCASurv`
 #' @importFrom magrittr %>%
 #' @examples
 #' data(dca_survival_data)
-#' fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
+#' fit <- dca_surv_pem(dca_survival_data, prediction_time = 1, cores = 4)
 #' plot(fit)
-dca_surv <- function(.data, # nolint
-                     prediction_time,
-                     thresholds = seq(0, 0.5, length = 51),
-                     keep_draws = TRUE,
-                     keep_fit = FALSE,
-                     summary_probs = c(0.025, 0.975),
-                     cutpoints = NULL,
-                     prior_scaling_factor = 1 / 5,
-                     min_events = 10,
-                     prior_means = NULL,
-                     prior_only = FALSE,
-                     prior_anchor = c("prediction_time", "median"),
-                     keep_prior = FALSE,
-                     iter = 2000,
-                     refresh = 0,
-                     ...) {
+dca_surv_pem <- function(.data, # nolint
+                         prediction_time,
+                         thresholds = seq(0, 0.5, length = 51),
+                         keep_draws = TRUE,
+                         keep_fit = FALSE,
+                         summary_probs = c(0.025, 0.975),
+                         cutpoints = NULL,
+                         prior_scaling_factor = 1 / 5,
+                         min_events = 10,
+                         prior_means = NULL,
+                         prior_only = FALSE,
+                         prior_anchor = c("prediction_time", "median"),
+                         keep_prior = FALSE,
+                         iter = 2000,
+                         refresh = 0,
+                         ...) {
+  stop("`dca_surv_pem` requires further development. Use `dca_surv` instead")
   prior_anchor <- match.arg(prior_anchor)
   if (colnames(.data)[1] != "outcomes") {
     stop("Missing 'outcomes' column as the first column in input .data")
@@ -431,22 +432,21 @@ dca_surv <- function(.data, # nolint
 #' data(dca_survival_data)
 #' fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
 #' plot(fit)
-dca_surv_weibull <- function(.data, # nolint
-                             prediction_time,
-                             thresholds = seq(0, 0.5, length = 51),
-                             keep_draws = TRUE,
-                             keep_fit = FALSE,
-                             summary_probs = c(0.025, 0.975),
-                             positivity_prior = c(1, 1),
-                             mean_log_alpha = 1,
-                             sd_log_alpha = 1,
-                             mean_mu = 0,
-                             sd_mu = 5,
-                             prior_only = FALSE,
-                             prediction_time_scaling = FALSE,
-                             iter = 4000,
-                             refresh = 0,
-                             ...) {
+dca_surv <- function(.data, # nolint
+                     prediction_time,
+                     thresholds = seq(0, 0.5, length = 51),
+                     keep_draws = TRUE,
+                     keep_fit = FALSE,
+                     summary_probs = c(0.025, 0.975),
+                     positivity_prior = c(1, 1),
+                     mean_log_alpha = 1,
+                     sd_log_alpha = 1,
+                     mean_mu = 0,
+                     sd_mu = 5,
+                     prior_only = FALSE,
+                     iter = 4000,
+                     refresh = 0,
+                     ...) {
   if (colnames(.data)[1] != "outcomes") {
     stop("Missing 'outcomes' column as the first column in input .data")
   }
@@ -463,11 +463,6 @@ dca_surv_weibull <- function(.data, # nolint
     pmin(0.99) %>%
     pmax(1e-9)
 
-  # preprocess .data
-  if (isTRUE(prediction_time_scaling)) {
-    .data[["outcomes"]][, 1] <- .data[["outcomes"]][, 1] / prediction_time
-    prediction_time <- 1
-  }
   model_or_test_names <- colnames(.data)[-1]
   prediction_data <- data.frame(.data[, -1])
   colnames(prediction_data) <- model_or_test_names
@@ -618,20 +613,19 @@ dca_surv_weibull <- function(.data, # nolint
 #' data(dca_survival_data)
 #' fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
 #' plot(fit)
-dca_surv_weibull2 <- function(.data, # nolint
-                              prediction_time,
-                              thresholds = seq(0, 0.5, length = 51),
-                              keep_draws = TRUE,
-                              keep_fit = FALSE,
-                              summary_probs = c(0.025, 0.975),
-                              positivity_prior = c(1, 1),
-                              prior_scale_alpha = 1,
-                              prior_scale_sigma = 100,
-                              prior_only = FALSE,
-                              prediction_time_scaling = FALSE,
-                              iter = 4000,
-                              refresh = 0,
-                              ...) {
+dca_surv2 <- function(.data, # nolint
+                      prediction_time,
+                      thresholds = seq(0, 0.5, length = 51),
+                      keep_draws = TRUE,
+                      keep_fit = FALSE,
+                      summary_probs = c(0.025, 0.975),
+                      positivity_prior = c(1, 1),
+                      prior_scale_alpha = 1,
+                      prior_scale_sigma = 100,
+                      prior_only = FALSE,
+                      iter = 4000,
+                      refresh = 0,
+                      ...) {
   if (colnames(.data)[1] != "outcomes") {
     stop("Missing 'outcomes' column as the first column in input .data")
   }
@@ -648,11 +642,6 @@ dca_surv_weibull2 <- function(.data, # nolint
     pmin(0.99) %>%
     pmax(1e-9)
 
-  # preprocess .data
-  if (isTRUE(prediction_time_scaling)) {
-    .data[["outcomes"]][, 1] <- .data[["outcomes"]][, 1] / prediction_time
-    prediction_time <- 1
-  }
   model_or_test_names <- colnames(.data)[-1]
   prediction_data <- data.frame(.data[, -1])
   colnames(prediction_data) <- model_or_test_names
@@ -915,7 +904,7 @@ dca_surv_weibull2 <- function(.data, # nolint
   )
 
   .draws <- list(
-    overall_surv = stan_draws$St_marginal %>% as.vector(),
+    overall_surv = as.vector(stan_draws$St_marginal),
     treat_all = stan_draws$treat_all,
     net_benefit = list(),
     delta_default = list(),

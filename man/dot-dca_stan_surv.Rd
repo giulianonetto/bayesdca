@@ -24,12 +24,12 @@ using Stan for survival outcomes}
 )
 }
 \arguments{
-\item{refresh}{Control verbosity of \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.}
+\item{refresh}{Control verbosity of \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.  # nolint}
 
-\item{...}{Arguments passed to \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains).}
+\item{...}{Arguments passed to \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains). # nolint}
 }
 \value{
-An object of class \href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} returned by \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains)
+An object of class \href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} returned by \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains)  # nolint
 }
 \description{
 Fit Bayesian Decision Curve Analysis

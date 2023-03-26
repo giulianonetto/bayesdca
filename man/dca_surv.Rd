@@ -2,8 +2,8 @@
 % Please edit documentation in R/dca_surv.R
 \name{dca_surv}
 \alias{dca_surv}
-\title{Bayesian Decision Curve Analysis for
-Survival outcomes}
+\title{Bayesian Decision Curve Analysis
+for Survival outcomes (Weibull)}
 \usage{
 dca_surv(
   .data,
@@ -12,14 +12,13 @@ dca_surv(
   keep_draws = TRUE,
   keep_fit = FALSE,
   summary_probs = c(0.025, 0.975),
-  cutpoints = NULL,
-  prior_scaling_factor = 1/5,
-  min_events = 10,
-  prior_means = NULL,
+  positivity_prior = c(1, 1),
+  mean_log_alpha = 1,
+  sd_log_alpha = 1,
+  mean_mu = 0,
+  sd_mu = 5,
   prior_only = FALSE,
-  prior_anchor = c("prediction_time", "median"),
-  keep_prior = FALSE,
-  iter = 2000,
+  iter = 4000,
   refresh = 0,
   ...
 )
@@ -28,8 +27,8 @@ dca_surv(
 An object of class \code{BayesDCASurv}
 }
 \description{
-Bayesian Decision Curve Analysis for
-Survival outcomes
+Bayesian Decision Curve Analysis
+for Survival outcomes (Weibull)
 }
 \examples{
 data(dca_survival_data)

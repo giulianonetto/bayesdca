@@ -177,7 +177,7 @@ dca <- function(.data,
     )
   }
   tp <- threshold_data %>%
-    dplyr::select(thresholds, model_or_test, tp) %>%  #nolint
+    dplyr::select(thresholds, model_or_test, tp) %>% # nolint
     tidyr::pivot_wider(
       names_from = model_or_test,
       values_from = tp
@@ -186,7 +186,7 @@ dca <- function(.data,
     as.matrix()
 
   tn <- threshold_data %>%
-    dplyr::select(thresholds, model_or_test, tn) %>%  #nolint
+    dplyr::select(thresholds, model_or_test, tn) %>% # nolint
     tidyr::pivot_wider(
       names_from = model_or_test,
       values_from = tn
@@ -281,8 +281,8 @@ dca <- function(.data,
   }
   outcomes <- .data[["outcomes"]]
   model_or_test_names <- colnames(.data)[-1]
-  N <- ifelse(prior_only, 0, length(outcomes))  #nolint
-  d <- ifelse(prior_only, 0, sum(outcomes))     #nolint
+  N <- ifelse(prior_only, 0, length(outcomes)) # nolint
+  d <- ifelse(prior_only, 0, sum(outcomes)) # nolint
 
   thr_data <- purrr::map(model_or_test_names, ~ {
     .predictions <- .data[[.x]]
@@ -331,7 +331,7 @@ dca <- function(.data,
 #' @param thresholds Vector of thresholds for DCA.
 #' @importFrom magrittr %>%
 #' @keywords internal
-.extract_dca_summary <- function(fit,                 #nolint
+.extract_dca_summary <- function(fit, # nolint
                                  model_or_test_names,
                                  summary_probs,
                                  thresholds) {
@@ -341,50 +341,50 @@ dca <- function(.data,
     probs = summary_probs
   )$summary %>%
     tibble::as_tibble(rownames = "par_name") %>%
-    dplyr::select(-se_mean) %>%                       #nolint
-    dplyr::rename(estimate := mean) %>%               #nolint
+    dplyr::select(-se_mean) %>% # nolint
+    dplyr::rename(estimate := mean) %>% # nolint
     dplyr::mutate(
-      threshold_ix = stringr::str_extract(par_name, "\\[\\d+") %>%  #nolint
-        stringr::str_remove(string = ., pattern = "\\[") %>%        #nolint
+      threshold_ix = stringr::str_extract(par_name, "\\[\\d+") %>% # nolint
+        stringr::str_remove(string = ., pattern = "\\[") %>% # nolint
         as.integer(),
       model_or_test_ix = stringr::str_extract(par_name, ",\\d+\\]") %>%
         stringr::str_remove_all(string = ., pattern = "\\]|,") %>%
         as.integer(),
-      threshold = thresholds[threshold_ix],                         #nolint
-      model_or_test_name = model_or_test_names[model_or_test_ix]    #nolint
+      threshold = thresholds[threshold_ix], # nolint
+      model_or_test_name = model_or_test_names[model_or_test_ix] # nolint
     ) %>%
     dplyr::select(
-      par_name, threshold, model_or_test_name,                      #nolint
+      par_name, threshold, model_or_test_name, # nolint
       dplyr::everything(), -dplyr::contains("ix")
     )
 
   # prevalence
   prevalence <- fit_summary %>%
     dplyr::filter(
-      par_name == "p" #nolint
+      par_name == "p" # nolint
     ) %>%
-    dplyr::select(-threshold, -model_or_test_name)  #nolint
+    dplyr::select(-threshold, -model_or_test_name) # nolint
 
   # sensitivity
   sensitivity <- fit_summary %>%
     dplyr::filter(
-      stringr::str_detect(par_name, "Se")  #nolint
+      stringr::str_detect(par_name, "Se") # nolint
     )
 
   # specificity
   specificity <- fit_summary %>%
     dplyr::filter(
-      stringr::str_detect(par_name, "Sp")  #nolint
+      stringr::str_detect(par_name, "Sp") # nolint
     )
 
   # net benefit
   net_benefit <- fit_summary %>%
-    dplyr::filter(stringr::str_detect(par_name, "net_benefit"))  #nolint
+    dplyr::filter(stringr::str_detect(par_name, "net_benefit")) # nolint
 
   # treat all (net benefit for treat all strategy)
   treat_all <- fit_summary %>%
-    dplyr::filter(stringr::str_detect(par_name, "treat_all")) %>%  #nolint
-    dplyr::select(-model_or_test_name)  #nolint
+    dplyr::filter(stringr::str_detect(par_name, "treat_all")) %>% # nolint
+    dplyr::select(-model_or_test_name) # nolint
 
   .summary <- structure(
     list(
@@ -469,12 +469,12 @@ get_thr_data <- function(outcomes,
   ) %>%
     dplyr:::mutate(
       thr_perf = purrr::map(thresholds, function(.thr) {
-        tp <- sum(predictions[outcomes == 1] >= .thr)  #nolint
-        tn <- sum(predictions[outcomes == 0] < .thr)   #nolint
+        tp <- sum(predictions[outcomes == 1] >= .thr) # nolint
+        tn <- sum(predictions[outcomes == 0] < .thr) # nolint
         return(list(tp = tp, tn = tn))
       })
     ) %>%
-    tidyr::unnest_wider(col = thr_perf) %>%  #nolint
-    dplyr::select(N, d, tp, tn, thresholds)  #nolint
+    tidyr::unnest_wider(col = thr_perf) %>% # nolint
+    dplyr::select(N, d, tp, tn, thresholds) # nolint
   return(thr_data)
 }
