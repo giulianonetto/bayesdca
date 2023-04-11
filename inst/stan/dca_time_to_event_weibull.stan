@@ -19,10 +19,8 @@ data {
   vector<lower=0>[total_event_times] event_times_marginal;
   vector<lower=0>[total_censored_times] censored_times_marginal;
   int<lower=1> other_models_indices[n_models, n_models-1];  // for each model, indices to capture all models but itself
-  real<lower=0> sd_log_alpha;
-  real<lower=0> sd_mu;
-  real mean_mu;
-  real mean_log_alpha;
+  real<lower=0> prior_scale_alpha;
+  real<lower=0> prior_scale_sigma;
   int<lower=0, upper=1> prior_only;
 }
 
@@ -35,25 +33,11 @@ transformed data {
 }
 
 parameters {
-    real alpha_raw[n_models, n_thr];
-    real mu[n_models, n_thr];
-    real alpha_raw_marginal;
-    real mu_marginal;
+    real<lower=0> alpha[n_models, n_thr];
+    real<lower=0> sigma[n_models, n_thr];
+    real<lower=0> alpha_marginal;
+    real<lower=0> sigma_marginal;
     vector<lower=0, upper=1>[n_thr] positivity[n_models];
-}
-
-
-transformed parameters {
-  real<lower=0> alpha[n_models, n_thr];
-  real<lower=0> alpha_marginal;
-
-  for (model_j in 1:n_models) {
-    for (thr_m in 1:n_thr) {
-      alpha[model_j, thr_m] = exp( (sd_log_alpha * alpha_raw[model_j, thr_m]) + mean_log_alpha );
-    }
-  }
-
-  alpha_marginal = exp( (sd_log_alpha * alpha_raw_marginal) + mean_log_alpha );
 }
 
 model {
@@ -61,27 +45,28 @@ model {
         for (thr_m in 1:n_thr) {
             if (prior_only == 0) {
                 if (event_times_sizes[model_j, thr_m] > 0) {
-                    segment(event_times_stacked, event_times_start_positions[model_j, thr_m], event_times_sizes[model_j, thr_m]) ~ weibull(alpha[model_j, thr_m], exp( (-1) * (mu[model_j, thr_m] / alpha[model_j, thr_m]) ) );
+                    segment(event_times_stacked, event_times_start_positions[model_j, thr_m], event_times_sizes[model_j, thr_m]) ~ weibull(alpha[model_j, thr_m], sigma[model_j, thr_m]);
                 }  // else: no positives for this model at this threshold with observed event times
                 if (censored_times_sizes[model_j, thr_m] > 0) {
-                    target += weibull_lccdf(segment(censored_times_stacked, censored_times_start_positions[model_j, thr_m], censored_times_sizes[model_j, thr_m]) | alpha[model_j, thr_m], exp( (-1) * (mu[model_j, thr_m] / alpha[model_j, thr_m]) ) );
+                    target += weibull_lccdf(segment(censored_times_stacked, censored_times_start_positions[model_j, thr_m], censored_times_sizes[model_j, thr_m]) | alpha[model_j, thr_m], sigma[model_j, thr_m] );
                 }  // else: no positives for this model at this threshold with censored event times
             }
             // Prior statements
-            alpha_raw[model_j, thr_m] ~ normal(0.0, 1.0);
-            mu[model_j, thr_m] ~ normal(mean_mu, sd_mu);
+            alpha[model_j, thr_m] ~ cauchy(0, prior_scale_alpha);
+            sigma[model_j, thr_m] ~ student_t(3, 0, prior_scale_sigma);
             // P(+ | prediction > threshold)
             positivity[model_j][thr_m] ~ beta(pos_post1[model_j, thr_m], pos_post2[model_j, thr_m]);    
         }
     }
 
     if (prior_only == 0) {
-      event_times_marginal ~ weibull(alpha_marginal, exp((-1) * (mu_marginal / alpha_marginal) ) );
-      target += weibull_lccdf(censored_times_marginal | alpha_marginal, exp((-1) * (mu_marginal / alpha_marginal) ) );
+      event_times_marginal ~ weibull(alpha_marginal, sigma_marginal );
+      target += weibull_lccdf(censored_times_marginal | alpha_marginal, sigma_marginal );
     }
 
-    alpha_raw_marginal ~ normal(0.0, 1.0);
-    mu_marginal ~ normal(mean_mu, sd_mu);  // might want to use specific priors for marginal survival (treat all)
+    alpha_marginal ~ cauchy(0, prior_scale_alpha);
+    sigma_marginal ~ student_t(3, 0, prior_scale_sigma);
+    
 
 
 }
@@ -101,12 +86,12 @@ generated quantities {
   // for each threshold, each model
   matrix<lower=0, upper=1>[n_thr, n_models] prob_better_than_soc;
   // Treat all
-  St_marginal = exp((-1) * ( prediction_time / exp((-1) * (mu_marginal / alpha_marginal) ) )^alpha_marginal);
+  St_marginal = exp((-1) * ( prediction_time / sigma_marginal )^alpha_marginal);
   treat_all = (1-St_marginal) * 1 - St_marginal * 1 * odds_thrs;
 
   for (model_j in 1:n_models) {
     for (thr_m in 1:n_thr) {
-        St_positives[model_j, thr_m] = exp( (-1) * ( ( prediction_time / exp( (-1) * (mu[model_j, thr_m] / alpha[model_j, thr_m]) ) )^alpha[model_j, thr_m] ) );  // survival at prediction time
+        St_positives[model_j, thr_m] = exp( (-1) * ( ( prediction_time / sigma[model_j, thr_m] )^alpha[model_j, thr_m] ) );  // survival at prediction time
         net_benefit[thr_m, model_j] = ((1 - St_positives[model_j, thr_m]) * positivity[model_j, thr_m]) - ((St_positives[model_j, thr_m] * positivity[model_j, thr_m]) * odds_thrs[thr_m]);
     }
   }

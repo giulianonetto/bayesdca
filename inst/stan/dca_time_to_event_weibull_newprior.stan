@@ -19,7 +19,8 @@ data {
   vector<lower=0>[total_event_times] event_times_marginal;
   vector<lower=0>[total_censored_times] censored_times_marginal;
   int<lower=1> other_models_indices[n_models, n_models-1];  // for each model, indices to capture all models but itself
-  real<lower=0> prior_scale_alpha;
+  real<lower=0> prior_shape_alpha;
+  real<lower=0> prior_rate_alpha;
   real<lower=0> prior_scale_sigma;
   int<lower=0, upper=1> prior_only;
 }
@@ -52,7 +53,7 @@ model {
                 }  // else: no positives for this model at this threshold with censored event times
             }
             // Prior statements
-            alpha[model_j, thr_m] ~ cauchy(0, prior_scale_alpha);
+            alpha[model_j, thr_m] ~ gamma(prior_shape_alpha, prior_rate_alpha);
             sigma[model_j, thr_m] ~ student_t(3, 0, prior_scale_sigma);
             // P(+ | prediction > threshold)
             positivity[model_j][thr_m] ~ beta(pos_post1[model_j, thr_m], pos_post2[model_j, thr_m]);    
@@ -64,8 +65,8 @@ model {
       target += weibull_lccdf(censored_times_marginal | alpha_marginal, sigma_marginal );
     }
 
-    alpha_marginal ~ cauchy(0, prior_scale_alpha);
-    sigma_marginal ~ student_t(3, 0, prior_scale_alpha);
+    alpha_marginal ~ gamma(prior_shape_alpha, prior_rate_alpha);
+    sigma_marginal ~ student_t(3, 0, prior_scale_sigma);
     
 
 
