@@ -72,6 +72,78 @@
 #' @return An object of class
 #' [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)  # nolint
 #' @keywords internal
+.dca_stan_surv_weibull2 <- function(sample_size, # nolint
+                                    n_thr,
+                                    n_models,
+                                    times,
+                                    events,
+                                    predictions,
+                                    predictions_marginal,
+                                    prediction_time,
+                                    thresholds,
+                                    other_models_indices,
+                                    shape_prior,
+                                    scale_prior,
+                                    shape_prior_pars,
+                                    scale_prior_pars,
+                                    positivity_prior_pars,
+                                    prior_only,
+                                    iter,
+                                    refresh,
+                                    ...) {
+  thresholds <- pmin(thresholds, 0.9999) # nolint odds(1) = Inf
+
+  standata <- list(
+    N = sample_size,
+    n_thr = n_thr,
+    n_models = n_models,
+    times = times,
+    events = events,
+    predictions = predictions,
+    predictions_marginal = predictions_marginal,
+    prediction_time = prediction_time,
+    thresholds = thresholds,
+    other_models_indices = other_models_indices,
+    shape_prior = shape_prior,
+    scale_prior = scale_prior,
+    shape_prior_pars = shape_prior_pars,
+    scale_prior_pars = scale_prior_pars,
+    positivity_prior_pars = positivity_prior_pars,
+    prior_only = prior_only,
+    iter = iter,
+    refresh = refresh,
+    ...
+  )
+
+  dots <- list(...)
+  if ("control" %in% names(dots)) {
+    control <- dots[["control"]]
+  } else {
+    control <- list(adapt_delta = 0.9)
+  }
+
+  .model <- stanmodels$dca_time_to_event_weibull_newlikelihood
+  stanfit <- rstan::sampling(
+    .model,
+    data = standata,
+    control = control,
+    iter = iter,
+    refresh = refresh, ...
+  )
+  return(stanfit)
+}
+
+
+#' @title Fit Bayesian Decision Curve Analysis
+#' using Stan for survival outcomes (Weibull model)
+#'
+#' @param refresh Control verbosity of
+#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).  # nolint
+#' @param ... Arguments passed to
+#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).  # nolint
+#' @return An object of class
+#' [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)  # nolint
+#' @keywords internal
 .dca_stan_surv_weibull <- function(sample_size, # nolint
                                    n_thr,
                                    n_models,
@@ -93,7 +165,9 @@
                                    censored_times_marginal,
                                    other_models_indices,
                                    prior_only,
-                                   prior_scale_alpha,
+                                   prior_shape_alpha,
+                                   prior_rate_alpha,
+                                   prior_df_sigma,
                                    prior_scale_sigma,
                                    iter = 2000,
                                    refresh = 0,
@@ -122,7 +196,9 @@
     censored_times_marginal = censored_times_marginal,
     other_models_indices = other_models_indices,
     prior_only = prior_only,
-    prior_scale_alpha = prior_scale_alpha,
+    prior_shape_alpha = prior_shape_alpha,
+    prior_rate_alpha = prior_rate_alpha,
+    prior_df_sigma = prior_df_sigma,
     prior_scale_sigma = prior_scale_sigma,
     iter = iter,
     refresh = refresh
@@ -136,93 +212,6 @@
   }
 
   .model <- stanmodels$dca_time_to_event_weibull
-  stanfit <- rstan::sampling(
-    .model,
-    data = standata,
-    control = control,
-    iter = iter,
-    refresh = refresh, ...
-  )
-  return(stanfit)
-}
-
-
-#' @title Fit Bayesian Decision Curve Analysis
-#' using Stan for survival outcomes (Weibull model)
-#'
-#' @param refresh Control verbosity of
-#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).  # nolint
-#' @param ... Arguments passed to
-#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).  # nolint
-#' @return An object of class
-#' [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)  # nolint
-#' @keywords internal
-.dca_stan_surv_weibull2 <- function(sample_size, # nolint
-                                    n_thr,
-                                    n_models,
-                                    event_times_stacked,
-                                    censored_times_stacked,
-                                    n_event_times_stacked,
-                                    n_censored_times_stacked,
-                                    event_times_start_positions,
-                                    censored_times_start_positions,
-                                    event_times_sizes,
-                                    censored_times_sizes,
-                                    prediction_time,
-                                    thresholds,
-                                    pos_post1,
-                                    pos_post2,
-                                    total_event_times,
-                                    total_censored_times,
-                                    event_times_marginal,
-                                    censored_times_marginal,
-                                    other_models_indices,
-                                    prior_only,
-                                    prior_shape_alpha,
-                                    prior_rate_alpha,
-                                    prior_scale_sigma,
-                                    iter = 2000,
-                                    refresh = 0,
-                                    ...) {
-  thresholds <- pmin(thresholds, 0.9999) # nolint odds(1) = Inf
-
-  standata <- list(
-    N = sample_size,
-    n_thr = n_thr,
-    n_models = n_models,
-    event_times_stacked = event_times_stacked,
-    censored_times_stacked = censored_times_stacked,
-    n_event_times_stacked = n_event_times_stacked,
-    n_censored_times_stacked = n_censored_times_stacked,
-    event_times_start_positions = event_times_start_positions,
-    censored_times_start_positions = censored_times_start_positions,
-    event_times_sizes = event_times_sizes,
-    censored_times_sizes = censored_times_sizes,
-    prediction_time = prediction_time,
-    thresholds = thresholds,
-    pos_post1 = pos_post1,
-    pos_post2 = pos_post2,
-    total_event_times = total_event_times,
-    total_censored_times = total_censored_times,
-    event_times_marginal = event_times_marginal,
-    censored_times_marginal = censored_times_marginal,
-    other_models_indices = other_models_indices,
-    prior_only = prior_only,
-    prior_shape_alpha = prior_shape_alpha,
-    prior_rate_alpha = prior_rate_alpha,
-    prior_scale_sigma = prior_scale_sigma,
-    iter = iter,
-    refresh = refresh
-  )
-
-  dots <- list(...)
-  if ("control" %in% names(dots)) {
-    control <- dots[["control"]]
-  } else {
-    control <- list(adapt_delta = 0.9)
-  }
-
-  .model <- stanmodels$dca_time_to_event_weibull_newprior
   stanfit <- rstan::sampling(
     .model,
     data = standata,
@@ -431,6 +420,141 @@ dca_surv_pem <- function(.data, # nolint
 #' data(dca_survival_data)
 #' fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
 #' plot(fit)
+dca_surv2 <- function(.data, # nolint
+                      prediction_time,
+                      thresholds = seq(0, 0.5, length = 51),
+                      keep_draws = TRUE,
+                      keep_fit = FALSE,
+                      summary_probs = c(0.025, 0.975),
+                      positivity_prior_pars = c(1, 1),
+                      shape_prior = c("gamma", "student"),
+                      shape_prior_pars = c(20, 20),
+                      scale_prior = c("student", "gamma"),
+                      scale_prior_pars = c(30, 0, 100),
+                      prior_only = FALSE,
+                      iter = 4000,
+                      refresh = 0,
+                      ...) {
+  if (colnames(.data)[1] != "outcomes") {
+    stop("Missing 'outcomes' column as the first column in input .data")
+  }
+
+  stopifnot(
+    "'outcomes' column must be a Surv object. " = survival::is.Surv(.data[["outcomes"]]) # nolint
+  )
+  stopifnot(
+    "positivity_prior_pars must be a vector of length 2." = length(positivity_prior_pars) == 2L # nolint
+  )
+
+  shape_prior <- ifelse(
+    match.arg(shape_prior) == "gamma", 1, 2
+  )
+  scale_prior <- ifelse(
+    match.arg(scale_prior) == "gamma", 1, 2
+  )
+  shape_prior_pars <- c(shape_prior_pars, 0)[1:3] # fix to size 3
+  scale_prior_pars <- c(scale_prior_pars, 0)[1:3]
+
+  # avoid thresholds in {0, 1}
+  thresholds <- thresholds %>%
+    pmin(0.99) %>%
+    pmax(1e-9)
+
+  model_or_test_names <- colnames(.data)[-1]
+  prediction_data <- data.frame(.data[, -1])
+  colnames(prediction_data) <- model_or_test_names
+  n_models_or_tests <- length(model_or_test_names)
+  n_thresholds <- length(thresholds)
+  surv_data <- data.frame(
+    .time = unname(.data[["outcomes"]][, 1]), # observed time-to-event
+    .events = unname(.data[["outcomes"]][, 2]) # 1 if event, 0 if censored
+  )
+
+  n <- nrow(surv_data)
+  predictions_marginal <- rep(1, length = n)
+  predictions <- array(dim = c(n_models_or_tests, n_thresholds, n))
+
+  for (j in seq_len(n_models_or_tests)) {
+    for (m in seq_len(n_thresholds)) {
+      .thr <- thresholds[m]
+      .model <- model_or_test_names[j]
+      .preds <- prediction_data[, .model]
+
+      predictions[j, m, ] <- as.numeric(.preds >= .thr)
+    }
+  }
+
+  # random data information
+  other_models_indices <- lapply(
+    1:n_models_or_tests,
+    function(i) (1:n_models_or_tests)[-i]
+  )
+
+  fit <- .dca_stan_surv_weibull2(
+    sample_size = n,
+    n_thr = n_thresholds,
+    n_models = n_models_or_tests,
+    times = surv_data$.time,
+    events = surv_data$.events,
+    predictions = predictions,
+    predictions_marginal = predictions_marginal,
+    prediction_time = prediction_time,
+    thresholds = thresholds,
+    other_models_indices = other_models_indices,
+    shape_prior = shape_prior,
+    scale_prior = scale_prior,
+    shape_prior_pars = shape_prior_pars,
+    scale_prior_pars = scale_prior_pars,
+    positivity_prior_pars = positivity_prior_pars,
+    prior_only = as.numeric(prior_only),
+    iter = iter,
+    refresh = refresh,
+    ...
+  )
+
+  dca_summary <- .extract_dca_surv_summary(
+    fit = fit,
+    summary_probs = summary_probs,
+    thresholds = thresholds,
+    model_or_test_names = model_or_test_names
+  )
+
+  output_data <- list(
+    summary = dca_summary,
+    thresholds = thresholds,
+    .time = surv_data$.time,
+    .status = surv_data$.status,
+    .time_original = surv_data$.time * prediction_time,
+    .data = .data,
+    model_or_test_names = model_or_test_names,
+    prediction_time = prediction_time
+  )
+
+  if (isTRUE(keep_fit)) {
+    output_data[["fit"]] <- fit
+  }
+
+  if (isTRUE(keep_draws)) {
+    output_data[["draws"]] <- .extract_dca_surv_draws(
+      fit = fit,
+      model_or_test_names = model_or_test_names
+    )
+  }
+
+  .output <- structure(output_data, class = "BayesDCASurv")
+  return(.output)
+}
+
+#' @title Bayesian Decision Curve Analysis
+#' for Survival outcomes (Weibull)
+#'
+#' @export
+#' @return An object of class `BayesDCASurv`
+#' @importFrom magrittr %>%
+#' @examples
+#' data(dca_survival_data)
+#' fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
+#' plot(fit)
 dca_surv <- function(.data, # nolint
                      prediction_time,
                      thresholds = seq(0, 0.5, length = 51),
@@ -438,7 +562,9 @@ dca_surv <- function(.data, # nolint
                      keep_fit = FALSE,
                      summary_probs = c(0.025, 0.975),
                      positivity_prior = c(1, 1),
-                     prior_scale_alpha = 1,
+                     prior_shape_alpha = 20,
+                     prior_rate_alpha = 20,
+                     prior_df_sigma = 30,
                      prior_scale_sigma = 10,
                      prior_only = FALSE,
                      iter = 4000,
@@ -558,187 +684,9 @@ dca_surv <- function(.data, # nolint
     censored_times_marginal = censored_times_marginal,
     other_models_indices = other_models_indices,
     prior_only = as.numeric(prior_only),
-    prior_scale_alpha = prior_scale_alpha,
-    prior_scale_sigma = prior_scale_sigma,
-    iter = iter,
-    refresh = refresh,
-    ...
-  )
-
-  dca_summary <- .extract_dca_surv_summary(
-    fit = fit,
-    summary_probs = summary_probs,
-    thresholds = thresholds,
-    model_or_test_names = model_or_test_names
-  )
-
-  output_data <- list(
-    summary = dca_summary,
-    thresholds = thresholds,
-    .time = surv_data$.time,
-    .status = surv_data$.status,
-    .time_original = surv_data$.time * prediction_time,
-    .data = .data,
-    model_or_test_names = model_or_test_names,
-    prediction_time = prediction_time,
-    posterior_positivity_pars = posterior_positivity_pars
-  )
-
-  if (isTRUE(keep_fit)) {
-    output_data[["fit"]] <- fit
-  }
-
-  if (isTRUE(keep_draws)) {
-    output_data[["draws"]] <- .extract_dca_surv_draws(
-      fit = fit,
-      model_or_test_names = model_or_test_names
-    )
-  }
-
-  .output <- structure(output_data, class = "BayesDCASurv")
-  return(.output)
-}
-
-#' @title Bayesian Decision Curve Analysis
-#' for Survival outcomes (Weibull)
-#'
-#' @export
-#' @return An object of class `BayesDCASurv`
-#' @importFrom magrittr %>%
-#' @examples
-#' data(dca_survival_data)
-#' fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
-#' plot(fit)
-dca_surv2 <- function(.data, # nolint
-                      prediction_time,
-                      thresholds = seq(0, 0.5, length = 51),
-                      keep_draws = TRUE,
-                      keep_fit = FALSE,
-                      summary_probs = c(0.025, 0.975),
-                      positivity_prior = c(1, 1),
-                      prior_shape_alpha = 1,
-                      prior_rate_alpha = 1,
-                      prior_scale_sigma = 10,
-                      prior_only = FALSE,
-                      iter = 4000,
-                      refresh = 0,
-                      ...) {
-  if (colnames(.data)[1] != "outcomes") {
-    stop("Missing 'outcomes' column as the first column in input .data")
-  }
-
-  stopifnot(
-    "'outcomes' column must be a Surv object. " = survival::is.Surv(.data[["outcomes"]]) # nolint
-  )
-  stopifnot(
-    "positivity_prior must be a vector of length 2." = length(positivity_prior) == 2L # nolint
-  )
-
-  # avoid thresholds in {0, 1}
-  thresholds <- thresholds %>%
-    pmin(0.99) %>%
-    pmax(1e-9)
-
-  model_or_test_names <- colnames(.data)[-1]
-  prediction_data <- data.frame(.data[, -1])
-  colnames(prediction_data) <- model_or_test_names
-  n_models_or_tests <- length(model_or_test_names)
-  n_thresholds <- length(thresholds)
-  surv_data <- data.frame(
-    .time = unname(.data[["outcomes"]][, 1]), # observed time-to-event
-    .status = unname(.data[["outcomes"]][, 2]) # 1 if event, 0 if censored
-  )
-
-  event_times_marginal <- surv_data$.time[surv_data$.status == 1L] # nolint
-  censored_times_marginal <- surv_data$.time[surv_data$.status == 0L] # nolint
-  total_event_times <- length(event_times_marginal)
-  total_censored_times <- length(censored_times_marginal)
-
-  event_times_stacked <-
-    censored_times_stacked <-
-    numeric() # hard to guess the size
-
-  # these are used within Stan with the segment() function
-  event_times_sizes <-
-    censored_times_sizes <- matrix(
-      nrow = n_models_or_tests, ncol = n_thresholds
-    )
-
-  event_times_start_positions <-
-    censored_times_start_positions <- matrix(
-      nrow = n_models_or_tests, ncol = n_thresholds
-    )
-
-  event_times_position <- censored_times_position <- 1
-  for (j in seq_len(n_models_or_tests)) {
-    for (m in seq_len(n_thresholds)) {
-      .thr <- thresholds[m]
-      .model <- model_or_test_names[j]
-      .preds <- prediction_data[, .model]
-
-      .event_times_positives <- surv_data$.time[
-        .preds >= .thr & surv_data$.status == 1L
-      ]
-      .censored_times_positives <- surv_data$.time[
-        .preds >= .thr & surv_data$.status == 0L
-      ]
-      .event_times_size <- length(.event_times_positives)
-      .censored_times_size <- length(.censored_times_positives)
-      event_times_stacked <- c(
-        event_times_stacked, .event_times_positives
-      )
-      censored_times_stacked <- c(
-        censored_times_stacked, .censored_times_positives
-      )
-
-      event_times_start_positions[j, m] <- event_times_position
-      censored_times_start_positions[j, m] <- censored_times_position
-      event_times_sizes[j, m] <- .event_times_size
-      censored_times_sizes[j, m] <- .censored_times_size
-
-      event_times_position <- event_times_position + .event_times_size
-      censored_times_position <- censored_times_position + .censored_times_size
-    }
-  }
-
-  posterior_positivity_pars <- get_positivity_posterior_parameters(
-    .prediction_data = prediction_data,
-    .thresholds = thresholds,
-    .prior_shape1 = positivity_prior[1],
-    .prior_shape2 = positivity_prior[2],
-    .prior_only = prior_only
-  )
-
-  # random data information
-  other_models_indices <- lapply(
-    1:n_models_or_tests,
-    function(i) (1:n_models_or_tests)[-i]
-  )
-
-  fit <- .dca_stan_surv_weibull2(
-    sample_size = nrow(surv_data),
-    n_thr = n_thresholds,
-    n_models = n_models_or_tests,
-    event_times_stacked = event_times_stacked,
-    censored_times_stacked = censored_times_stacked,
-    n_event_times_stacked = length(event_times_stacked),
-    n_censored_times_stacked = length(censored_times_stacked),
-    event_times_start_positions = event_times_start_positions,
-    censored_times_start_positions = censored_times_start_positions,
-    event_times_sizes = event_times_sizes,
-    censored_times_sizes = censored_times_sizes,
-    prediction_time = prediction_time,
-    thresholds = thresholds,
-    pos_post1 = posterior_positivity_pars$.shape1,
-    pos_post2 = posterior_positivity_pars$.shape2,
-    total_event_times = total_event_times,
-    total_censored_times = total_censored_times,
-    event_times_marginal = event_times_marginal,
-    censored_times_marginal = censored_times_marginal,
-    other_models_indices = other_models_indices,
-    prior_only = as.numeric(prior_only),
     prior_shape_alpha = prior_shape_alpha,
     prior_rate_alpha = prior_rate_alpha,
+    prior_df_sigma = prior_df_sigma,
     prior_scale_sigma = prior_scale_sigma,
     iter = iter,
     refresh = refresh,

@@ -19,7 +19,9 @@ data {
   vector<lower=0>[total_event_times] event_times_marginal;
   vector<lower=0>[total_censored_times] censored_times_marginal;
   int<lower=1> other_models_indices[n_models, n_models-1];  // for each model, indices to capture all models but itself
-  real<lower=0> prior_scale_alpha;
+  real<lower=0> prior_shape_alpha;
+  real<lower=0> prior_rate_alpha;
+  int<lower=0> prior_df_sigma;
   real<lower=0> prior_scale_sigma;
   int<lower=0, upper=1> prior_only;
 }
@@ -52,7 +54,7 @@ model {
                 }  // else: no positives for this model at this threshold with censored event times
             }
             // Prior statements
-            alpha[model_j, thr_m] ~ cauchy(0, prior_scale_alpha);
+            alpha[model_j, thr_m] ~ gamma(prior_shape_alpha, prior_rate_alpha);
             sigma[model_j, thr_m] ~ student_t(3, 0, prior_scale_sigma);
             // P(+ | prediction > threshold)
             positivity[model_j][thr_m] ~ beta(pos_post1[model_j, thr_m], pos_post2[model_j, thr_m]);    
@@ -64,8 +66,8 @@ model {
       target += weibull_lccdf(censored_times_marginal | alpha_marginal, sigma_marginal );
     }
 
-    alpha_marginal ~ cauchy(0, prior_scale_alpha);
-    sigma_marginal ~ student_t(3, 0, prior_scale_sigma);
+    alpha_marginal ~ gamma(prior_shape_alpha, prior_rate_alpha);
+    sigma_marginal ~ student_t(prior_df_sigma, 0, prior_scale_sigma);
     
 
 
@@ -86,12 +88,12 @@ generated quantities {
   // for each threshold, each model
   matrix<lower=0, upper=1>[n_thr, n_models] prob_better_than_soc;
   // Treat all
-  St_marginal = exp((-1) * ( prediction_time / sigma_marginal )^alpha_marginal);
+  St_marginal = exp((-1) * pow( prediction_time / sigma_marginal, alpha_marginal));
   treat_all = (1-St_marginal) * 1 - St_marginal * 1 * odds_thrs;
 
   for (model_j in 1:n_models) {
     for (thr_m in 1:n_thr) {
-        St_positives[model_j, thr_m] = exp( (-1) * ( ( prediction_time / sigma[model_j, thr_m] )^alpha[model_j, thr_m] ) );  // survival at prediction time
+        St_positives[model_j, thr_m] = exp( (-1) * pow(prediction_time / sigma[model_j, thr_m], alpha[model_j, thr_m]) );  // survival at prediction time
         net_benefit[thr_m, model_j] = ((1 - St_positives[model_j, thr_m]) * positivity[model_j, thr_m]) - ((St_positives[model_j, thr_m] * positivity[model_j, thr_m]) * odds_thrs[thr_m]);
     }
   }
@@ -109,7 +111,7 @@ generated quantities {
         highest_nb_other_than_model_j[thr_i, model_j] = best_among_treat_all_or_none;
       }
 
-      // P(useful)
+      // P(useful or best)
       prob_better_than_soc[thr_i, model_j] = net_benefit[thr_i, model_j] > highest_nb_other_than_model_j[thr_i, model_j];
       // Delta against best strategy
       delta[thr_i, model_j] = net_benefit[thr_i, model_j] - highest_nb_other_than_model_j[thr_i, model_j];
