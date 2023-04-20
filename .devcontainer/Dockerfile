@@ -1,1 +1,1 @@
-FROM giulianocruz/rstudio:0.0.7
+FROM giulianocruz/rstudio:0.0.9

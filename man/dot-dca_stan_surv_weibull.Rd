@@ -27,10 +27,10 @@ using Stan for survival outcomes (Weibull model)}
   censored_times_marginal,
   other_models_indices,
   prior_only,
-  mean_log_alpha = 1,
-  sd_log_alpha = 2.25,
-  mean_mu = 0,
-  sd_mu = 2,
+  shape_prior,
+  scale_prior,
+  shape_prior_pars,
+  scale_prior_pars,
   iter = 2000,
   refresh = 0,
   ...
@@ -38,14 +38,14 @@ using Stan for survival outcomes (Weibull model)}
 }
 \arguments{
 \item{refresh}{Control verbosity of
-\href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.}
+\href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.  # nolint}
 
 \item{...}{Arguments passed to
-\href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains).}
+\href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains).  # nolint}
 }
 \value{
 An object of class
-\href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} returned by \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains)
+\href{https://mc-stan.org/rstan/reference/stanfit-class.html}{\code{stanfit}} returned by \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}} (e.g. iter, chains)  # nolint
 }
 \description{
 Fit Bayesian Decision Curve Analysis
