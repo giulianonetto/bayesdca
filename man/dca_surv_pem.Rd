@@ -36,3 +36,4 @@ data(dca_survival_data)
 fit <- dca_surv_pem(dca_survival_data, prediction_time = 1, cores = 4)
 plot(fit)
 }
+\keyword{internal}

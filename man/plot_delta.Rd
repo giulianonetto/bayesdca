@@ -2,7 +2,7 @@
 % Please edit documentation in R/plotting.R
 \name{plot_delta}
 \alias{plot_delta}
-\title{Plot BayesDCAList delta}
+\title{Plot BayesDCA delta}
 \usage{
 plot_delta(
   obj,
@@ -13,7 +13,7 @@ plot_delta(
 )
 }
 \arguments{
-\item{obj}{BayesDCAList object}
+\item{obj}{BayesDCA object}
 
 \item{colors}{Named vector with color for each model or test. If provided
 for a subset of models or tests, only that subset will be plotted.}
@@ -24,7 +24,7 @@ for a subset of models or tests, only that subset will be plotted.}
 A ggplot object.
 }
 \description{
-Plot BayesDCAList delta
+Plot BayesDCA delta
 }
 \examples{
 data(PredModelData)

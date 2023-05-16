@@ -1,26 +1,26 @@
-#' @title Plot BayesDCAList
+#' @title Plot BayesDCA
 #'
-#' @param obj BayesDCAList object
+#' @param obj BayesDCA object
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
 #' @param models_or_tests Character vector with
 #' models or tests to compare. If null, compares
-#' either first two in `obj$model_or_test_names`
+#' either first two in `obj$model_or_tests`
 #' or the first one against Treat all/none
 #' (if only one available).
 #' @importFrom magrittr %>%
 #' @export
-plot.BayesDCAList <- function(obj,
-                              models_or_tests = NULL,
-                              colors = NULL,
-                              labels = NULL,
-                              raw_values = NULL,
-                              raw_values_label = "Biomarker threshold", ...) {
+plot.BayesDCA <- function(obj,
+                          models_or_tests = NULL,
+                          colors = NULL,
+                          labels = NULL,
+                          raw_values = NULL,
+                          raw_values_label = "Biomarker threshold", ...) {
   if (!is.null(models_or_tests)) {
     stopifnot(
       "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
+        models_or_tests %in% obj$model_or_tests
       )
     )
 
@@ -99,10 +99,8 @@ plot.BayesDCAList <- function(obj,
     ggplot2::guides(
       fill = "none",
       color = ggplot2::guide_legend(
-        keywidth = ggplot2::unit(0.5, "cm"),
-        override.aes = list(
-          linetype = c(1, 2, rep(1, dplyr::n_distinct(net_benefit_data$model_or_test_name))) # nolint
-        )
+        keywidth = ggplot2::unit(1, "cm"),
+        override.aes = list(linewidth = 2)
       )
     )
 
@@ -134,13 +132,13 @@ plot.BayesDCAList <- function(obj,
 #' @param obj BayesDCASurv object
 #' @export
 plot.BayesDCASurv <- function(obj, ...) {
-  plot.BayesDCAList(obj = obj, ... = ...)
+  plot.BayesDCA(obj = obj, ... = ...)
 }
 
-#' @title Plot BayesDCAList comparison
+#' @title Plot BayesDCA comparison
 #'
-#' @param obj BayesDCAList object
-#' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_test_names` or the first one against Treat all/none (if only one available).
+#' @param obj BayesDCA object
+#' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_tests` or the first one against Treat all/none (if only one available).
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
@@ -163,11 +161,11 @@ compare_dca <- function(obj, models_or_tests = NULL, colors = NULL, labels = NUL
   }
 
   if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_test_names))
+    models_or_tests <- as.vector(na.omit(obj$model_or_tests))
   } else {
     stopifnot(
       "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
+        models_or_tests %in% obj$model_or_tests
       )
     )
   }
@@ -237,9 +235,9 @@ compare_dca <- function(obj, models_or_tests = NULL, colors = NULL, labels = NUL
   }
 }
 
-#' @title Plot BayesDCAList delta
+#' @title Plot BayesDCA delta
 #'
-#' @param obj BayesDCAList object
+#' @param obj BayesDCA object
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
@@ -261,50 +259,42 @@ plot_delta <- function(obj,
       "Must specify two models_or_tests to plot pairwise comparison" = length(models_or_tests) == 2 # nolint
     )
   }
-  if (is.null(obj$draws)) {
-    msg <- "Retrieving posterior draws."
-    message(msg)
-    if (inherits(obj, "BayesDCAList")) {
-      obj$draws <- .extract_dca_draws(
-        fit = obj,
-        model_or_test_names = models_or_tests
-      )
-    } else {
-      obj$draws <- .extract_dca_surv_draws(
-        fit = obj,
-        model_or_test_names = models_or_tests
-      )
-    }
-  }
 
-  if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_test_names))
-  } else {
-    stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
-      )
-    )
-  }
+  models_or_tests <- validate_models_or_tests(
+    obj = obj, models_or_tests = models_or_tests
+  )
 
   if (is.null(labels)) {
     labels <- setNames(models_or_tests, models_or_tests)
   } else {
     stopifnot(
-      "Names of labels must match models_or_tests" = all(names(labels) == models_or_tests) # nolint
+      "Names of labels must match models_or_tests" = all(sort(names(labels)) == sort(models_or_tests)) # nolint
     )
   }
 
-  if (type == "pairwise") {
-    nb1 <- obj$draws$net_benefit[[models_or_tests[1]]]
-    nb2 <- obj$draws$net_benefit[[models_or_tests[2]]]
-    .delta <- matrixStats::colQuantiles(nb1 - nb2, probs = c(.025, .5, .975))
-    df <- tibble::tibble(
-      estimate = .delta[, "50%"],
-      `2.5%` = .delta[, "2.5%"],
-      `97.5%` = .delta[, "97.5%"],
-      threshold = obj$thresholds,
+  if (inherits(obj, "BayesDCA")) {
+    df <- get_delta_plot_data_binary(
+      obj = obj,
+      models_or_tests = models_or_tests,
+      type = type,
+      labels = labels
     )
+  } else if (inherits(obj, "BayesDCASurv")) {
+    df <- get_delta_plot_data_surv(
+      obj = obj,
+      models_or_tests = models_or_tests,
+      type = type,
+      labels = labels
+    )
+  } else {
+    msg <- paste0(
+      "FATAL - unknown object: ", class(obj),
+      "\nIt should be either 'BayesDCA' or 'BayesDCASurv'."
+    )
+    stop(msg)
+  }
+
+  if (type == "pairwise") {
     .subtitle <- paste0(
       labels[models_or_tests[1]],
       " v.s. ",
@@ -319,38 +309,6 @@ plot_delta <- function(obj,
       ggplot2::geom_ribbon(alpha = 0.3) +
       ggplot2::geom_line(lwd = 0.9)
   } else {
-    df <- lapply(
-      seq_along(models_or_tests),
-      function(i) {
-        .m <- models_or_tests[i]
-
-        if (type == "best") {
-          .delta <- matrixStats::colQuantiles(obj$draws$delta_default[[.m]], probs = c(.025, .5, .975)) # nolint
-        } else { # nolint type = 'useful'
-          nb1 <- obj$draws$net_benefit[[.m]]
-          nb2 <- pmax(obj$draws$treat_all, 0)  #nolint default strategies: treat all or none (0)
-          .delta <- matrixStats::colQuantiles(nb1 - nb2, probs = c(.025, .5, .975))  #nolint
-        }
-
-        tibble::tibble(
-          estimate = .delta[, "50%"],
-          `2.5%` = .delta[, "2.5%"],
-          `97.5%` = .delta[, "97.5%"],
-          threshold = obj$thresholds,
-          model_or_test = .m,
-          label = labels[models_or_tests[i]]
-        )
-      }
-    ) %>%
-      dplyr::bind_rows()
-
-    .colors_and_labels <- get_colors_and_labels(
-      obj = obj,
-      colors = colors,
-      labels = labels,
-      models_or_tests = models_or_tests,
-      all_or_none = FALSE
-    )
     .subtitle <- paste0(
       "Difference against ",
       ifelse(
@@ -358,6 +316,13 @@ plot_delta <- function(obj,
         "treat all or none",
         "best competitor"
       )
+    )
+    .colors_and_labels <- get_colors_and_labels(
+      obj = obj,
+      colors = colors,
+      labels = labels,
+      models_or_tests = models_or_tests,
+      all_or_none = FALSE
     )
     initial_plot <- df %>%
       ggplot2::ggplot() +
@@ -387,17 +352,25 @@ plot_delta <- function(obj,
     ggplot2::labs(
       x = "Decision threshold",
       y = expression(Delta[NB]),
-      subtitle = .subtitle
+      subtitle = .subtitle,
+      color = NULL, fill = NULL
     ) +
     ggplot2::coord_cartesian(
       ylim = c(.ymin, .ymax)
+    ) +
+    ggplot2::guides(
+      fill = "none",
+      color = ggplot2::guide_legend(
+        keywidth = ggplot2::unit(1, "cm"),
+        override.aes = list(linewidth = 2)
+      )
     )
   return(.plot)
 }
 
 #' @title Plot P(useful) from Wynants 2018 (doi: 10.1002/sim.7653)
-#' @param obj BayesDCAList or BayesDCASurv object
-#' @param mcip Minimal clinically important difference. Defaults to zero. Used only for `type = "pairwise"`
+#' @param obj BayesDCA or BayesDCASurv object
+#' @param min_diff Minimal difference for superiority. Defaults to zero. Used only for `type = "pairwise"`
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
@@ -409,38 +382,17 @@ plot_delta <- function(obj,
 #' plot_superiority_prob(fit)
 
 #' @return A ggplot object.
-plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", "useful", "pairwise"), mcip = 0, colors = NULL, labels = NULL) {
+plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", "useful", "pairwise"), min_diff = 0, colors = NULL, labels = NULL) {
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(
       "Must specify two models_or_tests to plot pairwise comparison" = length(models_or_tests) == 2 # nolint
     )
   }
-  if (is.null(obj$draws)) {
-    msg <- "Retrieving posterior draws."
-    message(msg)
-    if (inherits(obj, "BayesDCAList")) {
-      obj$draws <- .extract_dca_draws(
-        fit = obj,
-        model_or_test_names = models_or_tests
-      )
-    } else {
-      obj$draws <- .extract_dca_surv_draws(
-        fit = obj,
-        model_or_test_names = models_or_tests
-      )
-    }
-  }
 
-  if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_test_names))
-  } else {
-    stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
-      )
-    )
-  }
+  models_or_tests <- validate_models_or_tests(
+    obj = obj, models_or_tests = models_or_tests
+  )
 
   if (is.null(labels)) {
     labels <- setNames(models_or_tests, models_or_tests)
@@ -450,42 +402,38 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
     )
   }
 
-  if (type == "pairwise") {
-    nb1 <- obj$draws$net_benefit[[models_or_tests[1]]]
-    nb2 <- obj$draws$net_benefit[[models_or_tests[2]]]
-    .prob <- colMeans(nb1 - nb2 > mcip)
-    df <- tibble::tibble(
-      prob = .prob,
-      threshold = obj$thresholds
+  if (inherits(obj, "BayesDCA")) {
+    df <- get_superiority_prob_plot_data_binary(
+      obj = obj,
+      min_diff = min_diff,
+      models_or_tests = models_or_tests,
+      type = type,
+      labels = labels
     )
+  } else if (inherits(obj, "BayesDCASurv")) {
+    df <- get_superiority_prob_plot_data_surv(
+      obj = obj,
+      models_or_tests = models_or_tests,
+      type = type,
+      labels = labels
+    )
+  } else {
+    msg <- paste0(
+      "FATAL - unknown object: ", class(obj),
+      "\nIt should be either 'BayesDCA' or 'BayesDCASurv'."
+    )
+    stop(msg)
+  }
+
+
+
+  if (type == "pairwise") {
     .subtitle <- paste0("P(", labels[models_or_tests[1]], " better than ", labels[models_or_tests[2]], ")") # nolint
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = prob)) + # nolint
       ggplot2::geom_line(lwd = 0.9)
   } else {
-    df <- lapply(
-      seq_along(models_or_tests),
-      function(i) {
-        .m <- models_or_tests[i]
-
-        if (type == "best") {
-          .prob <- colMeans(obj$draws$prob_best[[.m]])
-        } else { # type = 'useful'
-          nb1 <- obj$draws$net_benefit[[.m]]
-          nb2 <- pmax(obj$draws$treat_all, 0) # default strategies: treat all or none (0)
-          .prob <- colMeans(nb1 > nb2)
-        }
-
-        tibble::tibble(
-          prob = .prob,
-          threshold = obj$thresholds,
-          model_or_test = .m,
-          label = labels[models_or_tests[i]]
-        )
-      }
-    ) %>%
-      dplyr::bind_rows()
-
+    .subtitle <- paste0("P(", type, ")")
     .colors_and_labels <- get_colors_and_labels(
       obj = obj,
       colors = colors,
@@ -493,7 +441,6 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
       models_or_tests = models_or_tests,
       all_or_none = FALSE
     )
-    .subtitle <- paste0("P(", type, ")")
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = prob)) + # nolint
       ggplot2::geom_line(ggplot2::aes(color = model_or_test), lwd = 0.9) + # nolint
@@ -508,8 +455,8 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
     ) +
     ggplot2::scale_y_continuous(
       labels = scales::percent_format(1),
-      breaks = scales::pretty_breaks(10),
-      limits = c(0, 1)
+      breaks = seq(0, 1, 0.1),
+      limits = c(0, 1.01)
     ) +
     ggplot2::labs(
       x = "Decision threshold",
@@ -523,10 +470,10 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
 
 #' @title Plot Expected Value of Perfect Information (EVPI)
 #'
-#' @param obj BayesDCAList object
+#' @param obj BayesDCA object
 #' @param models_or_tests Character vector with models or tests
 #' to compare. If null, compares either first two in
-#' `obj$model_or_test_names` or the first one against
+#' `obj$model_or_tests` or the first one against
 #' Treat all/none (if only one available).
 #' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
@@ -550,25 +497,25 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
   if (is.null(obj$draws)) {
     msg <- "Retrieving posterior draws."
     message(msg)
-    if (inherits(obj, "BayesDCAList")) {
+    if (inherits(obj, "BayesDCA")) {
       obj$draws <- .extract_dca_draws(
         fit = obj,
-        model_or_test_names = models_or_tests
+        model_or_tests = models_or_tests
       )
     } else {
       obj$draws <- .extract_dca_surv_draws(
         fit = obj,
-        model_or_test_names = models_or_tests
+        model_or_tests = models_or_tests
       )
     }
   }
 
   if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_test_names))
+    models_or_tests <- as.vector(na.omit(obj$model_or_tests))
   } else {
     stopifnot(
       "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
+        models_or_tests %in% obj$model_or_tests
       )
     )
   }
@@ -670,13 +617,13 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
 #' Plot classification performance from Bayesian DCA of binary outcome
 #'
 #' May plot either sensitivity or specificity.
-#' @param obj BayesDCAList object
+#' @param obj BayesDCA object
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
 #' @param models_or_tests Character vector with models or tests
 #' to compare. If null, compares either first two in
-#' `obj$model_or_test_names` or the first one against
+#' `obj$model_or_tests` or the first one against
 #' Treat all/none (if only one available).
 #' @importFrom magrittr %>%
 #' @export
@@ -690,14 +637,14 @@ plot_classification <- function(obj,
   if (!is.null(models_or_tests)) {
     stopifnot(
       "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_test_names
+        models_or_tests %in% obj$model_or_tests
       )
     )
 
     plot_data <- obj$summary[[type]] %>%
       dplyr::filter(model_or_test_name %in% models_or_tests) # nolint
   } else {
-    models_or_tests <- obj$model_or_test_names
+    models_or_tests <- obj$model_or_tests
     plot_data <- obj$summary[[type]]
   }
 

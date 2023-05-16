@@ -14,7 +14,7 @@ plot_superiority_prob(
 )
 }
 \arguments{
-\item{obj}{BayesDCAList or BayesDCASurv object}
+\item{obj}{BayesDCA or BayesDCASurv object}
 
 \item{mcip}{Minimal clinically important difference. Defaults to zero. Used only for \code{type = "pairwise"}}
 

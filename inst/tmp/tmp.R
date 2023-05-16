@@ -1,4 +1,3 @@
-
 priors <- expand.grid(
   alphas = c(1, 2, 2.5, 5, 10),
   sigmas = c(1, 2, 2.5, 5, 10)
@@ -73,3 +72,20 @@ system.time({
     keep_fit = TRUE
   )
 })
+
+
+if (is.null(obj$draws)) {
+  msg <- "Retrieving posterior draws."
+  message(msg)
+  if (inherits(obj, "BayesDCA")) {
+    obj$draws <- .extract_dca_draws(
+      fit = obj,
+      model_or_tests = models_or_tests
+    )
+  } else {
+    obj$draws <- .extract_dca_surv_draws(
+      fit = obj,
+      model_or_tests = models_or_tests
+    )
+  }
+}

@@ -140,7 +140,7 @@
     control <- list(adapt_delta = 0.9)
   }
 
-  .model <- stanmodels$dca_time_to_event_weibull
+  .model <- stanmodels$dca_survival_weibull
   stanfit <- rstan::sampling(
     .model,
     data = standata,
@@ -154,9 +154,9 @@
 #' @title Bayesian Decision Curve Analysis for
 #' Survival outcomes (deprecated)
 #'
-#' @export
 #' @return An object of class `BayesDCASurv`
 #' @importFrom magrittr %>%
+#' @keywords internal
 #' @examples
 #' data(dca_survival_data)
 #' fit <- dca_surv_pem(dca_survival_data, prediction_time = 1, cores = 4)
@@ -191,7 +191,8 @@ dca_surv_pem <- function(.data, # nolint
   # avoid thresholds in {0, 1}
   thresholds <- thresholds %>%
     pmin(0.99) %>%
-    pmax(1e-9)
+    pmax(1e-9) %>%
+    unique()
 
   # preprocess .data
   model_or_test_names <- colnames(.data)[-1]
@@ -388,7 +389,8 @@ dca_surv <- function(.data, # nolint
   # avoid thresholds in {0, 1}
   thresholds <- thresholds %>%
     pmin(0.99) %>%
-    pmax(1e-9)
+    pmax(1e-9) %>%
+    unique()
 
   model_or_test_names <- colnames(.data)[-1]
   prediction_data <- data.frame(.data[, -1])

@@ -4,12 +4,12 @@
 \alias{.extract_dca_summary}
 \title{Get summary from BayesDCA fit}
 \usage{
-.extract_dca_summary(fit, model_or_test_names, summary_probs, thresholds)
+.extract_dca_summary(fit, model_or_tests, summary_probs, thresholds)
 }
 \arguments{
 \item{fit}{A stanfit object.}
 
-\item{model_or_test_names}{Vector of names of models or binary tests under assessment.}
+\item{model_or_tests}{Vector of names of models or binary tests under assessment.}
 
 \item{summary_probs}{Numeric vector giving probabilities for credible interval.}
 

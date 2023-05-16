@@ -80,13 +80,13 @@ get_colors_and_labels <- function(obj,
                                   all_or_none = TRUE) {
   # decide which models/tests to include
   if (is.null(models_or_tests)) {
-    model_or_test_names <- obj$model_or_test_names
+    model_or_tests <- obj$model_or_tests
   } else {
     stopifnot(
-      any(models_or_tests %in% obj$model_or_test_names)
+      any(models_or_tests %in% obj$model_or_tests)
     )
-    model_or_test_names <- models_or_tests[
-      models_or_tests %in% obj$model_or_test_names
+    model_or_tests <- models_or_tests[
+      models_or_tests %in% obj$model_or_tests
     ]
   }
   # pick color palette for ggplot
@@ -98,7 +98,7 @@ get_colors_and_labels <- function(obj,
     color_values <- character()
   }
 
-  n_colors <- length(model_or_test_names)
+  n_colors <- length(model_or_tests)
   if (n_colors < 9) {
     palette <- RColorBrewer:::brewer.pal(max(c(n_colors, 3)), "Dark2")
   } else {
@@ -108,7 +108,7 @@ get_colors_and_labels <- function(obj,
   }
   # set actual color values to use in scale_color_manual
   for (i in seq_len(n_colors)) {
-    model_or_test <- model_or_test_names[i]
+    model_or_test <- model_or_tests[i]
     if (!is.null(colors) && model_or_test %in% names(colors)) {
       color_values[model_or_test] <- colors[[model_or_test]]
     } else {
@@ -662,4 +662,19 @@ get_prior_sample_size <- function(thresholds,
   }
 
   return(.priors)
+}
+
+validate_models_or_tests <- function(obj,
+                                     models_or_tests = NULL) {
+  if (is.null(models_or_tests)) {
+    models_or_tests <- as.vector(na.omit(obj$model_or_tests))
+  } else {
+    stopifnot(
+      "Provided `models_or_tests` are not available" = all(
+        models_or_tests %in% obj$model_or_tests
+      )
+    )
+  }
+
+  return(models_or_tests)
 }

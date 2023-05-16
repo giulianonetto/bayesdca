@@ -6,9 +6,7 @@
 \usage{
 dca(
   .data,
-  thresholds = seq(0.01, 0.5, 0.01),
-  keep_draws = TRUE,
-  keep_fit = FALSE,
+  thresholds = seq(0, 0.5, length = 51),
   prior_p = NULL,
   prior_se = NULL,
   prior_sp = NULL,
@@ -22,7 +20,7 @@ dca(
   summary_probs = c(0.025, 0.975),
   external_prevalence_data = NULL,
   prior_only = FALSE,
-  refresh = 0,
+  n_draws = 4000,
   ...
 )
 }
@@ -34,12 +32,6 @@ binary tests.}
 
 \item{thresholds}{Numeric vector with probability thresholds with which
 the net benefit should be computed (default is \code{seq(0.01, 0.5, 0.02)}).}
-
-\item{keep_draws}{Logical indicating whether to keep posterior
-draws from \code{stanfit} object (default is TRUE).}
-
-\item{keep_fit}{Logical indicating whether to keep \code{stanfit} in
-the output (default is FALSE).}
 
 \item{prior_p, prior_se, prior_sp}{Non-negative shape values for
 Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
@@ -72,15 +64,21 @@ population).}
 
 \item{prior_only}{If set to TRUE, will produce prior DCA.}
 
+\item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter,
+chains).}
+
+\item{keep_fit}{Logical indicating whether to keep \code{stanfit} in
+the output (default is FALSE).}
+
+\item{keep_draws}{Logical indicating whether to keep posterior
+draws from \code{stanfit} object (default is TRUE).}
+
 \item{refresh}{Control verbosity of \code{rstan::sampling}
 (check its help
 page for details).}
-
-\item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter,
-chains).}
 }
 \value{
-An object of class \code{BayesDCAList}
+An object of class \code{BayesDCA}
 }
 \description{
 Estimate decision curves for a list of predictive models and/or

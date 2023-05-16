@@ -2,7 +2,7 @@
 % Please edit documentation in R/plotting.R
 \name{compare_dca}
 \alias{compare_dca}
-\title{Plot BayesDCAList comparison}
+\title{Plot BayesDCA comparison}
 \usage{
 compare_dca(
   obj,
@@ -16,9 +16,9 @@ compare_dca(
 )
 }
 \arguments{
-\item{obj}{BayesDCAList object}
+\item{obj}{BayesDCA object}
 
-\item{models_or_tests}{Character vector with models or tests to compare. If null, compares either first two in \code{obj$model_or_test_names} or the first one against Treat all/none (if only one available).}
+\item{models_or_tests}{Character vector with models or tests to compare. If null, compares either first two in \code{obj$model_or_tests} or the first one against Treat all/none (if only one available).}
 
 \item{colors}{Named vector with color for each model or test. If provided
 for a subset of models or tests, only that subset will be plotted.}
@@ -31,7 +31,7 @@ for a subset of models or tests, only that subset will be plotted.}
 A patchwork/ggplot object or a list of ggplot objects.
 }
 \description{
-Plot BayesDCAList comparison
+Plot BayesDCA comparison
 }
 \examples{
 data(PredModelData)
