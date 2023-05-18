@@ -16,19 +16,14 @@ plot.BayesDCA <- function(obj,
                           colors = NULL,
                           labels = NULL,
                           raw_values = NULL,
-                          raw_values_label = "Biomarker threshold", ...) {
-  if (!is.null(models_or_tests)) {
-    stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_tests
-      )
-    )
+                          raw_values_label = "Biomarker threshold",
+                          linewidth = 1.5, ...) {
+  models_or_tests <- validate_models_or_tests(
+    obj = obj, models_or_tests = models_or_tests
+  )
 
-    net_benefit_data <- obj$summary$net_benefit %>%
-      dplyr::filter(model_or_test_name %in% models_or_tests) # nolint
-  } else {
-    net_benefit_data <- obj$summary$net_benefit
-  }
+  net_benefit_data <- obj$summary$net_benefit %>%
+    dplyr::filter(model_or_test_name %in% models_or_tests)
 
   colors_and_labels <- get_colors_and_labels(
     obj = obj,
@@ -58,7 +53,7 @@ plot.BayesDCA <- function(obj,
       alpha = 0.2
     ) +
     ggplot2::geom_line(
-      data = obj$summary$treat_all,
+      data = obj$summary$treat_all, linewidth = linewidth,
       ggplot2::aes(y = estimate, color = "Treat all", group = 1) # nolint
     ) +
     # add net benefit curves
@@ -72,6 +67,7 @@ plot.BayesDCA <- function(obj,
     ) +
     ggplot2::geom_line(
       data = net_benefit_data,
+      linewidth = linewidth,
       ggplot2::aes(
         y = estimate,
         color = model_or_test_name,
@@ -81,7 +77,7 @@ plot.BayesDCA <- function(obj,
     # add treat none curve
     ggplot2::geom_hline(
       ggplot2::aes(color = "Treat none", yintercept = 0),
-      linetype = 2, lwd = 0.8
+      linetype = 2, linewidth = linewidth,
     ) +
     # make it pretty
     ggplot2::theme_bw(base_size = 14) +
@@ -131,8 +127,116 @@ plot.BayesDCA <- function(obj,
 #'
 #' @param obj BayesDCASurv object
 #' @export
-plot.BayesDCASurv <- function(obj, ...) {
-  plot.BayesDCA(obj = obj, ... = ...)
+plot.BayesDCASurv <- function(obj,
+                              models_or_tests = NULL,
+                              colors = NULL,
+                              labels = NULL,
+                              raw_values = NULL,
+                              raw_values_label = "Biomarker threshold",
+                              linewidth = 1.5) {
+  models_or_tests <- validate_models_or_tests(
+    obj = obj, models_or_tests = models_or_tests
+  )
+
+  net_benefit_data <- obj$summary$net_benefit %>%
+    dplyr::filter(model_or_test_name %in% models_or_tests)
+
+  colors_and_labels <- get_colors_and_labels(
+    obj = obj,
+    colors = colors,
+    labels = labels,
+    models_or_tests = models_or_tests
+  )
+
+  .ymin <- ifelse(
+    max(obj$summary$treat_all$estimate) > 0.02,
+    -0.02,
+    -max(obj$summary$treat_all$estimate)
+  )
+
+  .p <- ggplot2::ggplot() +
+    # set x axis
+    ggplot2::aes(x = threshold) + # nolint
+    # add color/fill/label scheme
+    colors_and_labels +
+    # add treat all curve
+    ggplot2::geom_ribbon(
+      data = obj$summary$treat_all,
+      ggplot2::aes(
+        ymax = `97.5%`, ymin = `2.5%`, # nolint
+        fill = "Treat all"
+      ),
+      alpha = 0.2
+    ) +
+    ggplot2::geom_line(
+      data = obj$summary$treat_all, linewidth = linewidth,
+      ggplot2::aes(y = estimate, color = "Treat all", group = 1) # nolint
+    ) +
+    # add net benefit curves
+    ggplot2::geom_ribbon(
+      data = net_benefit_data,
+      ggplot2::aes(
+        ymin = `2.5%`, ymax = `97.5%`,
+        fill = model_or_test_name # nolint
+      ), # nolint
+      alpha = 0.4
+    ) +
+    ggplot2::geom_line(
+      data = net_benefit_data,
+      linewidth = linewidth,
+      ggplot2::aes(
+        y = estimate,
+        color = model_or_test_name,
+        group = model_or_test_name
+      )
+    ) +
+    # add treat none curve
+    ggplot2::geom_hline(
+      ggplot2::aes(color = "Treat none", yintercept = 0),
+      linetype = 2, linewidth = linewidth,
+    ) +
+    # make it pretty
+    ggplot2::theme_bw(base_size = 14) +
+    ggplot2::coord_cartesian(ylim = c(.ymin, NA)) +
+    ggplot2::scale_x_continuous(
+      labels = scales::percent
+    ) +
+    ggplot2::scale_y_continuous(
+      breaks = scales::pretty_breaks()
+    ) +
+    ggplot2::labs(
+      x = "Decision threshold", y = "Net Benefit",
+      color = NULL
+    ) +
+    ggplot2::guides(
+      fill = "none",
+      color = ggplot2::guide_legend(
+        keywidth = ggplot2::unit(1, "cm"),
+        override.aes = list(linewidth = 2)
+      )
+    )
+
+  if (!is.null(raw_values)) {
+    stopifnot(is.data.frame(raw_values))
+
+    raw_values_p <- ggplot2::ggplot(
+      raw_values,
+      ggplot2::aes(x = thresholds * 100) # nolint
+    ) +
+      ggplot2::scale_x_continuous(
+        labels = raw_values$values,
+      ) +
+      ggplot2::theme_bw(base_size = 14) +
+      ggplot2::labs(
+        x = raw_values_label
+      )
+    .p <- (.p / raw_values_p) +
+      patchwork::plot_layout(
+        heights = c(0.9, 0.01)
+      )
+  }
+
+  return(.p)
 }
 
 #' @title Plot BayesDCA comparison
@@ -151,8 +255,14 @@ plot.BayesDCASurv <- function(obj, ...) {
 #' fit <- dca(PredModelData, cores = 4)
 #' compare_dca(fit)
 #' @return A patchwork/ggplot object or a list of ggplot objects.
-compare_dca <- function(obj, models_or_tests = NULL, colors = NULL, labels = NULL,
-                        plot_list = FALSE, .evpi = FALSE, type = c("best", "useful", "pairwise"), ...) {
+compare_dca <- function(obj,
+                        models_or_tests = NULL,
+                        colors = NULL,
+                        labels = NULL,
+                        plot_list = FALSE,
+                        .evpi = FALSE,
+                        type = c("best", "useful", "pairwise"),
+                        ...) {
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(

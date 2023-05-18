@@ -39,35 +39,31 @@ parameters {
     real<lower=0> scale[n_models, n_thr];
     real<lower=0> shape_marginal;
     real<lower=0> scale_marginal;
-    vector<lower=0, upper=1>[n_thr] positivity[n_models];
 }
 
 model {
-    for (model_j in 1:n_models) {
-        for (thr_m in 1:n_thr) {
+    for (j in 1:n_models) {
+        for (i in 1:n_thr) {
             if (prior_only == 0) {
-                if (event_times_sizes[model_j, thr_m] > 0) {
-                    segment(event_times_stacked, event_times_start_positions[model_j, thr_m], event_times_sizes[model_j, thr_m]) ~ weibull(shape[model_j, thr_m], scale[model_j, thr_m]);
+                if (event_times_sizes[j, i] > 0) {
+                    segment(event_times_stacked, event_times_start_positions[j, i], event_times_sizes[j, i]) ~ weibull(shape[j, i], scale[j, i]);
                 }  // else: no positives for this model at this threshold with observed event times
-                if (censored_times_sizes[model_j, thr_m] > 0) {
-                    target += weibull_lccdf(segment(censored_times_stacked, censored_times_start_positions[model_j, thr_m], censored_times_sizes[model_j, thr_m]) | shape[model_j, thr_m], scale[model_j, thr_m] );
+                if (censored_times_sizes[j, i] > 0) {
+                    target += weibull_lccdf(segment(censored_times_stacked, censored_times_start_positions[j, i], censored_times_sizes[j, i]) | shape[j, i], scale[j, i] );
                 }  // else: no positives for this model at this threshold with censored event times
             }
             // Prior statements
             if (shape_prior == 1) {
-                shape[model_j, thr_m] ~ student_t(shape_prior_pars[1], shape_prior_pars[2], shape_prior_pars[3]);
+                shape[j, i] ~ student_t(shape_prior_pars[1], shape_prior_pars[2], shape_prior_pars[3]);
             } else {
-                shape[model_j, thr_m] ~ gamma(shape_prior_pars[1], shape_prior_pars[2]);
+                shape[j, i] ~ gamma(shape_prior_pars[1], shape_prior_pars[2]);
             }
 
             if (scale_prior == 1) {
-                scale[model_j, thr_m] ~ student_t(scale_prior_pars[1], scale_prior_pars[2], scale_prior_pars[3]);
+                scale[j, i] ~ student_t(scale_prior_pars[1], scale_prior_pars[2], scale_prior_pars[3]);
             } else {
-                scale[model_j, thr_m] ~ gamma(scale_prior_pars[1], scale_prior_pars[2]);
+                scale[j, i] ~ gamma(scale_prior_pars[1], scale_prior_pars[2]);
             }
-            
-            // P(+ | prediction > threshold)
-            positivity[model_j][thr_m] ~ beta(pos_post1[model_j, thr_m], pos_post2[model_j, thr_m]);    
         }
     }
 
@@ -87,12 +83,11 @@ model {
     } else {
         scale_marginal ~ gamma(scale_prior_pars[1], scale_prior_pars[2]);
     }
-    
-
 
 }
 
 generated quantities {
+  vector<lower=0, upper=1>[n_thr] positivity[n_models];
   real<lower=0, upper=1> St_marginal;
   real<lower=0, upper=1> St_positives[n_models, n_thr];
   // Treat all (same for all models)
@@ -110,30 +105,31 @@ generated quantities {
   St_marginal = exp((-1) * pow( prediction_time / scale_marginal, shape_marginal));
   treat_all = (1-St_marginal) * 1 - St_marginal * 1 * odds_thrs;
 
-  for (model_j in 1:n_models) {
-    for (thr_m in 1:n_thr) {
-        St_positives[model_j, thr_m] = exp( (-1) * pow(prediction_time / scale[model_j, thr_m], shape[model_j, thr_m]) );  // survival at prediction time
-        net_benefit[thr_m, model_j] = ((1 - St_positives[model_j, thr_m]) * positivity[model_j, thr_m]) - ((St_positives[model_j, thr_m] * positivity[model_j, thr_m]) * odds_thrs[thr_m]);
+  for (j in 1:n_models) {
+    for (i in 1:n_thr) {
+        positivity[j][i] = beta_rng(pos_post1[j, i], pos_post2[j, i]);    
+        St_positives[j, i] = exp( (-1) * pow(prediction_time / scale[j, i], shape[j, i]) );  // survival at prediction time
+        net_benefit[i, j] = ((1 - St_positives[j, i]) * positivity[j, i]) - ((St_positives[j, i] * positivity[j, i]) * odds_thrs[i]);
     }
   }
 
   for (thr_i in 1:n_thr) {
     real best_among_treat_all_or_none = fmax(0, treat_all[thr_i]);
 
-    for (model_j in 1:n_models) {
+    for (j in 1:n_models) {
 
       if (n_models > 1) {
-        real best_among_other_models = max(net_benefit[thr_i, other_models_indices[model_j]]);
-        highest_nb_other_than_model_j[thr_i, model_j] = fmax(best_among_treat_all_or_none, best_among_other_models);
+        real best_among_other_models = max(net_benefit[thr_i, other_models_indices[j]]);
+        highest_nb_other_than_model_j[thr_i, j] = fmax(best_among_treat_all_or_none, best_among_other_models);
 
       } else {
-        highest_nb_other_than_model_j[thr_i, model_j] = best_among_treat_all_or_none;
+        highest_nb_other_than_model_j[thr_i, j] = best_among_treat_all_or_none;
       }
 
       // P(useful or best)
-      prob_better_than_soc[thr_i, model_j] = net_benefit[thr_i, model_j] > highest_nb_other_than_model_j[thr_i, model_j];
+      prob_better_than_soc[thr_i, j] = net_benefit[thr_i, j] > highest_nb_other_than_model_j[thr_i, j];
       // Delta against best strategy
-      delta[thr_i, model_j] = net_benefit[thr_i, model_j] - highest_nb_other_than_model_j[thr_i, model_j];
+      delta[thr_i, j] = net_benefit[thr_i, j] - highest_nb_other_than_model_j[thr_i, j];
     }
   }
 }

@@ -1,0 +1,3 @@
+options(radian.color_scheme = "monokai")
+options(max.print = 300)
+import::from(magrittr, `%>%`)

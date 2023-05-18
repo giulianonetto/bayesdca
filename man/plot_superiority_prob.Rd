@@ -8,7 +8,7 @@ plot_superiority_prob(
   obj,
   models_or_tests = NULL,
   type = c("best", "useful", "pairwise"),
-  mcip = 0,
+  min_diff = 0,
   colors = NULL,
   labels = NULL
 )
@@ -16,7 +16,7 @@ plot_superiority_prob(
 \arguments{
 \item{obj}{BayesDCA or BayesDCASurv object}
 
-\item{mcip}{Minimal clinically important difference. Defaults to zero. Used only for \code{type = "pairwise"}}
+\item{min_diff}{Minimal difference for superiority. Defaults to zero. Used only for \code{type = "pairwise"}}
 
 \item{colors}{Named vector with color for each model or test. If provided
 for a subset of models or tests, only that subset will be plotted.}
