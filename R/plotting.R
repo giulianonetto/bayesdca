@@ -492,7 +492,12 @@ plot_delta <- function(obj,
 #' plot_superiority_prob(fit)
 
 #' @return A ggplot object.
-plot_superiority_prob <- function(obj, strategies = NULL, type = c("best", "useful", "pairwise"), min_diff = 0, colors = NULL, labels = NULL) {
+plot_superiority_prob <- function(obj,
+                                  strategies = NULL,
+                                  type = c("best", "useful", "pairwise"),
+                                  min_diff = 0,
+                                  colors = NULL,
+                                  labels = NULL) {
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(
@@ -587,7 +592,11 @@ plot_superiority_prob <- function(obj, strategies = NULL, type = c("best", "usef
 #' Treat all/none (if only one available).
 #' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
-plot_evpi <- function(obj, strategies = NULL, type = c("best", "useful", "pairwise"), colors = NULL, labels = NULL) { # nolint
+plot_evpi <- function(obj,
+                      strategies = NULL,
+                      type = c("best", "useful", "pairwise"),
+                      colors = NULL,
+                      labels = NULL) { # nolint
   type <- match.arg(type)
 
   if (type != "best") {

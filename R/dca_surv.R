@@ -544,7 +544,8 @@ dca_surv <- function(.data, # nolint
                                       thresholds,
                                       strategies) {
   .pars <- c(
-    "net_benefit", "delta_best", "delta_useful",
+    "net_benefit",
+    "delta_best", "delta_useful",
     "p_best", "p_useful",
     "best_competitor_nb",
     "positivity", "treat_all", "St_marginal"
@@ -559,20 +560,23 @@ dca_surv <- function(.data, # nolint
     dplyr::select(-c(se_mean, sd, n_eff, Rhat)) %>% # nolint
     dplyr::rename(estimate := mean) %>% # nolint
     dplyr::mutate(
+      # sorry about this terrible code but that's how life is sometimes
       threshold_ix = dplyr::case_when(
-        str_detect(par_name, str_c(.pars[1:4], collapse = "|")) ~ str_extract(par_name, "\\[\\d+") %>% # nolint
+        str_detect(par_name, str_c(.pars[1:6], collapse = "|")) ~ str_extract(par_name, "\\[\\d+") %>% # nolint
           str_remove(string = ., pattern = "\\[") %>%
           as.integer(),
-        str_detect(par_name, str_c(.pars[5:6], collapse = "|")) ~ str_extract(par_name, "\\d+\\]") %>% # nolint
+        str_detect(par_name, "positivity") ~ str_extract(par_name, "\\d+\\]") %>% # nolint
           str_remove(string = ., pattern = "\\]") %>%
+          as.integer(),
+        str_detect(par_name, "treat_all") ~ str_extract(par_name, "\\d+") %>% # nolint
           as.integer(),
         TRUE ~ NA_integer_
       ),
       decision_strategy_ix = dplyr::case_when(
-        str_detect(par_name, str_c(.pars[1:4], collapse = "|")) ~ str_extract(par_name, "\\d+\\]") %>% # nolint
+        str_detect(par_name, str_c(.pars[1:6], collapse = "|")) ~ str_extract(par_name, "\\d+\\]") %>% # nolint
           str_remove(string = ., pattern = "\\]") %>%
           as.integer(),
-        str_detect(par_name, str_c(.pars[5], collapse = "|")) ~ str_extract(par_name, "\\[\\d+") %>% # nolint
+        str_detect(par_name, str_c("positivity", collapse = "|")) ~ str_extract(par_name, "\\[\\d+") %>% # nolint
           str_remove(string = ., pattern = "\\[") %>%
           as.integer(),
         TRUE ~ NA_integer_
@@ -615,12 +619,22 @@ dca_surv <- function(.data, # nolint
     dplyr::filter(str_detect(par_name, "treat_all")) %>% # nolint
     dplyr::select(-decision_strategy_name) # nolint
 
+  # delta useful
+  delta_useful <- fit_summary %>%
+    dplyr::filter(str_detect(par_name, "deta_useful")) # nolint
+
+  # delta best
+  delta_best <- fit_summary %>%
+    dplyr::filter(str_detect(par_name, "deta_best")) # nolint
+
   .summary <- structure(
     list(
       net_benefit = net_benefit,
       treat_all = treat_all,
       overall_surv = overall_surv,
-      positivity = positivity
+      positivity = positivity,
+      delta_useful = delta_useful,
+      delta_best = delta_best
     ),
     class = "BayesDCASummary"
   )

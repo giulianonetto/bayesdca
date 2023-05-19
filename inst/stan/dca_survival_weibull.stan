@@ -130,7 +130,7 @@ generated quantities {
       // P(best)
       p_best[i, j] = net_benefit[i, j] > best_competitor_nb[i, j];
       // P(useful)
-      p_useful[i, j] = net_benefit[i, j] > best_competitor_nb[i, j];
+      p_useful[i, j] = net_benefit[i, j] > best_among_treat_all_or_none;
       // Delta against best strategy other than j^th strategy
       delta_best[i, j] = net_benefit[i, j] - best_competitor_nb[i, j];
       // Delta agains Treat all/none
