@@ -6,7 +6,7 @@
 #' @return An object of class [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)  # nolint
 #' @keywords internal
 .dca_stan_surv_pem <- function(n_thr,
-                               n_models_or_tests,
+                               n_strategies,
                                n_intervals,
                                thresholds,
                                time_exposed,
@@ -26,7 +26,7 @@
 
   standata <- list(
     n_thr = n_thr,
-    n_models = n_models_or_tests,
+    n_strategies = n_strategies,
     n_intervals = n_intervals,
     thresholds = thresholds,
     time_exposed = time_exposed,
@@ -75,7 +75,7 @@
 #' @keywords internal
 .dca_stan_surv_weibull <- function(sample_size, # nolint
                                    n_thr,
-                                   n_models,
+                                   n_strategies,
                                    event_times_stacked,
                                    censored_times_stacked,
                                    n_event_times_stacked,
@@ -106,7 +106,7 @@
   standata <- list(
     N = sample_size,
     n_thr = n_thr,
-    n_models = n_models,
+    n_strategies = n_strategies,
     event_times_stacked = event_times_stacked,
     censored_times_stacked = censored_times_stacked,
     n_event_times_stacked = n_event_times_stacked,
@@ -195,9 +195,9 @@ dca_surv_pem <- function(.data, # nolint
     unique()
 
   # preprocess .data
-  model_or_test_names <- colnames(.data)[-1]
+  strategies <- colnames(.data)[-1]
   prediction_data <- data.frame(.data[, -1])
-  colnames(prediction_data) <- model_or_test_names
+  colnames(prediction_data) <- strategies
   surv_data <- data.frame(
     .time = unname(.data[["outcomes"]][, 1]), # observed time-to-event
     .status = unname(.data[["outcomes"]][, 2]) # 1 if event, 0 if censored
@@ -238,7 +238,7 @@ dca_surv_pem <- function(.data, # nolint
   )
   message(cli::col_br_magenta(msg))
 
-  n_models_or_tests <- ncol(prediction_data)
+  n_strategies <- ncol(prediction_data)
   n_thresholds <- length(thresholds)
   n_intervals <- length(cutpoints)
   time_exposed <- get_survival_time_exposed(prediction_time, cutpoints)
@@ -246,7 +246,7 @@ dca_surv_pem <- function(.data, # nolint
   posterior_surv_pars <- get_survival_posterior_parameters(
     .prediction_data = prediction_data,
     .surv_data = surv_data,
-    .models_or_tests = colnames(prediction_data),
+    .strategies = colnames(prediction_data),
     .cutpoints = cutpoints,
     .thresholds = thresholds,
     .prior_scaling_factor = prior_scaling_factor,
@@ -259,7 +259,7 @@ dca_surv_pem <- function(.data, # nolint
   posterior_surv_pars0 <- get_survival_posterior_parameters(
     .prediction_data = NA,
     .surv_data = surv_data,
-    .models_or_tests = 1,
+    .strategies = 1,
     .cutpoints = cutpoints,
     .thresholds = 0,
     .prior_scaling_factor = prior_scaling_factor,
@@ -276,13 +276,13 @@ dca_surv_pem <- function(.data, # nolint
   )
 
   other_models_indices <- lapply(
-    1:n_models_or_tests,
-    function(i) (1:n_models_or_tests)[-i]
+    1:n_strategies,
+    function(i) (1:n_strategies)[-i]
   )
 
   fit <- .dca_stan_surv(
     n_thr = n_thresholds,
-    n_models = n_models_or_tests,
+    n_strategies = n_strategies,
     n_intervals = n_intervals,
     thresholds = thresholds,
     time_exposed = time_exposed,
@@ -302,7 +302,7 @@ dca_surv_pem <- function(.data, # nolint
     fit = fit,
     summary_probs = summary_probs,
     thresholds = thresholds,
-    model_or_test_names = model_or_test_names
+    strategies = strategies
   )
 
   output_data <- list(
@@ -312,7 +312,7 @@ dca_surv_pem <- function(.data, # nolint
     .status = surv_data$.status,
     .data = .data,
     cutpoints = cutpoints,
-    model_or_test_names = model_or_test_names,
+    strategies = strategies,
     prediction_time = prediction_time,
     posterior_surv_pars = posterior_surv_pars[c(".alpha", ".beta")],
     posterior_surv_pars0 = posterior_surv_pars0[c(".alpha", ".beta")],
@@ -326,7 +326,7 @@ dca_surv_pem <- function(.data, # nolint
   if (isTRUE(keep_draws)) {
     output_data[["draws"]] <- .extract_dca_surv_draws(
       fit = fit,
-      model_or_test_names = model_or_test_names
+      strategies = strategies
     )
   }
 
@@ -392,10 +392,10 @@ dca_surv <- function(.data, # nolint
     pmax(1e-9) %>%
     unique()
 
-  model_or_test_names <- colnames(.data)[-1]
+  strategies <- colnames(.data)[-1]
   prediction_data <- data.frame(.data[, -1])
-  colnames(prediction_data) <- model_or_test_names
-  n_models_or_tests <- length(model_or_test_names)
+  colnames(prediction_data) <- strategies
+  n_strategies <- length(strategies)
   n_thresholds <- length(thresholds)
   surv_data <- data.frame(
     .time = unname(.data[["outcomes"]][, 1]), # observed time-to-event
@@ -414,19 +414,19 @@ dca_surv <- function(.data, # nolint
   # these are used within Stan with the segment() function
   event_times_sizes <-
     censored_times_sizes <- matrix(
-      nrow = n_models_or_tests, ncol = n_thresholds
+      nrow = n_strategies, ncol = n_thresholds
     )
 
   event_times_start_positions <-
     censored_times_start_positions <- matrix(
-      nrow = n_models_or_tests, ncol = n_thresholds
+      nrow = n_strategies, ncol = n_thresholds
     )
 
   event_times_position <- censored_times_position <- 1
-  for (j in seq_len(n_models_or_tests)) {
+  for (j in seq_len(n_strategies)) {
     for (m in seq_len(n_thresholds)) {
       .thr <- thresholds[m]
-      .model <- model_or_test_names[j]
+      .model <- strategies[j]
       .preds <- prediction_data[, .model]
 
       .event_times_positives <- surv_data$.time[
@@ -464,14 +464,14 @@ dca_surv <- function(.data, # nolint
 
   # random data information
   other_models_indices <- lapply(
-    1:n_models_or_tests,
-    function(i) (1:n_models_or_tests)[-i]
+    1:n_strategies,
+    function(i) (1:n_strategies)[-i]
   )
 
   fit <- .dca_stan_surv_weibull(
     sample_size = nrow(surv_data),
     n_thr = n_thresholds,
-    n_models = n_models_or_tests,
+    n_strategies = n_strategies,
     event_times_stacked = event_times_stacked,
     censored_times_stacked = censored_times_stacked,
     n_event_times_stacked = length(event_times_stacked),
@@ -503,7 +503,7 @@ dca_surv <- function(.data, # nolint
     fit = fit,
     summary_probs = summary_probs,
     thresholds = thresholds,
-    model_or_test_names = model_or_test_names
+    strategies = strategies
   )
 
   output_data <- list(
@@ -513,7 +513,7 @@ dca_surv <- function(.data, # nolint
     .status = surv_data$.status,
     .time_original = surv_data$.time * prediction_time,
     .data = .data,
-    model_or_test_names = model_or_test_names,
+    strategies = strategies,
     prediction_time = prediction_time,
     posterior_positivity_pars = posterior_positivity_pars
   )
@@ -525,7 +525,7 @@ dca_surv <- function(.data, # nolint
   if (isTRUE(keep_draws)) {
     output_data[["draws"]] <- .extract_dca_surv_draws(
       fit = fit,
-      model_or_test_names = model_or_test_names
+      strategies = strategies
     )
   }
 
@@ -542,10 +542,11 @@ dca_surv <- function(.data, # nolint
 .extract_dca_surv_summary <- function(fit, # nolint
                                       summary_probs,
                                       thresholds,
-                                      model_or_test_names) {
+                                      strategies) {
   .pars <- c(
-    "net_benefit", "delta", "prob_better_than_soc",
-    "highest_nb_other_than_model_j",
+    "net_benefit", "delta_best", "delta_useful",
+    "p_best", "p_useful",
+    "best_competitor_nb",
     "positivity", "treat_all", "St_marginal"
   )
 
@@ -567,7 +568,7 @@ dca_surv <- function(.data, # nolint
           as.integer(),
         TRUE ~ NA_integer_
       ),
-      model_or_test_ix = dplyr::case_when(
+      decision_strategy_ix = dplyr::case_when(
         str_detect(par_name, str_c(.pars[1:4], collapse = "|")) ~ str_extract(par_name, "\\d+\\]") %>% # nolint
           str_remove(string = ., pattern = "\\]") %>%
           as.integer(),
@@ -581,23 +582,15 @@ dca_surv <- function(.data, # nolint
         NA_real_,
         thresholds[threshold_ix]
       ),
-      model_or_test_name = ifelse(
-        is.na(model_or_test_ix), # nolint
+      decision_strategy_name = ifelse(
+        is.na(decision_strategy_ix), # nolint
         NA_character_,
-        model_or_test_names[model_or_test_ix]
+        strategies[decision_strategy_ix]
       ),
-      par_name = stringr::str_extract(par_name, "\\w+"),
-      par_name = ifelse(
-        str_detect(
-          par_name,
-          "highest_nb_other_than_model_j"
-        ),
-        "best_competitor_nb",
-        par_name
-      )
+      par_name = stringr::str_extract(par_name, "\\w+")
     ) %>%
     dplyr::select(
-      par_name, threshold, model_or_test_name, # nolint
+      par_name, threshold, decision_strategy_name, # nolint
       dplyr::everything(), -dplyr::contains("ix")
     )
 
@@ -607,7 +600,7 @@ dca_surv <- function(.data, # nolint
       str_detect(par_name, "St_marginal") # nolint
     ) %>%
     dplyr::mutate(par_name = "overall_surv") %>%
-    dplyr::select(-c(threshold, model_or_test_name)) # nolint
+    dplyr::select(-c(threshold, decision_strategy_name)) # nolint
 
   # positivity
   positivity <- fit_summary %>%
@@ -620,7 +613,7 @@ dca_surv <- function(.data, # nolint
   # treat all (net benefit for treat all strategy)
   treat_all <- fit_summary %>%
     dplyr::filter(str_detect(par_name, "treat_all")) %>% # nolint
-    dplyr::select(-model_or_test_name) # nolint
+    dplyr::select(-decision_strategy_name) # nolint
 
   .summary <- structure(
     list(
@@ -638,15 +631,16 @@ dca_surv <- function(.data, # nolint
 #' @title Get posterior draws from time-to-event DCA stanfit
 #'
 #' @param fit A stanfit object.
-#' @param model_or_test_names Vector of names of models
+#' @param strategies Vector of names of models
 #' or binary tests under assessment.
 #' @keywords internal
 .extract_dca_surv_draws <- function(fit,
-                                    model_or_test_names) {
+                                    strategies) {
   .pars <- c(
-    "net_benefit", "delta",
-    "prob_better_than_soc",
-    "highest_nb_other_than_model_j",
+    "net_benefit",
+    "delta_best", "delta_useful",
+    "p_best", "p_useful",
+    "best_competitor_nb",
     "positivity", "treat_all", "St_marginal"
   )
 
@@ -655,20 +649,31 @@ dca_surv <- function(.data, # nolint
     pars = .pars
   )
 
+  .init_list <- function() {
+    n_strategies <- length(strategies)
+    x <- vector(mode = "list", length = n_strategies)
+    setNames(x, strategies)
+  }
+
   .draws <- list(
     overall_surv = as.vector(stan_draws$St_marginal),
     treat_all = stan_draws$treat_all,
-    net_benefit = list(),
-    delta_default = list(),
-    prob_best = list()
+    net_benefit = .init_list(),
+    delta_useful = .init_list(),
+    delta_best = .init_list(),
+    p_useful = .init_list(),
+    p_best = .init_list(),
+    best_competitor_nb = .init_list()
   )
 
-  for (i in seq_along(model_or_test_names)) {
-    .name <- model_or_test_names[i]
+  for (i in seq_along(strategies)) {
+    .name <- strategies[i]
     .draws[["net_benefit"]][[.name]] <- stan_draws$net_benefit[, , i]
-    .draws[["delta_default"]][[.name]] <- stan_draws$delta[, , i]
-    .draws[["prob_best"]][[.name]] <- stan_draws$prob_better_than_soc[, , i]
-    .draws[["best_competitor_nb"]][[.name]] <- stan_draws$highest_nb_other_than_model_j[, , i] # nolint
+    .draws[["delta_useful"]][[.name]] <- stan_draws$delta_useful[, , i]
+    .draws[["delta_best"]][[.name]] <- stan_draws$delta_best[, , i]
+    .draws[["p_useful"]][[.name]] <- stan_draws$p_useful[, , i]
+    .draws[["p_best"]][[.name]] <- stan_draws$p_best[, , i]
+    .draws[["best_competitor_nb"]][[.name]] <- stan_draws$best_competitor_nb[, , i] # nolint
   }
 
   return(.draws)
@@ -698,9 +703,136 @@ print.BayesDCASurv <- function(obj, ...) {
           os$`97.5%`, "%]"
         ),
         "Models or tests: ",
-        paste0(obj$model_or_test_names, collapse = ", ")
+        paste0(obj$strategies, collapse = ", ")
       ),
       collapse = "\n"
     )
   )
+}
+
+#' @title Get delta plot data for survival bayesDCA
+#'
+#' @param obj BayesDCA object
+#' @param strategies Character vector with subset of decision strategies.
+#' @param type One of "best", "useful", or "pairwise".
+#' @importFrom magrittr %>%
+#' @keywords internal
+#' @return A ggplot object.
+get_superiority_prob_plot_data_surv <- function(obj, # nolint: object_length_linter.
+                                                min_diff = 0,
+                                                strategies = NULL,
+                                                type = c("best", "useful", "pairwise"),
+                                                labels = NULL) {
+  type <- match.arg(type)
+  if (type == "pairwise") {
+    stopifnot(
+      "Must specify two strategies to plot pairwise comparison" = length(strategies) == 2 # nolint
+    )
+  }
+
+  strategies <- validate_strategies(
+    obj = obj, strategies = strategies
+  )
+
+  if (type == "pairwise") {
+    nb1 <- obj$draws$net_benefit[[strategies[1]]]
+    nb2 <- obj$draws$net_benefit[[strategies[2]]]
+    .prob <- colMeans(nb1 - nb2 > min_diff)
+    df <- tibble::tibble(
+      prob = .prob,
+      threshold = obj$thresholds
+    )
+  } else {
+    df <- lapply(
+      seq_along(strategies),
+      function(j) {
+        .m <- strategies[j]
+        if (type == "best") {
+          .prob <- colMeans(obj$draws$p_best[[.m]])
+        } else {
+          .prob <- colMeans(obj$draws$p_useful[[.m]])
+        }
+        tibble::tibble(
+          prob = .prob,
+          threshold = obj$thresholds,
+          decision_strategy = .m,
+          label = labels[.m]
+        )
+      }
+    ) %>%
+      dplyr::bind_rows()
+  }
+  return(df)
+}
+
+#' @title Get delta plot data for binary bayesDCA
+#'
+#' @param obj BayesDCA object
+#' @param strategies Character vector with subset of decision strategies.
+#' @param type One of "best", "useful", or "pairwise".
+#' @importFrom magrittr %>%
+#' @keywords internal
+#' @return A ggplot object.
+get_delta_plot_data_surv <- function(obj,
+                                     strategies = NULL,
+                                     type = c("best", "useful", "pairwise"),
+                                     labels = NULL) {
+  type <- match.arg(type)
+  if (type == "pairwise") {
+    stopifnot(
+      "Must specify two strategies to plot pairwise comparison" = length(strategies) == 2 # nolint
+    )
+  }
+
+  strategies <- validate_strategies(
+    obj = obj, strategies = strategies
+  )
+
+  if (is.null(obj$draws)) {
+    msg <- "Retrieving posterior draws."
+    message(cli::col_br_cyan(msg))
+    if (!inherits(obj$fit, "stanfit")) {
+      msg <- "FATAL - missing posterior draws and stanfit object. Recopute dca using keep_draws = TRUE."
+    }
+    obj$draws <- .extract_dca_surv_draws(
+      fit = obj$fit,
+      strategies = strategies
+    )
+  }
+
+  if (type == "pairwise") {
+    nb1 <- obj$draws$net_benefit[[strategies[1]]]
+    nb2 <- obj$draws$net_benefit[[strategies[2]]]
+    .delta <- nb1 - nb2
+    qs <- matrixStats::colQuantiles(.delta, probs = c(.025, .975))
+    df <- tibble::tibble(
+      estimate = colMeans(.delta),
+      `2.5%` = qs[, "2.5%"],
+      `97.5%` = qs[, "97.5%"],
+      threshold = obj$thresholds,
+    )
+  } else {
+    df <- lapply(
+      seq_along(strategies),
+      function(i) {
+        .m <- strategies[i]
+        if (type == "best") {
+          .delta <- obj$draws$delta_best[[.m]]
+        } else {
+          .delta <- obj$draws$delta_useful[[.m]]
+        }
+        qs <- matrixStats::colQuantiles(.delta, probs = c(.025, .975)) # nolint
+        tibble::tibble(
+          estimate = colMeans(.delta),
+          `2.5%` = qs[, "2.5%"],
+          `97.5%` = qs[, "97.5%"],
+          threshold = obj$thresholds,
+          decision_strategy = .m,
+          label = labels[.m]
+        )
+      }
+    ) %>%
+      dplyr::bind_rows()
+  }
+  return(df)
 }

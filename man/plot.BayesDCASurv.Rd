@@ -4,7 +4,15 @@
 \alias{plot.BayesDCASurv}
 \title{Plot BayesDCASurv}
 \usage{
-\method{plot}{BayesDCASurv}(obj, ...)
+\method{plot}{BayesDCASurv}(
+  obj,
+  strategies = NULL,
+  colors = NULL,
+  labels = NULL,
+  raw_values = NULL,
+  raw_values_label = "Biomarker threshold",
+  linewidth = 1.5
+)
 }
 \arguments{
 \item{obj}{BayesDCASurv object}

@@ -6,7 +6,7 @@
 \usage{
 .get_nonconstant_prior_parameters(
   thresholds,
-  n_models_or_tests,
+  n_strategies,
   shift = 0.45,
   slope = 0.025,
   prior_sample_size = NULL,
@@ -21,7 +21,7 @@
 )
 }
 \arguments{
-\item{n_models_or_tests}{Number of models or tests (int.).}
+\item{n_strategies}{Number of models or tests (int.).}
 
 \item{prior_sample_size}{Prior sample size or strength.}
 

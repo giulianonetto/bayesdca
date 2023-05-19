@@ -7,7 +7,7 @@
 plot_classification(
   obj,
   type = c("sensitivity", "specificity"),
-  models_or_tests = NULL,
+  strategies = NULL,
   colors = NULL,
   labels = NULL
 )
@@ -15,9 +15,9 @@ plot_classification(
 \arguments{
 \item{obj}{BayesDCA object}
 
-\item{models_or_tests}{Character vector with models or tests
+\item{strategies}{Character vector with models or tests
 to compare. If null, compares either first two in
-\code{obj$model_or_tests} or the first one against
+\code{obj$strategies} or the first one against
 Treat all/none (if only one available).}
 
 \item{colors}{Named vector with color for each model or test. If provided

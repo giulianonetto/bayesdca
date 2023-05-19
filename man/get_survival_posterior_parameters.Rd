@@ -8,7 +8,7 @@ get_survival_posterior_parameters(
   .prediction_data,
   .surv_data,
   .cutpoints,
-  .models_or_tests,
+  .strategies,
   .thresholds,
   .prior_scaling_factor,
   .prediction_time,
@@ -26,7 +26,7 @@ get_survival_posterior_parameters(
 
 \item{.cutpoints}{Survival cutpoints.}
 
-\item{.models_or_tests}{Names for models or tests.}
+\item{.strategies}{Names for models or tests.}
 
 \item{.thresholds}{DCA thresholds.}
 

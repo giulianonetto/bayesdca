@@ -6,7 +6,7 @@
 \usage{
 plot_evpi(
   obj,
-  models_or_tests = NULL,
+  strategies = NULL,
   type = c("best", "useful", "pairwise"),
   colors = NULL,
   labels = NULL
@@ -15,9 +15,9 @@ plot_evpi(
 \arguments{
 \item{obj}{BayesDCA object}
 
-\item{models_or_tests}{Character vector with models or tests
+\item{strategies}{Character vector with models or tests
 to compare. If null, compares either first two in
-\code{obj$model_or_tests} or the first one against
+\code{obj$strategies} or the first one against
 Treat all/none (if only one available).}
 
 \item{labels}{Named vector with label for each model or test.}

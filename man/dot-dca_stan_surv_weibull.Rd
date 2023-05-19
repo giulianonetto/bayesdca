@@ -8,7 +8,7 @@ using Stan for survival outcomes (Weibull model)}
 .dca_stan_surv_weibull(
   sample_size,
   n_thr,
-  n_models,
+  n_strategies,
   event_times_stacked,
   censored_times_stacked,
   n_event_times_stacked,

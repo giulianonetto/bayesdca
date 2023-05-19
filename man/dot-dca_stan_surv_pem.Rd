@@ -7,7 +7,7 @@ using Stan for survival outcomes}
 \usage{
 .dca_stan_surv_pem(
   n_thr,
-  n_models_or_tests,
+  n_strategies,
   n_intervals,
   thresholds,
   time_exposed,

@@ -6,7 +6,7 @@
 \usage{
 .get_constant_prior_parameters(
   n_thresholds,
-  n_models_or_tests,
+  n_strategies,
   prior_p = NULL,
   prior_se = NULL,
   prior_sp = NULL
@@ -15,7 +15,7 @@
 \arguments{
 \item{n_thresholds}{Number of thresholds (int.).}
 
-\item{n_models_or_tests}{Number of models or tests (int.).}
+\item{n_strategies}{Number of models or tests (int.).}
 
 \item{prior_p, prior_se, prior_sp}{Non-negative shape values for
 Beta(alpha, beta) priors used for p, Se, and Sp, respectively.

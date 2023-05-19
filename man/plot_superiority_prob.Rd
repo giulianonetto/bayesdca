@@ -6,7 +6,7 @@
 \usage{
 plot_superiority_prob(
   obj,
-  models_or_tests = NULL,
+  strategies = NULL,
   type = c("best", "useful", "pairwise"),
   min_diff = 0,
   colors = NULL,

@@ -8,7 +8,7 @@
   thresholds,
   constant = TRUE,
   n_thresholds = NULL,
-  n_models_or_tests = NULL,
+  n_strategies = NULL,
   prior_p = NULL,
   prior_se = NULL,
   prior_sp = NULL,

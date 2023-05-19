@@ -4,32 +4,32 @@
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
-#' @param models_or_tests Character vector with
+#' @param strategies Character vector with
 #' models or tests to compare. If null, compares
-#' either first two in `obj$model_or_tests`
+#' either first two in `obj$strategies`
 #' or the first one against Treat all/none
 #' (if only one available).
 #' @importFrom magrittr %>%
 #' @export
 plot.BayesDCA <- function(obj,
-                          models_or_tests = NULL,
+                          strategies = NULL,
                           colors = NULL,
                           labels = NULL,
                           raw_values = NULL,
                           raw_values_label = "Biomarker threshold",
                           linewidth = 1.5, ...) {
-  models_or_tests <- validate_models_or_tests(
-    obj = obj, models_or_tests = models_or_tests
+  strategies <- validate_strategies(
+    obj = obj, strategies = strategies
   )
 
   net_benefit_data <- obj$summary$net_benefit %>%
-    dplyr::filter(model_or_test_name %in% models_or_tests)
+    dplyr::filter(decision_strategy_name %in% strategies)
 
   colors_and_labels <- get_colors_and_labels(
     obj = obj,
     colors = colors,
     labels = labels,
-    models_or_tests = models_or_tests
+    strategies = strategies
   )
 
   .ymin <- ifelse(
@@ -61,7 +61,7 @@ plot.BayesDCA <- function(obj,
       data = net_benefit_data,
       ggplot2::aes(
         ymin = `2.5%`, ymax = `97.5%`,
-        fill = model_or_test_name # nolint
+        fill = decision_strategy_name # nolint
       ), # nolint
       alpha = 0.4
     ) +
@@ -70,8 +70,8 @@ plot.BayesDCA <- function(obj,
       linewidth = linewidth,
       ggplot2::aes(
         y = estimate,
-        color = model_or_test_name,
-        group = model_or_test_name
+        color = decision_strategy_name,
+        group = decision_strategy_name
       )
     ) +
     # add treat none curve
@@ -128,24 +128,24 @@ plot.BayesDCA <- function(obj,
 #' @param obj BayesDCASurv object
 #' @export
 plot.BayesDCASurv <- function(obj,
-                              models_or_tests = NULL,
+                              strategies = NULL,
                               colors = NULL,
                               labels = NULL,
                               raw_values = NULL,
                               raw_values_label = "Biomarker threshold",
                               linewidth = 1.5) {
-  models_or_tests <- validate_models_or_tests(
-    obj = obj, models_or_tests = models_or_tests
+  strategies <- validate_strategies(
+    obj = obj, strategies = strategies
   )
 
   net_benefit_data <- obj$summary$net_benefit %>%
-    dplyr::filter(model_or_test_name %in% models_or_tests)
+    dplyr::filter(decision_strategy_name %in% strategies)
 
   colors_and_labels <- get_colors_and_labels(
     obj = obj,
     colors = colors,
     labels = labels,
-    models_or_tests = models_or_tests
+    strategies = strategies
   )
 
   .ymin <- ifelse(
@@ -177,7 +177,7 @@ plot.BayesDCASurv <- function(obj,
       data = net_benefit_data,
       ggplot2::aes(
         ymin = `2.5%`, ymax = `97.5%`,
-        fill = model_or_test_name # nolint
+        fill = decision_strategy_name # nolint
       ), # nolint
       alpha = 0.4
     ) +
@@ -186,8 +186,8 @@ plot.BayesDCASurv <- function(obj,
       linewidth = linewidth,
       ggplot2::aes(
         y = estimate,
-        color = model_or_test_name,
-        group = model_or_test_name
+        color = decision_strategy_name,
+        group = decision_strategy_name
       )
     ) +
     # add treat none curve
@@ -242,7 +242,7 @@ plot.BayesDCASurv <- function(obj,
 #' @title Plot BayesDCA comparison
 #'
 #' @param obj BayesDCA object
-#' @param models_or_tests Character vector with models or tests to compare. If null, compares either first two in `obj$model_or_tests` or the first one against Treat all/none (if only one available).
+#' @param strategies Character vector with models or tests to compare. If null, compares either first two in `obj$strategies` or the first one against Treat all/none (if only one available).
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
@@ -256,7 +256,7 @@ plot.BayesDCASurv <- function(obj,
 #' compare_dca(fit)
 #' @return A patchwork/ggplot object or a list of ggplot objects.
 compare_dca <- function(obj,
-                        models_or_tests = NULL,
+                        strategies = NULL,
                         colors = NULL,
                         labels = NULL,
                         plot_list = FALSE,
@@ -266,16 +266,16 @@ compare_dca <- function(obj,
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(
-      "Must specify two models_or_tests to plot pairwise comparison" = length(models_or_tests) == 2
+      "Must specify two strategies to plot pairwise comparison" = length(strategies) == 2
     )
   }
 
-  if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_tests))
+  if (is.null(strategies)) {
+    strategies <- as.vector(na.omit(obj$strategies))
   } else {
     stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_tests
+      "Provided `strategies` are not available" = all(
+        strategies %in% obj$strategies
       )
     )
   }
@@ -284,11 +284,11 @@ compare_dca <- function(obj,
 
   p1 <- plot(obj,
     colors = colors, labels = labels,
-    models_or_tests = models_or_tests
+    strategies = strategies
   )
   p2 <- plot_delta(
     obj = obj,
-    models_or_tests = models_or_tests,
+    strategies = strategies,
     colors = colors,
     labels = labels,
     type = type
@@ -296,7 +296,7 @@ compare_dca <- function(obj,
     ggplot2::guides(color = "none", fill = "none")
   p3 <- plot_superiority_prob(
     obj = obj,
-    models_or_tests = models_or_tests,
+    strategies = strategies,
     colors = colors,
     labels = labels,
     type = type
@@ -312,7 +312,7 @@ compare_dca <- function(obj,
     if (isTRUE(.evpi)) {
       .plot_list[["evpi"]] <- plot_evpi(
         obj = obj,
-        models_or_tests = models_or_tests,
+        strategies = strategies,
         colors = colors,
         labels = labels,
         type = type
@@ -325,7 +325,7 @@ compare_dca <- function(obj,
       p1 <- p1 + ggplot2::labs(subtitle = "DCA")
       p4 <- plot_evpi(
         obj = obj,
-        models_or_tests = models_or_tests,
+        strategies = strategies,
         colors = colors,
         labels = labels,
         type = type
@@ -359,40 +359,40 @@ compare_dca <- function(obj,
 #' plot_delta(fit)
 #' @return A ggplot object.
 plot_delta <- function(obj,
-                       models_or_tests = NULL,
+                       strategies = NULL,
                        type = c("best", "useful", "pairwise"),
                        colors = NULL,
                        labels = NULL) {
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(
-      "Must specify two models_or_tests to plot pairwise comparison" = length(models_or_tests) == 2 # nolint
+      "Must specify two strategies to plot pairwise comparison" = length(strategies) == 2 # nolint
     )
   }
 
-  models_or_tests <- validate_models_or_tests(
-    obj = obj, models_or_tests = models_or_tests
+  strategies <- validate_strategies(
+    obj = obj, strategies = strategies
   )
 
   if (is.null(labels)) {
-    labels <- setNames(models_or_tests, models_or_tests)
+    labels <- setNames(strategies, strategies)
   } else {
     stopifnot(
-      "Names of labels must match models_or_tests" = all(sort(names(labels)) == sort(models_or_tests)) # nolint
+      "Names of labels must match strategies" = all(sort(names(labels)) == sort(strategies)) # nolint
     )
   }
 
   if (inherits(obj, "BayesDCA")) {
     df <- get_delta_plot_data_binary(
       obj = obj,
-      models_or_tests = models_or_tests,
+      strategies = strategies,
       type = type,
       labels = labels
     )
   } else if (inherits(obj, "BayesDCASurv")) {
     df <- get_delta_plot_data_surv(
       obj = obj,
-      models_or_tests = models_or_tests,
+      strategies = strategies,
       type = type,
       labels = labels
     )
@@ -406,9 +406,9 @@ plot_delta <- function(obj,
 
   if (type == "pairwise") {
     .subtitle <- paste0(
-      labels[models_or_tests[1]],
+      labels[strategies[1]],
       " v.s. ",
-      labels[models_or_tests[2]]
+      labels[strategies[2]]
     )
     initial_plot <- df %>%
       ggplot2::ggplot() +
@@ -431,7 +431,7 @@ plot_delta <- function(obj,
       obj = obj,
       colors = colors,
       labels = labels,
-      models_or_tests = models_or_tests,
+      strategies = strategies,
       all_or_none = FALSE
     )
     initial_plot <- df %>%
@@ -440,8 +440,8 @@ plot_delta <- function(obj,
         x = threshold, y = estimate, # nolint
         ymin = `2.5%`, ymax = `97.5%` # nolint
       ) + # nolint
-      ggplot2::geom_ribbon(alpha = 0.3, ggplot2::aes(fill = model_or_test)) + # nolint
-      ggplot2::geom_line(ggplot2::aes(color = model_or_test), lwd = 0.9) +
+      ggplot2::geom_ribbon(alpha = 0.3, ggplot2::aes(fill = decision_strategy)) + # nolint
+      ggplot2::geom_line(ggplot2::aes(color = decision_strategy), lwd = 0.9) +
       .colors_and_labels
   }
 
@@ -492,23 +492,23 @@ plot_delta <- function(obj,
 #' plot_superiority_prob(fit)
 
 #' @return A ggplot object.
-plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", "useful", "pairwise"), min_diff = 0, colors = NULL, labels = NULL) {
+plot_superiority_prob <- function(obj, strategies = NULL, type = c("best", "useful", "pairwise"), min_diff = 0, colors = NULL, labels = NULL) {
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(
-      "Must specify two models_or_tests to plot pairwise comparison" = length(models_or_tests) == 2 # nolint
+      "Must specify two strategies to plot pairwise comparison" = length(strategies) == 2 # nolint
     )
   }
 
-  models_or_tests <- validate_models_or_tests(
-    obj = obj, models_or_tests = models_or_tests
+  strategies <- validate_strategies(
+    obj = obj, strategies = strategies
   )
 
   if (is.null(labels)) {
-    labels <- setNames(models_or_tests, models_or_tests)
+    labels <- setNames(strategies, strategies)
   } else {
     stopifnot(
-      "Names of labels must match models_or_tests" = all(names(labels) == models_or_tests)
+      "Names of labels must match strategies" = all(names(labels) == strategies)
     )
   }
 
@@ -516,14 +516,14 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
     df <- get_superiority_prob_plot_data_binary(
       obj = obj,
       min_diff = min_diff,
-      models_or_tests = models_or_tests,
+      strategies = strategies,
       type = type,
       labels = labels
     )
   } else if (inherits(obj, "BayesDCASurv")) {
     df <- get_superiority_prob_plot_data_surv(
       obj = obj,
-      models_or_tests = models_or_tests,
+      strategies = strategies,
       type = type,
       labels = labels
     )
@@ -538,7 +538,7 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
 
 
   if (type == "pairwise") {
-    .subtitle <- paste0("P(", labels[models_or_tests[1]], " better than ", labels[models_or_tests[2]], ")") # nolint
+    .subtitle <- paste0("P(", labels[strategies[1]], " better than ", labels[strategies[2]], ")") # nolint
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = prob)) + # nolint
       ggplot2::geom_line(lwd = 0.9)
@@ -548,12 +548,12 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
       obj = obj,
       colors = colors,
       labels = labels,
-      models_or_tests = models_or_tests,
+      strategies = strategies,
       all_or_none = FALSE
     )
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = prob)) + # nolint
-      ggplot2::geom_line(ggplot2::aes(color = model_or_test), lwd = 0.9) + # nolint
+      ggplot2::geom_line(ggplot2::aes(color = decision_strategy), lwd = 0.9) + # nolint
       .colors_and_labels
   }
 
@@ -581,13 +581,13 @@ plot_superiority_prob <- function(obj, models_or_tests = NULL, type = c("best", 
 #' @title Plot Expected Value of Perfect Information (EVPI)
 #'
 #' @param obj BayesDCA object
-#' @param models_or_tests Character vector with models or tests
+#' @param strategies Character vector with models or tests
 #' to compare. If null, compares either first two in
-#' `obj$model_or_tests` or the first one against
+#' `obj$strategies` or the first one against
 #' Treat all/none (if only one available).
 #' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
-plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "pairwise"), colors = NULL, labels = NULL) { # nolint
+plot_evpi <- function(obj, strategies = NULL, type = c("best", "useful", "pairwise"), colors = NULL, labels = NULL) { # nolint
   type <- match.arg(type)
 
   if (type != "best") {
@@ -596,64 +596,64 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
       type,
       "' at your own risk."
     )
-    message(cli::col_br_cyan(msg))
+    message(cli::col_br_red(msg))
   }
   if (type == "pairwise") {
     stopifnot(
-      "Must specify two models_or_tests to plot pairwise comparison" = length(models_or_tests) == 2 # nolint
+      "Must specify two strategies to plot pairwise comparison" = length(strategies) == 2 # nolint
     )
   }
 
   if (is.null(obj$draws)) {
     msg <- "Retrieving posterior draws."
-    message(msg)
+    message(cli::col_br_cyan(msg))
     if (inherits(obj, "BayesDCA")) {
       obj$draws <- .extract_dca_draws(
         fit = obj,
-        model_or_tests = models_or_tests
+        strategies = strategies
       )
     } else {
       obj$draws <- .extract_dca_surv_draws(
         fit = obj,
-        model_or_tests = models_or_tests
+        strategies = strategies
       )
     }
   }
 
-  if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_tests))
+  if (is.null(strategies)) {
+    strategies <- as.vector(na.omit(obj$strategies))
   } else {
     stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_tests
+      "Provided `strategies` are not available" = all(
+        strategies %in% obj$strategies
       )
     )
   }
 
   if (is.null(labels)) {
-    labels <- setNames(models_or_tests, models_or_tests)
+    labels <- setNames(strategies, strategies)
   } else {
     stopifnot(
-      "Names of labels must match models_or_tests" = all(names(labels) == models_or_tests)
+      "Names of labels must match strategies" = all(names(labels) == strategies)
     )
   }
 
   if (type == "pairwise") {
-    nb1 <- obj$draws$net_benefit[[models_or_tests[1]]]
-    nb2 <- obj$draws$net_benefit[[models_or_tests[2]]]
+    nb1 <- obj$draws$net_benefit[[strategies[1]]]
+    nb2 <- obj$draws$net_benefit[[strategies[2]]]
     df <- tibble::tibble(
       .evpi = evpi(thresholds = obj$thresholds, nb1, nb2),
       threshold = obj$thresholds
     )
-    .subtitle <- paste0("EVPI: ", labels[models_or_tests[1]], " v.s. ", labels[models_or_tests[2]]) # nolint
+    .subtitle <- paste0("EVPI: ", labels[strategies[1]], " v.s. ", labels[strategies[2]]) # nolint
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = .evpi)) + # nolint
       ggplot2::geom_line(lwd = 0.9)
   } else if (type == "useful") {
     df <- lapply(
-      seq_along(models_or_tests),
+      seq_along(strategies),
       function(i) {
-        .m <- models_or_tests[i]
+        .m <- strategies[i]
 
         # type = 'useful', considers this model against treat all/none
         args <- list(
@@ -668,8 +668,8 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
         tibble::tibble(
           .evpi = .evpi,
           threshold = obj$thresholds,
-          model_or_test = .m,
-          label = labels[models_or_tests[i]]
+          decision_strategy = .m,
+          label = labels[strategies[i]]
         )
       }
     ) %>%
@@ -679,13 +679,13 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
       obj = obj,
       colors = colors,
       labels = labels,
-      models_or_tests = models_or_tests,
+      strategies = strategies,
       all_or_none = FALSE
     )
     .subtitle <- paste0("EVPI against treat all or none")
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = .evpi)) + # nolint
-      ggplot2::geom_line(ggplot2::aes(color = model_or_test), lwd = 0.9) + # nolint
+      ggplot2::geom_line(ggplot2::aes(color = decision_strategy), lwd = 0.9) + # nolint
       .colors_and_labels
   } else {
     # actual EVPI
@@ -695,7 +695,7 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
     df <- tibble::tibble(
       .evpi = do.call(evpi, args),
       threshold = obj$thresholds,
-      model_or_test = NA_character_,
+      decision_strategy = NA_character_,
       label = NA_character_
     )
     .subtitle <- "EVPI"
@@ -731,30 +731,30 @@ plot_evpi <- function(obj, models_or_tests = NULL, type = c("best", "useful", "p
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
-#' @param models_or_tests Character vector with models or tests
+#' @param strategies Character vector with models or tests
 #' to compare. If null, compares either first two in
-#' `obj$model_or_tests` or the first one against
+#' `obj$strategies` or the first one against
 #' Treat all/none (if only one available).
 #' @importFrom magrittr %>%
 #' @export
 plot_classification <- function(obj,
                                 type = c("sensitivity", "specificity"),
-                                models_or_tests = NULL,
+                                strategies = NULL,
                                 colors = NULL,
                                 labels = NULL) {
   type <- match.arg(type)
 
-  if (!is.null(models_or_tests)) {
+  if (!is.null(strategies)) {
     stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_tests
+      "Provided `strategies` are not available" = all(
+        strategies %in% obj$strategies
       )
     )
 
     plot_data <- obj$summary[[type]] %>%
-      dplyr::filter(model_or_test_name %in% models_or_tests) # nolint
+      dplyr::filter(decision_strategy_name %in% strategies) # nolint
   } else {
-    models_or_tests <- obj$model_or_tests
+    strategies <- obj$strategies
     plot_data <- obj$summary[[type]]
   }
 
@@ -762,12 +762,12 @@ plot_classification <- function(obj,
     obj = obj,
     colors = colors,
     labels = labels,
-    models_or_tests = models_or_tests,
+    strategies = strategies,
     all_or_none = FALSE
   )
   .p <- plot_data %>%
     dplyr::filter(
-      model_or_test_name %in% models_or_tests # nolint
+      decision_strategy_name %in% strategies # nolint
     ) %>%
     ggplot2::ggplot() +
     # set x axis
@@ -778,15 +778,15 @@ plot_classification <- function(obj,
     ggplot2::geom_ribbon(
       ggplot2::aes(
         ymin = `2.5%`, ymax = `97.5%`, # nolint
-        fill = model_or_test_name
+        fill = decision_strategy_name
       ),
       alpha = 0.4
     ) +
     ggplot2::geom_line(
       ggplot2::aes(
         y = estimate, # nolint
-        color = model_or_test_name,
-        group = model_or_test_name
+        color = decision_strategy_name,
+        group = decision_strategy_name
       )
     ) +
     # make it pretty

@@ -4,7 +4,7 @@
 \alias{.extract_dca_surv_summary}
 \title{Extract posterior summaries for \code{BayesDCASurv} object}
 \usage{
-.extract_dca_surv_summary(fit, summary_probs, thresholds, model_or_test_names)
+.extract_dca_surv_summary(fit, summary_probs, thresholds, strategies)
 }
 \value{
 An object of class \code{BayesDCASurv}

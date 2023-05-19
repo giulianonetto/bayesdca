@@ -75,18 +75,18 @@ get_events_per_interval <- function(.cutpoints, .event_times) {
 #' @importFrom magrittr %>%
 #' @keywords internal
 get_colors_and_labels <- function(obj,
-                                  models_or_tests = NULL,
+                                  strategies = NULL,
                                   colors = NULL, labels = NULL,
                                   all_or_none = TRUE) {
   # decide which models/tests to include
-  if (is.null(models_or_tests)) {
-    model_or_tests <- obj$model_or_tests
+  if (is.null(strategies)) {
+    strategies <- obj$strategies
   } else {
     stopifnot(
-      any(models_or_tests %in% obj$model_or_tests)
+      any(strategies %in% obj$strategies)
     )
-    model_or_tests <- models_or_tests[
-      models_or_tests %in% obj$model_or_tests
+    strategies <- strategies[
+      strategies %in% obj$strategies
     ]
   }
   # pick color palette for ggplot
@@ -98,7 +98,7 @@ get_colors_and_labels <- function(obj,
     color_values <- character()
   }
 
-  n_colors <- length(model_or_tests)
+  n_colors <- length(strategies)
   if (n_colors < 9) {
     palette <- RColorBrewer:::brewer.pal(max(c(n_colors, 3)), "Dark2")
   } else {
@@ -108,11 +108,11 @@ get_colors_and_labels <- function(obj,
   }
   # set actual color values to use in scale_color_manual
   for (i in seq_len(n_colors)) {
-    model_or_test <- model_or_tests[i]
-    if (!is.null(colors) && model_or_test %in% names(colors)) {
-      color_values[model_or_test] <- colors[[model_or_test]]
+    decision_strategy <- strategies[i]
+    if (!is.null(colors) && decision_strategy %in% names(colors)) {
+      color_values[decision_strategy] <- colors[[decision_strategy]]
     } else {
-      color_values[model_or_test] <- palette[i]
+      color_values[decision_strategy] <- palette[i]
     }
   }
   # define color and label scales
@@ -170,7 +170,7 @@ get_survival_time_exposed <- function(.prediction_time, .cutpoints) {
 #' @param .surv_data Contains observed time to event
 #' (`.time` column) and event indicator (`.status` column)
 #' @param .cutpoints Survival cutpoints.
-#' @param .models_or_tests Names for models or tests.
+#' @param .strategies Names for models or tests.
 #' @param .thresholds DCA thresholds.
 #' @param .prior_scaling_factor Prior
 #' @param .prior_only If TRUE, will sample from prior only.
@@ -182,7 +182,7 @@ get_survival_time_exposed <- function(.prediction_time, .cutpoints) {
 get_survival_posterior_parameters <- function(.prediction_data, # nolint
                                               .surv_data,
                                               .cutpoints,
-                                              .models_or_tests,
+                                              .strategies,
                                               .thresholds,
                                               .prior_scaling_factor,
                                               .prediction_time,
@@ -195,7 +195,7 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
   n_thr <- length(.thresholds)
   initialize_pars <- function() {
     lapply(
-      seq_along(.models_or_tests),
+      seq_along(.strategies),
       function(...) {
         matrix(
           nrow = n_cuts,
@@ -211,8 +211,8 @@ get_survival_posterior_parameters <- function(.prediction_data, # nolint
   all_prior_betas <- initialize_pars()
   all_prior_means <- initialize_pars()
 
-  for (i in seq_along(.models_or_tests)) {
-    .model <- .models_or_tests[i]
+  for (i in seq_along(.strategies)) {
+    .model <- .strategies[i]
     w_inv <- .prior_scaling_factor # might be updated for some thresholds
     empty_thresholds <- 0
     for (j in seq_along(.thresholds)) {
@@ -377,7 +377,7 @@ get_positivity_posterior_parameters <- function(.prediction_data, # nolint
                                                 .prior_only = FALSE) {
   N <- nrow(.prediction_data) # nolint
   n_models <- ncol(.prediction_data)
-  .models_or_tests <- colnames(.prediction_data)
+  .strategies <- colnames(.prediction_data)
   n_thresholds <- length(.thresholds)
 
   all_posterior_shape1 <- matrix(
@@ -389,8 +389,8 @@ get_positivity_posterior_parameters <- function(.prediction_data, # nolint
     ncol = n_thresholds
   )
 
-  for (i in seq_along(.models_or_tests)) {
-    .model <- .models_or_tests[i]
+  for (i in seq_along(.strategies)) {
+    .model <- .strategies[i]
     for (j in seq_along(.thresholds)) {
       if (isFALSE(.prior_only)) {
         .thr <- .thresholds[j]
@@ -485,7 +485,7 @@ get_prior_sample_size <- function(thresholds,
 .get_prior_parameters <- function(thresholds,
                                   constant = TRUE,
                                   n_thresholds = NULL,
-                                  n_models_or_tests = NULL,
+                                  n_strategies = NULL,
                                   prior_p = NULL,
                                   prior_se = NULL,
                                   prior_sp = NULL,
@@ -505,12 +505,12 @@ get_prior_sample_size <- function(thresholds,
       prior_se = prior_se,
       prior_sp = prior_sp,
       n_thresholds = length(thresholds),
-      n_models_or_tests = n_models_or_tests
+      n_strategies = n_strategies
     )
   } else {
     .priors <- .get_nonconstant_prior_parameters(
       thresholds = thresholds,
-      n_models_or_tests = n_models_or_tests,
+      n_strategies = n_strategies,
       shift = shift,
       slope = slope,
       prior_sample_size = prior_sample_size,
@@ -530,7 +530,7 @@ get_prior_sample_size <- function(thresholds,
 #' @title Get constant priors for Bayesian DCA
 #'
 #' @param n_thresholds Number of thresholds (int.).
-#' @param n_models_or_tests Number of models or tests (int.).
+#' @param n_strategies Number of models or tests (int.).
 #' @param prior_p,prior_se,prior_sp Non-negative shape values for
 #' Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
 #' Default is uniform prior for all parameters - Beta(1, 1).
@@ -538,7 +538,7 @@ get_prior_sample_size <- function(thresholds,
 #' @importFrom magrittr %>%
 #' @keywords internal
 .get_constant_prior_parameters <- function(n_thresholds,
-                                           n_models_or_tests,
+                                           n_strategies,
                                            prior_p = NULL,
                                            prior_se = NULL,
                                            prior_sp = NULL) {
@@ -556,10 +556,10 @@ get_prior_sample_size <- function(thresholds,
     length(prior_sp) == 2 & is.vector(prior_sp)
   )
 
-  se1 <- sapply(1:n_models_or_tests, function(i) rep(prior_se[1], n_thresholds))
-  se2 <- sapply(1:n_models_or_tests, function(i) rep(prior_se[2], n_thresholds))
-  sp1 <- sapply(1:n_models_or_tests, function(i) rep(prior_sp[1], n_thresholds))
-  sp2 <- sapply(1:n_models_or_tests, function(i) rep(prior_sp[2], n_thresholds))
+  se1 <- sapply(1:n_strategies, function(i) rep(prior_se[1], n_thresholds))
+  se2 <- sapply(1:n_strategies, function(i) rep(prior_se[2], n_thresholds))
+  sp1 <- sapply(1:n_strategies, function(i) rep(prior_sp[1], n_thresholds))
+  sp2 <- sapply(1:n_strategies, function(i) rep(prior_sp[2], n_thresholds))
 
   .priors <- list(
     p1 = prior_p[1], p2 = prior_p[2],
@@ -573,7 +573,7 @@ get_prior_sample_size <- function(thresholds,
 #' @title Get threshold- and model-specific priors for Bayesian DCA
 #'
 #' @param n_thresholds Number of thresholds (int.).
-#' @param n_models_or_tests Number of models or tests (int.).
+#' @param n_strategies Number of models or tests (int.).
 #' @param prior_p,prior_se,prior_sp Non-negative shape values for
 #' Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
 #' Default is uniform prior for all parameters - Beta(1, 1).
@@ -588,7 +588,7 @@ get_prior_sample_size <- function(thresholds,
 #' @importFrom magrittr %>%
 #' @keywords internal
 .get_nonconstant_prior_parameters <- function(thresholds, # nolint
-                                              n_models_or_tests,
+                                              n_strategies,
                                               shift = 0.45,
                                               slope = 0.025,
                                               prior_sample_size = NULL,
@@ -603,21 +603,21 @@ get_prior_sample_size <- function(thresholds,
   if (is.null(prior_p)) prior_p <- c(1, 1)
 
   stopifnot(
-    "`shift` must be either a single number of a vector of size `n_models_or_tests`" = length(shift) == 1 | length(shift) == n_models_or_tests # nolint
+    "`shift` must be either a single number of a vector of size `n_strategies`" = length(shift) == 1 | length(shift) == n_strategies # nolint
   )
   stopifnot(
-    "`slope` must be either a single number of a vector of size `n_models_or_tests`" = length(slope) == 1 | length(slope) == n_models_or_tests # nolint
+    "`slope` must be either a single number of a vector of size `n_strategies`" = length(slope) == 1 | length(slope) == n_strategies # nolint
   )
   stopifnot(
-    "if given, `prior_sample_size` must be either a single number of a vector of size `n_models_or_tests`" = length(prior_sample_size) %in% c(0, 1, n_models_or_tests) # nolint
+    "if given, `prior_sample_size` must be either a single number of a vector of size `n_strategies`" = length(prior_sample_size) %in% c(0, 1, n_strategies) # nolint
   )
 
   # if not model-specific, then use the first shift/slope
   if (length(shift) == 1L) {
-    shift <- rep(shift, n_models_or_tests)
+    shift <- rep(shift, n_strategies)
   }
   if (length(slope) == 1L) {
-    slope <- rep(slope, n_models_or_tests)
+    slope <- rep(slope, n_strategies)
   }
   if (is.null(prior_sample_size)) {
     prior_sample_size <- get_prior_sample_size(
@@ -628,18 +628,18 @@ get_prior_sample_size <- function(thresholds,
     )
   }
   if (length(prior_sample_size) == 1L) {
-    prior_sample_size <- rep(prior_sample_size, n_models_or_tests)
+    prior_sample_size <- rep(prior_sample_size, n_strategies)
   }
   n_thresholds <- length(thresholds)
   .priors <- list(
     p1 = prior_p[1],
     p2 = prior_p[2],
-    Se1 = matrix(nrow = n_thresholds, ncol = n_models_or_tests),
-    Se2 = matrix(nrow = n_thresholds, ncol = n_models_or_tests),
-    Sp1 = matrix(nrow = n_thresholds, ncol = n_models_or_tests),
-    Sp2 = matrix(nrow = n_thresholds, ncol = n_models_or_tests)
+    Se1 = matrix(nrow = n_thresholds, ncol = n_strategies),
+    Se2 = matrix(nrow = n_thresholds, ncol = n_strategies),
+    Sp1 = matrix(nrow = n_thresholds, ncol = n_strategies),
+    Sp2 = matrix(nrow = n_thresholds, ncol = n_strategies)
   )
-  for (m in 1:n_models_or_tests) {
+  for (m in 1:n_strategies) {
     se_mu <- get_prior_se_mu(
       thresholds = thresholds,
       shift = shift[m],
@@ -664,17 +664,17 @@ get_prior_sample_size <- function(thresholds,
   return(.priors)
 }
 
-validate_models_or_tests <- function(obj,
-                                     models_or_tests = NULL) {
-  if (is.null(models_or_tests)) {
-    models_or_tests <- as.vector(na.omit(obj$model_or_tests))
+validate_strategies <- function(obj,
+                                     strategies = NULL) {
+  if (is.null(strategies)) {
+    strategies <- as.vector(na.omit(obj$strategies))
   } else {
     stopifnot(
-      "Provided `models_or_tests` are not available" = all(
-        models_or_tests %in% obj$model_or_tests
+      "Provided `strategies` are not available" = all(
+        strategies %in% obj$strategies
       )
     )
   }
 
-  return(models_or_tests)
+  return(strategies)
 }

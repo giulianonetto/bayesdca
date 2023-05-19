@@ -74,11 +74,11 @@ dca <- function(.data,
     pmin(0.99) %>%
     pmax(1e-9) %>%
     unique()
-  model_or_tests <- colnames(.data)[-1]
+  strategies <- colnames(.data)[-1]
   N <- nrow(.data)
   d <- sum(.data[["outcomes"]])
   n_thresholds <- length(thresholds)
-  n_models_or_tests <- length(model_or_tests)
+  n_strategies <- length(strategies)
   threshold_data <- .get_thr_data_list(
     .data = .data,
     thresholds = thresholds,
@@ -91,7 +91,7 @@ dca <- function(.data,
       prior_p = prior_p,
       prior_se = prior_se,
       prior_sp = prior_sp,
-      n_models_or_tests = n_models_or_tests,
+      n_strategies = n_strategies,
       shift = shift,
       slope = slope,
       prior_sample_size = prior_sample_size,
@@ -102,18 +102,18 @@ dca <- function(.data,
     )
   }
   tp <- threshold_data %>%
-    dplyr::select(thresholds, model_or_test, tp) %>% # nolint
+    dplyr::select(thresholds, decision_strategy, tp) %>% # nolint
     tidyr::pivot_wider(
-      names_from = model_or_test,
+      names_from = decision_strategy,
       values_from = tp
     ) %>%
     dplyr::select(-thresholds) %>%
     as.matrix()
 
   tn <- threshold_data %>%
-    dplyr::select(thresholds, model_or_test, tn) %>% # nolint
+    dplyr::select(thresholds, decision_strategy, tn) %>% # nolint
     tidyr::pivot_wider(
-      names_from = model_or_test,
+      names_from = decision_strategy,
       values_from = tn
     ) %>%
     dplyr::select(-thresholds) %>%
@@ -138,7 +138,7 @@ dca <- function(.data,
 
   fit <- .dca_binary(
     n_thr = n_thresholds,
-    models_or_tests = model_or_tests,
+    strategies = strategies,
     N = ifelse(prior_only, 0, N),
     d = ifelse(prior_only, 0, d),
     tp = tp,
@@ -159,7 +159,7 @@ dca <- function(.data,
     fit = fit,
     summary_probs = summary_probs,
     thresholds = thresholds,
-    model_or_tests = model_or_tests
+    strategies = strategies
   )
 
   output_data <- list(
@@ -169,7 +169,7 @@ dca <- function(.data,
     .data = .data,
     threshold_data = threshold_data,
     priors = priors,
-    model_or_tests = model_or_tests
+    strategies = strategies
   )
 
   .output <- structure(output_data, class = "BayesDCA")
@@ -180,17 +180,17 @@ dca <- function(.data,
 #' Stan for list of models or binary tests
 #'
 #' @param n_thr Number of thresholds (int.).
-#' @param n_models_or_tests Number of models or binary tests (int.).
+#' @param n_strategies Number of models or binary tests (int.).
 #' @param N Sample size (vector of integers of length `n_thr`).
 #' @param d Diseased: number of diseased persons or
 #' events (vector of integers of length `n_thr`).
 #' @param tp True Positives: number of diseased persons correctly
 #' identified as such by the diagnostic test of prediction
-#' model (matrix of integers of size `n_thr` by `n_models_or_tests`).
+#' model (matrix of integers of size `n_thr` by `n_strategies`).
 #' @param tn True Negatives: number of diseased persons correctly
 #' identified as such by the diagnostic test of prediction
 #' model (matrix of integers of size `n_thr` by
-#' `n_models_or_tests`).
+#' `n_strategies`).
 #' @param thresholds Numeric vector with probability thresholds with which
 #' the net benefit should be computed (default is `seq(0.01, 0.5, 0.01)`).
 #' @param N_ext,d_ext External sample size and number of
@@ -198,7 +198,7 @@ dca <- function(.data,
 #' adjust prevalence.
 #' @param prior_p,prior_se,prior_sp Prior parameters for
 #' prevalence, sensitivity, and specificity (numeric matrices
-#' of size `n_thr` by `n_models_or_tests`).
+#' of size `n_thr` by `n_strategies`).
 #' @param refresh Control verbosity of
 #' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).
 #' @param ... Arguments passed to
@@ -207,7 +207,7 @@ dca <- function(.data,
 #' [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)
 #' @keywords internal
 .dca_binary <- function(n_thr,
-                        models_or_tests,
+                        strategies,
                         N,
                         d,
                         tp,
@@ -221,7 +221,7 @@ dca <- function(.data,
                         d_ext = 0,
                         n_draws = 4000) {
   thresholds <- pmin(thresholds, 0.999) # odds(1) = Inf
-  n_models_or_tests <- length(models_or_tests)
+  n_strategies <- length(strategies)
   # get posterior distributions
 
   ## prevalence
@@ -241,14 +241,14 @@ dca <- function(.data,
   ### initialize parameter variables
   post_shape1_Se <- post_shape2_Se <-
     post_shape1_Sp <- post_shape2_Sp <- matrix(
-      nrow = n_thr, ncol = n_models_or_tests,
+      nrow = n_thr, ncol = n_strategies,
       dimnames = list(
         NULL,
-        models_or_tests
+        strategies
       )
     )
   ### initialize distribution variables
-  se <- sp <- net_benefit <- models_or_tests %>%
+  se <- sp <- net_benefit <- strategies %>%
     setNames(nm = .) %>%
     lapply(function(...) matrix(nrow = n_draws, ncol = n_thr))
   treat_all <- matrix(nrow = n_draws, ncol = n_thr)
@@ -256,9 +256,9 @@ dca <- function(.data,
   for (i in seq_len(n_thr)) {
     w_t <- thresholds[i] / (1 - thresholds[i])
     treat_all[, i] <- 1 * p - (1 - p) * (1 - 0) * w_t
-    for (j in seq_len(n_models_or_tests)) {
+    for (j in seq_len(n_strategies)) {
       # compute posterior parameters
-      .m <- models_or_tests[j]
+      .m <- strategies[j]
       post_shape1_Se[i, j] <- tp[i, j] + prior_Se1[i, j]
       post_shape2_Se[i, j] <- d - tp[i, j] + prior_Se2[i, j]
       post_shape1_Sp[i, j] <- tn[i, j] + prior_Sp1[i, j]
@@ -282,21 +282,21 @@ dca <- function(.data,
 
   # iterate again to look at "best competitor strategy"
   ## initialize comparison variables
-  delta_useful <- delta_best <- models_or_tests %>%
+  delta_useful <- delta_best <- strategies %>%
     setNames(nm = .) %>%
     lapply(function(...) matrix(nrow = n_draws, ncol = n_thr))
   p_useful <- p_best <- matrix(
-    nrow = n_thr, ncol = n_models_or_tests,
+    nrow = n_thr, ncol = n_strategies,
     dimnames = list(
       NULL,
-      models_or_tests
+      strategies
     )
   )
   for (i in seq_len(n_thr)) {
     nb_best_default_strategy <- pmax(0, treat_all[, i])
-    for (j in seq_len(n_models_or_tests)) {
-      .m <- models_or_tests[j]
-      if (n_models_or_tests == 1) {
+    for (j in seq_len(n_strategies)) {
+      .m <- strategies[j]
+      if (n_strategies == 1) {
         nb_best_competitor <- nb_best_default_strategy
       } else {
         nb_best_competitor <- matrixStats::rowMaxs(
@@ -349,15 +349,15 @@ dca <- function(.data,
     stop("Missing 'outcomes' column as the first column in input .data")
   }
   outcomes <- .data[["outcomes"]]
-  model_or_tests <- colnames(.data)[-1]
+  strategies <- colnames(.data)[-1]
   N <- ifelse(prior_only, 0, length(outcomes)) # nolint
   d <- ifelse(prior_only, 0, sum(outcomes)) # nolint
 
   thr_data <- purrr::map(
-    model_or_tests, ~ {
+    strategies, ~ {
       .predictions <- .data[[.x]]
       .thr_data <- tibble::tibble(
-        model_or_test = .x,
+        decision_strategy = .x,
         N = N, d = d, thresholds = thresholds
       ) %>%
         dplyr:::mutate(
@@ -375,7 +375,7 @@ dca <- function(.data,
           )
         ) %>%
         tidyr::unnest_wider(col = thr_perf) %>%
-        dplyr::select(model_or_test, N, d, tp, tn, thresholds)
+        dplyr::select(decision_strategy, N, d, tp, tn, thresholds)
     }
   ) %>%
     dplyr::bind_rows()
@@ -387,19 +387,19 @@ dca <- function(.data,
 #' @title Get summary from BayesDCA fit
 #'
 #' @param fit A stanfit object.
-#' @param model_or_tests Vector of names of models or binary tests under assessment.
+#' @param strategies Vector of names of models or binary tests under assessment.
 #' @param summary_probs Numeric vector giving probabilities for credible interval.
 #' @param thresholds Vector of thresholds for DCA.
 #' @importFrom magrittr %>%
 #' @keywords internal
 .extract_dca_summary <- function(fit, # nolint
-                                 model_or_tests,
+                                 strategies,
                                  summary_probs,
                                  thresholds) {
   summ_labels <- paste0(
     round(summary_probs * 100, 1), "%"
   )
-  .get_summ <- function(.x, .probs, .par_name, .summ_labels, .thrs, .model_or_test_name) {
+  .get_summ <- function(.x, .probs, .par_name, .summ_labels, .thrs, .decision_strategy_name) {
     if (is.vector(.x)) {
       .x <- as.matrix(.x, ncol = 1)
     }
@@ -410,7 +410,7 @@ dca <- function(.data,
     tibble::tibble(
       par_name = .par_name,
       threshold = .thrs,
-      model_or_test_name = .model_or_test_name,
+      decision_strategy_name = .decision_strategy_name,
       estimate = colMeans(.x),
       !!.summ_labels[1] := .qs[, 1],
       !!.summ_labels[2] := .qs[, 2]
@@ -423,7 +423,7 @@ dca <- function(.data,
     .par_name = "p",
     .summ_labels = summ_labels,
     .thrs = NA_real_,
-    .model_or_test_name = NA_character_
+    .decision_strategy_name = NA_character_
   )
 
   # treat all
@@ -433,12 +433,12 @@ dca <- function(.data,
     .par_name = "treat_all",
     .summ_labels = summ_labels,
     .thrs = thresholds,
-    .model_or_test_name = NA_character_
+    .decision_strategy_name = NA_character_
   )
 
   # se, sp, nb, deltas
   summary_by_model <- purrr::map_dfr(
-    seq_along(model_or_tests),
+    seq_along(strategies),
     function(j) {
       se <- .get_summ(
         .x = fit$distributions$sensitivity[[j]],
@@ -446,7 +446,7 @@ dca <- function(.data,
         .par_name = "Se",
         .summ_labels = summ_labels,
         .thrs = thresholds,
-        .model_or_test_name = model_or_tests[j]
+        .decision_strategy_name = strategies[j]
       )
       sp <- .get_summ(
         .x = fit$distributions$specificity[[j]],
@@ -454,7 +454,7 @@ dca <- function(.data,
         .par_name = "Sp",
         .summ_labels = summ_labels,
         .thrs = thresholds,
-        .model_or_test_name = model_or_tests[j]
+        .decision_strategy_name = strategies[j]
       )
       nb <- .get_summ(
         .x = fit$distributions$net_benefit[[j]],
@@ -462,7 +462,7 @@ dca <- function(.data,
         .par_name = "net_benefit",
         .summ_labels = summ_labels,
         .thrs = thresholds,
-        .model_or_test_name = model_or_tests[j]
+        .decision_strategy_name = strategies[j]
       )
       d_best <- .get_summ(
         .x = fit$comparisons$delta_best[[j]],
@@ -470,7 +470,7 @@ dca <- function(.data,
         .par_name = "delta_best",
         .summ_labels = summ_labels,
         .thrs = thresholds,
-        .model_or_test_name = model_or_tests[j]
+        .decision_strategy_name = strategies[j]
       )
       d_useful <- .get_summ(
         .x = fit$comparisons$delta_best[[j]],
@@ -478,14 +478,14 @@ dca <- function(.data,
         .par_name = "delta_useful",
         .summ_labels = summ_labels,
         .thrs = thresholds,
-        .model_or_test_name = model_or_tests[j]
+        .decision_strategy_name = strategies[j]
       )
       x <- dplyr::bind_rows(
         nb, d_best, d_useful, se, sp
       )
     }
   ) %>%
-    dplyr::arrange(par_name, threshold, model_or_test_name)
+    dplyr::arrange(par_name, threshold, decision_strategy_name)
 
   # sensitivity
   sensitivity <- summary_by_model %>%
@@ -541,7 +541,7 @@ print.BayesDCA <- function(obj, ...) {
         paste0("Number of thresholds: ", length(obj$thresholds)),
         "\nRaw data:", .data,
         "Models or tests: ",
-        paste0(obj$model_or_tests, collapse = ", ")
+        paste0(obj$strategies, collapse = ", ")
       ),
       collapse = "\n"
     )
@@ -551,30 +551,30 @@ print.BayesDCA <- function(obj, ...) {
 #' @title Get delta plot data for binary bayesDCA
 #'
 #' @param obj BayesDCA object
-#' @param models_or_tests Character vector with subset of decision strategies.
+#' @param strategies Character vector with subset of decision strategies.
 #' @param type One of "best", "useful", or "pairwise".
 #' @importFrom magrittr %>%
 #' @keywords internal
 #' @return A ggplot object.
 get_superiority_prob_plot_data_binary <- function(obj, # nolint: object_length_linter.
                                                   min_diff = 0,
-                                                  models_or_tests = NULL,
+                                                  strategies = NULL,
                                                   type = c("best", "useful", "pairwise"),
                                                   labels = NULL) {
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(
-      "Must specify two models_or_tests to plot pairwise comparison" = length(models_or_tests) == 2 # nolint
+      "Must specify two strategies to plot pairwise comparison" = length(strategies) == 2 # nolint
     )
   }
 
-  models_or_tests <- validate_models_or_tests(
-    obj = obj, models_or_tests = models_or_tests
+  strategies <- validate_strategies(
+    obj = obj, strategies = strategies
   )
 
   if (type == "pairwise") {
-    nb1 <- obj$fit$distributions$net_benefit[[models_or_tests[1]]]
-    nb2 <- obj$fit$distributions$net_benefit[[models_or_tests[2]]]
+    nb1 <- obj$fit$distributions$net_benefit[[strategies[1]]]
+    nb2 <- obj$fit$distributions$net_benefit[[strategies[2]]]
     .prob <- colMeans(nb1 - nb2 > min_diff)
     df <- tibble::tibble(
       prob = .prob,
@@ -582,9 +582,9 @@ get_superiority_prob_plot_data_binary <- function(obj, # nolint: object_length_l
     )
   } else {
     df <- lapply(
-      seq_along(models_or_tests),
+      seq_along(strategies),
       function(j) {
-        .m <- models_or_tests[j]
+        .m <- strategies[j]
         if (type == "best") {
           .prob <- obj$fit$comparisons$p_best[, j]
         } else {
@@ -593,7 +593,7 @@ get_superiority_prob_plot_data_binary <- function(obj, # nolint: object_length_l
         tibble::tibble(
           prob = .prob,
           threshold = obj$thresholds,
-          model_or_test = .m,
+          decision_strategy = .m,
           label = labels[.m]
         )
       }
@@ -606,29 +606,29 @@ get_superiority_prob_plot_data_binary <- function(obj, # nolint: object_length_l
 #' @title Get delta plot data for binary bayesDCA
 #'
 #' @param obj BayesDCA object
-#' @param models_or_tests Character vector with subset of decision strategies.
+#' @param strategies Character vector with subset of decision strategies.
 #' @param type One of "best", "useful", or "pairwise".
 #' @importFrom magrittr %>%
 #' @keywords internal
 #' @return A ggplot object.
 get_delta_plot_data_binary <- function(obj,
-                                       models_or_tests = NULL,
+                                       strategies = NULL,
                                        type = c("best", "useful", "pairwise"),
                                        labels = NULL) {
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(
-      "Must specify two models_or_tests to plot pairwise comparison" = length(models_or_tests) == 2 # nolint
+      "Must specify two strategies to plot pairwise comparison" = length(strategies) == 2 # nolint
     )
   }
 
-  models_or_tests <- validate_models_or_tests(
-    obj = obj, models_or_tests = models_or_tests
+  strategies <- validate_strategies(
+    obj = obj, strategies = strategies
   )
 
   if (type == "pairwise") {
-    nb1 <- obj$fit$distributions$net_benefit[[models_or_tests[1]]]
-    nb2 <- obj$fit$distributions$net_benefit[[models_or_tests[2]]]
+    nb1 <- obj$fit$distributions$net_benefit[[strategies[1]]]
+    nb2 <- obj$fit$distributions$net_benefit[[strategies[2]]]
     .delta <- nb1 - nb2
     qs <- matrixStats::colQuantiles(.delta, probs = c(.025, .975))
     df <- tibble::tibble(
@@ -639,9 +639,9 @@ get_delta_plot_data_binary <- function(obj,
     )
   } else {
     df <- lapply(
-      seq_along(models_or_tests),
+      seq_along(strategies),
       function(i) {
-        .m <- models_or_tests[i]
+        .m <- strategies[i]
         if (type == "best") {
           .delta <- obj$fit$comparisons$delta_best[[.m]]
         } else {
@@ -653,7 +653,7 @@ get_delta_plot_data_binary <- function(obj,
           `2.5%` = qs[, "2.5%"],
           `97.5%` = qs[, "97.5%"],
           threshold = obj$thresholds,
-          model_or_test = .m,
+          decision_strategy = .m,
           label = labels[.m]
         )
       }

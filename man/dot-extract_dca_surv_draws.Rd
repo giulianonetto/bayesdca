@@ -4,12 +4,12 @@
 \alias{.extract_dca_surv_draws}
 \title{Get posterior draws from time-to-event DCA stanfit}
 \usage{
-.extract_dca_surv_draws(fit, model_or_test_names)
+.extract_dca_surv_draws(fit, strategies)
 }
 \arguments{
 \item{fit}{A stanfit object.}
 
-\item{model_or_test_names}{Vector of names of models
+\item{strategies}{Vector of names of models
 or binary tests under assessment.}
 }
 \description{

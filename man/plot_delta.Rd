@@ -6,7 +6,7 @@
 \usage{
 plot_delta(
   obj,
-  models_or_tests = NULL,
+  strategies = NULL,
   type = c("best", "useful", "pairwise"),
   colors = NULL,
   labels = NULL

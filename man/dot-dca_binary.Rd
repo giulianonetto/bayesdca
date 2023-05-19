@@ -7,7 +7,7 @@ Stan for list of models or binary tests}
 \usage{
 .dca_binary(
   n_thr,
-  models_or_tests,
+  strategies,
   N,
   d,
   tp,
@@ -35,12 +35,12 @@ events (vector of integers of length \code{n_thr}).}
 
 \item{tp}{True Positives: number of diseased persons correctly
 identified as such by the diagnostic test of prediction
-model (matrix of integers of size \code{n_thr} by \code{n_models_or_tests}).}
+model (matrix of integers of size \code{n_thr} by \code{n_strategies}).}
 
 \item{tn}{True Negatives: number of diseased persons correctly
 identified as such by the diagnostic test of prediction
 model (matrix of integers of size \code{n_thr} by
-\code{n_models_or_tests}).}
+\code{n_strategies}).}
 
 \item{thresholds}{Numeric vector with probability thresholds with which
 the net benefit should be computed (default is \code{seq(0.01, 0.5, 0.01)}).}
@@ -49,11 +49,11 @@ the net benefit should be computed (default is \code{seq(0.01, 0.5, 0.01)}).}
 diseased individuals (or cases), respectively, used to
 adjust prevalence.}
 
-\item{n_models_or_tests}{Number of models or binary tests (int.).}
+\item{n_strategies}{Number of models or binary tests (int.).}
 
 \item{prior_p, prior_se, prior_sp}{Prior parameters for
 prevalence, sensitivity, and specificity (numeric matrices
-of size \code{n_thr} by \code{n_models_or_tests}).}
+of size \code{n_thr} by \code{n_strategies}).}
 
 \item{refresh}{Control verbosity of
 \href{https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html}{\code{rstan::sampling}}.}

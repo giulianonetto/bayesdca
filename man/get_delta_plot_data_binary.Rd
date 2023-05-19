@@ -6,7 +6,7 @@
 \usage{
 get_delta_plot_data_binary(
   obj,
-  models_or_tests = NULL,
+  strategies = NULL,
   type = c("best", "useful", "pairwise"),
   labels = NULL
 )
@@ -14,7 +14,7 @@ get_delta_plot_data_binary(
 \arguments{
 \item{obj}{BayesDCA object}
 
-\item{models_or_tests}{Character vector with subset of decision strategies.}
+\item{strategies}{Character vector with subset of decision strategies.}
 
 \item{type}{One of "best", "useful", or "pairwise".}
 }
