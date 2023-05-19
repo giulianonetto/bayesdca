@@ -543,13 +543,7 @@ dca_surv <- function(.data, # nolint
                                       summary_probs,
                                       thresholds,
                                       strategies) {
-  .pars <- c(
-    "net_benefit",
-    "delta_best", "delta_useful",
-    "p_best", "p_useful",
-    "best_competitor_nb",
-    "positivity", "treat_all", "St_marginal"
-  )
+  .pars <- .get_relevant_pars()
 
   fit_summary <- rstan::summary(
     fit,
@@ -642,6 +636,19 @@ dca_surv <- function(.data, # nolint
   return(.summary)
 }
 
+#' Get relevant parameters to parse from Stan output (BayesDCASurv)
+.get_relevant_pars <- function() {
+  return(
+    c(
+      "net_benefit",
+      "delta_best", "delta_useful",
+      "p_best", "p_useful",
+      "best_competitor_nb",
+      "positivity", "treat_all", "St_marginal"
+    )
+  )
+}
+
 #' @title Get posterior draws from time-to-event DCA stanfit
 #'
 #' @param fit A stanfit object.
@@ -650,13 +657,7 @@ dca_surv <- function(.data, # nolint
 #' @keywords internal
 .extract_dca_surv_draws <- function(fit,
                                     strategies) {
-  .pars <- c(
-    "net_benefit",
-    "delta_best", "delta_useful",
-    "p_best", "p_useful",
-    "best_competitor_nb",
-    "positivity", "treat_all", "St_marginal"
-  )
+  .pars <- .get_relevant_pars()
 
   stan_draws <- rstan::extract(
     fit,
