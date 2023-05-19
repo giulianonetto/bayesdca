@@ -262,6 +262,7 @@ compare_dca <- function(obj,
                         plot_list = FALSE,
                         .evpi = FALSE,
                         type = c("best", "useful", "pairwise"),
+                        linewidth = 1.5,
                         ...) {
   type <- match.arg(type)
   if (type == "pairwise") {
@@ -284,14 +285,16 @@ compare_dca <- function(obj,
 
   p1 <- plot(obj,
     colors = colors, labels = labels,
-    strategies = strategies
+    strategies = strategies,
+    linewidth = linewidth
   )
   p2 <- plot_delta(
     obj = obj,
     strategies = strategies,
     colors = colors,
     labels = labels,
-    type = type
+    type = type,
+    linewidth = linewidth
   ) +
     ggplot2::guides(color = "none", fill = "none")
   p3 <- plot_superiority_prob(
@@ -299,7 +302,8 @@ compare_dca <- function(obj,
     strategies = strategies,
     colors = colors,
     labels = labels,
-    type = type
+    type = type,
+    linewidth = linewidth
   ) +
     ggplot2::guides(color = "none")
 
@@ -315,7 +319,8 @@ compare_dca <- function(obj,
         strategies = strategies,
         colors = colors,
         labels = labels,
-        type = type
+        type = type,
+        linewidth = linewidth
       )
     }
 
@@ -328,7 +333,8 @@ compare_dca <- function(obj,
         strategies = strategies,
         colors = colors,
         labels = labels,
-        type = type
+        type = type,
+        linewidth = linewidth
       ) +
         ggplot2::guides(color = "none")
       .p <- (p1 | p3) / (p2 | p4) +
@@ -362,7 +368,8 @@ plot_delta <- function(obj,
                        strategies = NULL,
                        type = c("best", "useful", "pairwise"),
                        colors = NULL,
-                       labels = NULL) {
+                       labels = NULL,
+                       linewidth = 1.5) {
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(
@@ -417,7 +424,7 @@ plot_delta <- function(obj,
         ymin = `2.5%`, ymax = `97.5%` # nolint
       ) + # nolint
       ggplot2::geom_ribbon(alpha = 0.3) +
-      ggplot2::geom_line(lwd = 0.9)
+      ggplot2::geom_line(linewidth = linewidth)
   } else {
     .subtitle <- paste0(
       "Difference against ",
@@ -441,7 +448,9 @@ plot_delta <- function(obj,
         ymin = `2.5%`, ymax = `97.5%` # nolint
       ) + # nolint
       ggplot2::geom_ribbon(alpha = 0.3, ggplot2::aes(fill = decision_strategy)) + # nolint
-      ggplot2::geom_line(ggplot2::aes(color = decision_strategy), lwd = 0.9) +
+      ggplot2::geom_line(ggplot2::aes(color = decision_strategy),
+        linewidth = linewidth
+      ) +
       .colors_and_labels
   }
 
@@ -457,7 +466,7 @@ plot_delta <- function(obj,
     ) +
     ggplot2::geom_hline(
       yintercept = 0, linetype = 2,
-      color = "gray40", lwd = 0.8
+      color = "gray40", linewidth = linewidth
     ) +
     ggplot2::labs(
       x = "Decision threshold",
@@ -497,7 +506,8 @@ plot_superiority_prob <- function(obj,
                                   type = c("best", "useful", "pairwise"),
                                   min_diff = 0,
                                   colors = NULL,
-                                  labels = NULL) {
+                                  labels = NULL,
+                                  linewidth = 1.5) {
   type <- match.arg(type)
   if (type == "pairwise") {
     stopifnot(
@@ -546,7 +556,7 @@ plot_superiority_prob <- function(obj,
     .subtitle <- paste0("P(", labels[strategies[1]], " better than ", labels[strategies[2]], ")") # nolint
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = prob)) + # nolint
-      ggplot2::geom_line(lwd = 0.9)
+      ggplot2::geom_line(linewidth = linewidth)
   } else {
     .subtitle <- paste0("P(", type, ")")
     .colors_and_labels <- get_colors_and_labels(
@@ -558,7 +568,10 @@ plot_superiority_prob <- function(obj,
     )
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = prob)) + # nolint
-      ggplot2::geom_line(ggplot2::aes(color = decision_strategy), lwd = 0.9) + # nolint
+      ggplot2::geom_line(
+        ggplot2::aes(color = decision_strategy),
+        linewidth = linewidth
+      ) + # nolint
       .colors_and_labels
   }
 
@@ -592,13 +605,16 @@ plot_superiority_prob <- function(obj,
 #' Treat all/none (if only one available).
 #' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
+#' @export
 plot_evpi <- function(obj,
                       strategies = NULL,
                       type = c("best", "useful", "pairwise"),
                       colors = NULL,
-                      labels = NULL) { # nolint
-  type <- match.arg(type)
+                      labels = NULL,
+                      linewidth = 1.5) { # nolint
 
+  stopifnot(inherits(obj, c("BayesDCA", "BayesDCASurv")))
+  type <- match.arg(type)
   if (type != "best") {
     msg <- paste0(
       "CAREFUL: EVPI might only make sense for type='best'. Use type='",
@@ -613,43 +629,29 @@ plot_evpi <- function(obj,
     )
   }
 
-  if (is.null(obj$draws)) {
-    msg <- "Retrieving posterior draws."
-    message(cli::col_br_cyan(msg))
-    if (inherits(obj, "BayesDCA")) {
-      obj$draws <- .extract_dca_draws(
-        fit = obj,
-        strategies = strategies
-      )
-    } else {
-      obj$draws <- .extract_dca_surv_draws(
-        fit = obj,
-        strategies = strategies
-      )
-    }
-  }
-
-  if (is.null(strategies)) {
-    strategies <- as.vector(na.omit(obj$strategies))
-  } else {
-    stopifnot(
-      "Provided `strategies` are not available" = all(
-        strategies %in% obj$strategies
-      )
-    )
-  }
+  strategies <- validate_strategies(
+    obj = obj,
+    strategies = strategies
+  )
 
   if (is.null(labels)) {
     labels <- setNames(strategies, strategies)
   } else {
     stopifnot(
-      "Names of labels must match strategies" = all(names(labels) == strategies)
+      "Names of labels must match strategies" = all(sort(names(labels)) == sort(strategies))
     )
   }
 
   if (type == "pairwise") {
-    nb1 <- obj$draws$net_benefit[[strategies[1]]]
-    nb2 <- obj$draws$net_benefit[[strategies[2]]]
+    if (inherits(obj, "BayesDCA")) {
+      nb1 <- obj$fit$distributions$net_benefit[[strategies[1]]]
+      nb2 <- obj$fit$distributions$net_benefit[[strategies[2]]]
+    } else {
+      stopifnot("Refit with keep_draws = TRUE" = !is.null(obj$draws))
+      nb1 <- obj$draws$net_benefit[[strategies[1]]]
+      nb2 <- obj$draws$net_benefit[[strategies[2]]]
+    }
+
     df <- tibble::tibble(
       .evpi = evpi(thresholds = obj$thresholds, nb1, nb2),
       threshold = obj$thresholds
@@ -657,7 +659,7 @@ plot_evpi <- function(obj,
     .subtitle <- paste0("EVPI: ", labels[strategies[1]], " v.s. ", labels[strategies[2]]) # nolint
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = .evpi)) + # nolint
-      ggplot2::geom_line(lwd = 0.9)
+      ggplot2::geom_line(linewidth = linewidth)
   } else if (type == "useful") {
     df <- lapply(
       seq_along(strategies),
@@ -665,10 +667,17 @@ plot_evpi <- function(obj,
         .m <- strategies[i]
 
         # type = 'useful', considers this model against treat all/none
+        if (inherits(obj, "BayesDCA")) {
+          nb <- obj$fit$distributions$net_benefit[[.m]]
+          ta <- obj$fit$distributions$treat_all
+        } else {
+          nb <- obj$draws$net_benefit[[.m]]
+          ta <- obj$draws$treat_all
+        }
+
         args <- list(
           thresholds = obj$thresholds,
-          obj$draws$net_benefit[[.m]],
-          obj$draws$treat_all
+          nb, ta
         )
 
         .evpi <- do.call(evpi, args)
@@ -678,7 +687,7 @@ plot_evpi <- function(obj,
           .evpi = .evpi,
           threshold = obj$thresholds,
           decision_strategy = .m,
-          label = labels[strategies[i]]
+          label = labels[.m]
         )
       }
     ) %>%
@@ -694,13 +703,22 @@ plot_evpi <- function(obj,
     .subtitle <- paste0("EVPI against treat all or none")
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = .evpi)) + # nolint
-      ggplot2::geom_line(ggplot2::aes(color = decision_strategy), lwd = 0.9) + # nolint
+      ggplot2::geom_line(
+        ggplot2::aes(color = decision_strategy),
+        linewidth = linewidth
+      ) + # nolint
       .colors_and_labels
   } else {
     # actual EVPI
-    args <- obj$draws$net_benefit
-    args[[length(obj$draws$net_benefit) + 1]] <- obj$draws$treat_all
-    args[["thresholds"]] <- obj$thresholds
+    if (inherits(obj, "BayesDCA")) {
+      args <- obj$fit$distributions$net_benefit
+      args[["treat_all"]] <- obj$fit$distributions$treat_all
+      args[["thresholds"]] <- obj$thresholds
+    } else {
+      args <- obj$draws$net_benefit
+      args[["treat_all"]] <- obj$draws$treat_all
+      args[["thresholds"]] <- obj$thresholds
+    }
     df <- tibble::tibble(
       .evpi = do.call(evpi, args),
       threshold = obj$thresholds,
@@ -710,7 +728,7 @@ plot_evpi <- function(obj,
     .subtitle <- "EVPI"
     initial_plot <- df %>%
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = .evpi)) + # nolint
-      ggplot2::geom_line(lwd = 0.9)
+      ggplot2::geom_line(linewidth = linewidth)
   }
 
 
@@ -745,7 +763,7 @@ plot_evpi <- function(obj,
 #' `obj$strategies` or the first one against
 #' Treat all/none (if only one available).
 #' @importFrom magrittr %>%
-#' @export
+#' @keywords internal
 plot_classification <- function(obj,
                                 type = c("sensitivity", "specificity"),
                                 strategies = NULL,

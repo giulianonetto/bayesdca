@@ -28,3 +28,4 @@ for a subset of models or tests, only that subset will be plotted.}
 \description{
 May plot either sensitivity or specificity.
 }
+\keyword{internal}

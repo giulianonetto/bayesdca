@@ -665,7 +665,7 @@ get_prior_sample_size <- function(thresholds,
 }
 
 validate_strategies <- function(obj,
-                                     strategies = NULL) {
+                                strategies = NULL) {
   if (is.null(strategies)) {
     strategies <- as.vector(na.omit(obj$strategies))
   } else {

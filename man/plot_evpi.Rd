@@ -9,7 +9,8 @@ plot_evpi(
   strategies = NULL,
   type = c("best", "useful", "pairwise"),
   colors = NULL,
-  labels = NULL
+  labels = NULL,
+  linewidth = 1.5
 )
 }
 \arguments{

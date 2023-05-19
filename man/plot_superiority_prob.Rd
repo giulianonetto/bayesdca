@@ -10,7 +10,8 @@ plot_superiority_prob(
   type = c("best", "useful", "pairwise"),
   min_diff = 0,
   colors = NULL,
-  labels = NULL
+  labels = NULL,
+  linewidth = 1.5
 )
 }
 \arguments{

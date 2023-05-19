@@ -12,6 +12,7 @@ compare_dca(
   plot_list = FALSE,
   .evpi = FALSE,
   type = c("best", "useful", "pairwise"),
+  linewidth = 1.5,
   ...
 )
 }
