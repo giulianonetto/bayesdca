@@ -81,7 +81,7 @@ plot.BayesDCA <- function(obj,
     ) +
     # make it pretty
     ggplot2::theme_bw(base_size = 14) +
-    ggplot2::coord_cartesian(ylim = c(.ymin, NA)) +
+    ggplot2::coord_cartesian(ylim = c(.ymin, NA), default = TRUE) +
     ggplot2::scale_x_continuous(
       labels = scales::percent
     ) +
@@ -197,7 +197,7 @@ plot.BayesDCASurv <- function(obj,
     ) +
     # make it pretty
     ggplot2::theme_bw(base_size = 14) +
-    ggplot2::coord_cartesian(ylim = c(.ymin, NA)) +
+    ggplot2::coord_cartesian(ylim = c(.ymin, NA), default = TRUE) +
     ggplot2::scale_x_continuous(
       labels = scales::percent
     ) +
@@ -839,4 +839,134 @@ plot_classification <- function(obj,
     )
 
   return(.p)
+}
+
+#' Plot prior predictive check
+#' @import patchwork
+#' @importFrom magrittr %>%
+#' @export
+plot_ppc <- function(obj, strategy = 1, plot_list = FALSE, n_draws = 4000, bins = 20) {
+  stopifnot("Only implemented for bayesDCA objects (binary case)" = inherits(obj, "BayesDCA"))
+  stopifnot("Only implemented for threshold-varying prior" = obj$threshold_varying_prior)
+  .plot <- function(.df, ylab, .color) {
+    .df %>%
+      ggplot2::ggplot(
+        ggplot2::aes(
+          thr, mean,
+          ymin = lower, ymax = upper
+        )
+      ) +
+      ggplot2::geom_ribbon(
+        alpha = 0.4,
+        fill = .color
+      ) +
+      ggplot2::geom_line(
+        color = .color,
+        linewidth = 1.5
+      ) +
+      # make it pretty
+      ggplot2::theme_bw(base_size = 14) +
+      ggplot2::coord_cartesian(ylim = c(-0.001, 1)) +
+      ggplot2::scale_x_continuous(
+        labels = scales::percent
+      ) +
+      ggplot2::scale_y_continuous(
+        labels = scales::percent,
+        breaks = scales::pretty_breaks()
+      ) +
+      ggplot2::labs(
+        x = "Decision threshold",
+        y = ylab,
+        color = NULL
+      )
+  }
+  df_sens <- data.frame(
+    thr = obj$thresholds,
+    obj$priors$summaries$Se[[strategy]]
+  )
+  p_sens <- .plot(
+    .df = df_sens,
+    ylab = "Prior sensitivity",
+    .color = "#f80303"
+  )
+  df_spec <- data.frame(
+    thr = obj$thresholds,
+    obj$priors$summaries$Sp[[strategy]]
+  )
+  p_spec <- .plot(
+    .df = df_spec,
+    ylab = "Prior specificity",
+    .color = "steelblue"
+  )
+  df_prev <- data.frame(
+    x = rbeta(n_draws, shape1 = obj$priors$p1, shape2 = obj$priors$p2)
+  )
+  .subtitle <- paste0(
+    "Prior mean ",
+    round(obj$priors$summaries$p$mean * 100, 1),
+    "% (95% Cr.I. ",
+    round(obj$priors$summaries$p$lower * 100, 1),
+    "% \u2014 ",
+    round(obj$priors$summaries$p$upper * 100, 1),
+    "%)\nPrior sample size: ",
+    obj$priors$summaries$p$sample_size
+  )
+  p_prev <- df_prev %>%
+    ggplot2::ggplot(ggplot2::aes(x = x)) +
+    ggplot2::geom_histogram(bins = bins, fill = "#7c00f0") +
+    # make it pretty
+    ggplot2::theme_bw(base_size = 14) +
+    ggplot2::theme(
+      plot.subtitle = ggplot2::element_text(
+        size = 12
+      )
+    ) +
+    ggplot2::scale_x_continuous(
+      labels = scales::percent
+    ) +
+    ggplot2::labs(
+      x = "Prior prevalence",
+      subtitle = .subtitle
+    )
+
+  p_smpl_size <- df_sens %>%
+    ggplot2::ggplot(
+      ggplot2::aes(thr, sample_size)
+    ) +
+    ggplot2::geom_line(
+      linewidth = 1.5
+    ) +
+    # make it pretty
+    ggplot2::theme_bw(base_size = 14) +
+    ggplot2::scale_x_continuous(
+      labels = scales::percent
+    ) +
+    ggplot2::labs(
+      y = "Prior sample size",
+      x = "Decision threshold"
+    )
+
+  if (isTRUE(plot_list)) {
+    .output <- list(sens = p_sens, spec = p_spec, prev = p_prev)
+    return(.output)
+  }
+
+  if (isTRUE(obj$prior_only)) {
+    p_nb <- plot(obj) +
+      ggplot2::coord_cartesian(ylim = c(-0.1, 1)) +
+      ggplot2::labs(
+        y = "Prior net benefit"
+      )
+    .layout <- "
+    ABC
+    DEE
+    "
+    p <- p_sens + p_spec + p_smpl_size + p_prev + p_nb +
+      patchwork::plot_layout(design = .layout, guides = "collect") &
+      ggplot2::theme(legend.position = "bottom")
+  } else {
+    p <- ((p_sens | p_spec) / (p_smpl_size | p_prev))
+  }
+
+  return(p)
 }

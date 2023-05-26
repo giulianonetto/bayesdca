@@ -6,22 +6,19 @@
 \usage{
 .get_prior_parameters(
   thresholds,
-  constant = TRUE,
-  n_thresholds = NULL,
+  threshold_varying_prior = FALSE,
   n_strategies = NULL,
   prior_p = NULL,
   prior_se = NULL,
   prior_sp = NULL,
-  shift = 0.45,
-  slope = 0.025,
-  prior_sample_size = NULL,
-  min_prior_sample_size = 20,
-  max_prior_sample_size = 100,
-  slope_prior_sample_size = 300,
-  min_mean_se = 0.1,
-  max_mean_se = 0.9,
-  min_mean_sp = 0.1,
-  max_mean_sp = 0.9
+  ignorance_region_cutpoints = c(0.25, 0.75) * max(thresholds),
+  min_sens_prior_mean = 0.01,
+  max_sens_prior_mean = 0.99,
+  max_sens_prior_sample_size = 5,
+  ignorance_region_mean = 0.5,
+  ignorance_region_sample_size = 2,
+  prev_prior_mean = 0.5,
+  prev_prior_sample_size = 2
 )
 }
 \arguments{
@@ -33,6 +30,8 @@ Specificity curve. Only used if \code{constant=FALSE}.}
 \item{slope}{Scalar controlling shape of prior
 Specificity curve. Only used if \code{constant=FALSE}.}
 
+\item{min_mean_se, min_mean_sp, max_mean_se, max_mean_se}{Minimum}
+
 \item{prior_sample_size}{Prior sample size of strength.}
 
 \item{min_prior_sample_size}{Minimum prior sample size or strength.}
@@ -42,8 +41,6 @@ Specificity curve. Only used if \code{constant=FALSE}.}
 \item{slope_prior_sample_size}{Rate of change in prior
 sample size or strength.
 and maximum prior mean for sensitivity (se) and specificity (sp).}
-
-\item{min_mean_se, min_mean_sp, max_mean_se, max_mean_se}{Minimum}
 }
 \description{
 Get priors for Bayesian DCA

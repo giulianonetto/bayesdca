@@ -483,23 +483,20 @@ get_prior_sample_size <- function(thresholds,
 #' @importFrom magrittr %>%
 #' @export
 .get_prior_parameters <- function(thresholds,
-                                  constant = TRUE,
-                                  n_thresholds = NULL,
+                                  threshold_varying_prior = FALSE,
                                   n_strategies = NULL,
                                   prior_p = NULL,
                                   prior_se = NULL,
                                   prior_sp = NULL,
-                                  shift = 0.45,
-                                  slope = 0.025,
-                                  prior_sample_size = NULL,
-                                  min_prior_sample_size = 20,
-                                  max_prior_sample_size = 100,
-                                  slope_prior_sample_size = 300,
-                                  min_mean_se = 0.1,
-                                  max_mean_se = 0.9,
-                                  min_mean_sp = 0.1,
-                                  max_mean_sp = 0.9) {
-  if (isTRUE(constant)) {
+                                  ignorance_region_cutpoints = c(0.25, 0.75) * max(thresholds),
+                                  min_sens_prior_mean = 0.01,
+                                  max_sens_prior_mean = 0.99,
+                                  max_sens_prior_sample_size = 5,
+                                  ignorance_region_mean = 0.5,
+                                  ignorance_region_sample_size = 2,
+                                  prev_prior_mean = 0.5,
+                                  prev_prior_sample_size = 2) {
+  if (isFALSE(threshold_varying_prior)) {
     .priors <- .get_constant_prior_parameters(
       prior_p = prior_p,
       prior_se = prior_se,
@@ -508,19 +505,17 @@ get_prior_sample_size <- function(thresholds,
       n_strategies = n_strategies
     )
   } else {
-    .priors <- .get_nonconstant_prior_parameters(
+    .priors <- .get_threshold_varying_prior_parameters(
       thresholds = thresholds,
       n_strategies = n_strategies,
-      shift = shift,
-      slope = slope,
-      prior_sample_size = prior_sample_size,
-      min_prior_sample_size = min_prior_sample_size,
-      max_prior_sample_size = max_prior_sample_size,
-      slope_prior_sample_size = slope_prior_sample_size,
-      min_mean_se = min_mean_se,
-      max_mean_se = max_mean_se,
-      min_mean_sp = min_mean_sp,
-      max_mean_sp = max_mean_sp
+      ignorance_region_cutpoints = ignorance_region_cutpoints,
+      min_sens_prior_mean = min_sens_prior_mean,
+      max_sens_prior_mean = max_sens_prior_mean,
+      max_sens_prior_sample_size = max_sens_prior_sample_size,
+      ignorance_region_mean = ignorance_region_mean,
+      ignorance_region_sample_size = ignorance_region_sample_size,
+      prev_prior_mean = prev_prior_mean,
+      prev_prior_sample_size = prev_prior_sample_size
     )
   }
 
@@ -562,7 +557,8 @@ get_prior_sample_size <- function(thresholds,
   sp2 <- sapply(1:n_strategies, function(i) rep(prior_sp[2], n_thresholds))
 
   .priors <- list(
-    p1 = prior_p[1], p2 = prior_p[2],
+    p1 = prior_p[1],
+    p2 = prior_p[2],
     Se1 = se1, Se2 = se2,
     Sp1 = sp1, Sp2 = sp2
   )
@@ -570,95 +566,118 @@ get_prior_sample_size <- function(thresholds,
 }
 
 
-#' @title Get threshold- and model-specific priors for Bayesian DCA
-#'
-#' @param n_thresholds Number of thresholds (int.).
-#' @param n_strategies Number of models or tests (int.).
-#' @param prior_p,prior_se,prior_sp Non-negative shape values for
-#' Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
-#' Default is uniform prior for all parameters - Beta(1, 1).
-#' A single vector of the form `c(a, b)` can be provided for each.
-#' @param min_mean_se,min_mean_sp,max_mean_se,max_mean_se Minimum
-#' and maximum prior mean for sensitivity (se) and specificity (sp).
-#' @param prior_sample_size Prior sample size or strength.
-#' @param min_prior_sample_size Minimum prior sample size or strength.
-#' @param max_prior_sample_size Maximum prior sample size or strength.
-#' @param slope_prior_sample_size Rate of change in prior
-#' sample size or strength.
+#' @title Get threshold-varying priors for Bayesian DCA
 #' @importFrom magrittr %>%
 #' @keywords internal
-.get_nonconstant_prior_parameters <- function(thresholds, # nolint
-                                              n_strategies,
-                                              shift = 0.45,
-                                              slope = 0.025,
-                                              prior_sample_size = NULL,
-                                              min_prior_sample_size = 20,
-                                              max_prior_sample_size = 100,
-                                              slope_prior_sample_size = 300,
-                                              prior_p = NULL,
-                                              min_mean_se = 0.1,
-                                              max_mean_se = 0.9,
-                                              min_mean_sp = 0.1,
-                                              max_mean_sp = 0.9) {
-  if (is.null(prior_p)) prior_p <- c(1, 1)
+.get_threshold_varying_prior_parameters <- function(
+    thresholds, # nolint
+    n_strategies,
+    ignorance_region_cutpoints = c(0.25, 0.75) * max(thresholds),
+    min_sens_prior_mean = 0.01,
+    max_sens_prior_mean = 0.99,
+    max_sens_prior_sample_size = 5,
+    ignorance_region_mean = 0.5,
+    ignorance_region_sample_size = 2,
+    prev_prior_mean = 0.5,
+    prev_prior_sample_size = 2) {
+  min_t <- min(thresholds)
+  max_t <- max(thresholds)
+  if (!is.null(ignorance_region_cutpoints)) {
+    stopifnot("if given, ignorance_region_cutpoints should be 2D vector within thresholds range" = length(ignorance_region_cutpoints) == 2 && min(ignorance_region_cutpoints) >= min_t && max(ignorance_region_cutpoints) <= max_t) # nolint
+  }
+  .lengths <- sapply(
+    c(
+      min_sens_prior_mean, max_sens_prior_mean, max_sens_prior_sample_size
+    ),
+    length
+  )
+  stopifnot("All sensitivity parameters must have length equal either to 1 or to n_strategies" = all(.lengths == 1L) | all(.lengths == n_strategies))
+  if (.lengths[1] == 1L) {
+    min_sens_prior_mean <- rep(min_sens_prior_mean, length = n_strategies)
+    max_sens_prior_mean <- rep(max_sens_prior_mean, length = n_strategies)
+    max_sens_prior_sample_size <- rep(max_sens_prior_sample_size, length = n_strategies)
+  }
 
-  stopifnot(
-    "`shift` must be either a single number of a vector of size `n_strategies`" = length(shift) == 1 | length(shift) == n_strategies # nolint
-  )
-  stopifnot(
-    "`slope` must be either a single number of a vector of size `n_strategies`" = length(slope) == 1 | length(slope) == n_strategies # nolint
-  )
-  stopifnot(
-    "if given, `prior_sample_size` must be either a single number of a vector of size `n_strategies`" = length(prior_sample_size) %in% c(0, 1, n_strategies) # nolint
-  )
-
-  # if not model-specific, then use the first shift/slope
-  if (length(shift) == 1L) {
-    shift <- rep(shift, n_strategies)
-  }
-  if (length(slope) == 1L) {
-    slope <- rep(slope, n_strategies)
-  }
-  if (is.null(prior_sample_size)) {
-    prior_sample_size <- get_prior_sample_size(
-      thresholds = thresholds,
-      min_prior_sample_size = min_prior_sample_size,
-      max_prior_sample_size = max_prior_sample_size,
-      slope_prior_sample_size = slope_prior_sample_size
-    )
-  }
-  if (length(prior_sample_size) == 1L) {
-    prior_sample_size <- rep(prior_sample_size, n_strategies)
-  }
   n_thresholds <- length(thresholds)
   .priors <- list(
-    p1 = prior_p[1],
-    p2 = prior_p[2],
+    p1 = prev_prior_mean * prev_prior_sample_size,
+    p2 = (1 - prev_prior_mean) * prev_prior_sample_size,
     Se1 = matrix(nrow = n_thresholds, ncol = n_strategies),
     Se2 = matrix(nrow = n_thresholds, ncol = n_strategies),
     Sp1 = matrix(nrow = n_thresholds, ncol = n_strategies),
-    Sp2 = matrix(nrow = n_thresholds, ncol = n_strategies)
+    Sp2 = matrix(nrow = n_thresholds, ncol = n_strategies),
+    summaries = list(
+      p = list(
+        mean = prev_prior_mean,
+        sample_size = prev_prior_sample_size,
+        lower = qbeta(0.025, prev_prior_mean * prev_prior_sample_size, (1 - prev_prior_mean) * prev_prior_sample_size),
+        upper = qbeta(0.975, prev_prior_mean * prev_prior_sample_size, (1 - prev_prior_mean) * prev_prior_sample_size)
+      ),
+      Se = lapply(
+        seq_len(n_strategies), function(...) {
+          matrix(
+            nrow = n_thresholds, ncol = 4,
+            dimnames = list(NULL, c("mean", "sample_size", "lower", "upper"))
+          )
+        }
+      ),
+      Sp = lapply(
+        seq_len(n_strategies), function(...) {
+          matrix(
+            nrow = n_thresholds, ncol = 4,
+            dimnames = list(NULL, c("mean", "sample_size", "lower", "upper"))
+          )
+        }
+      )
+    )
   )
-  for (m in 1:n_strategies) {
-    se_mu <- get_prior_se_mu(
-      thresholds = thresholds,
-      shift = shift[m],
-      slope = slope[m],
-      .min = min_mean_se,
-      .max = max_mean_se
-    )
-    sp_mu <- get_prior_sp_mu(
-      thresholds = thresholds,
-      shift = shift[m],
-      slope = slope[m],
-      .min = min_mean_sp,
-      .max = max_mean_sp
-    )
-    smpl_size <- prior_sample_size[m]
-    .priors[["Se1"]][, m] <- se_mu * smpl_size
-    .priors[["Se2"]][, m] <- (1 - se_mu) * smpl_size
-    .priors[["Sp1"]][, m] <- sp_mu * smpl_size
-    .priors[["Sp2"]][, m] <- (1 - sp_mu) * smpl_size
+
+  cuts <- ignorance_region_cutpoints # OK, I agree these names are a bit too big
+  for (m in seq_len(n_strategies)) {
+    for (j in seq_along(thresholds)) {
+      .t <- thresholds[j]
+      if (!is.null(cuts)) {
+        if (.t <= cuts[1]) {
+          sens_mean <- max_sens_prior_mean[m] + (.t - min_t) * (ignorance_region_mean - max_sens_prior_mean[m]) / (cuts[1] - min_t)
+          smpl_size <- max_sens_prior_sample_size[m] + (.t - min_t) * (ignorance_region_sample_size - max_sens_prior_sample_size[m]) / (cuts[1] - min_t)
+        } else if (.t <= cuts[2]) {
+          sens_mean <- ignorance_region_mean
+          smpl_size <- ignorance_region_sample_size
+        } else {
+          sens_mean <- ignorance_region_mean + (.t - cuts[2]) * (min_sens_prior_mean[m] - ignorance_region_mean) / (max_t - cuts[2])
+          smpl_size <- ignorance_region_sample_size + (.t - cuts[2]) * (max_sens_prior_sample_size[m] - ignorance_region_sample_size) / (max_t - cuts[2])
+        }
+      } else {
+        sens_mean <- max_sens_prior_mean[m] + (.t - min_t) * (min_sens_prior_mean[m] - max_sens_prior_mean[m]) / (max_t - min_t)
+        smpl_size <- max_sens_prior_sample_size[m]
+      }
+      sens_mean <- max(min(sens_mean, 0.999), 0.001)
+      spec_mean <- 1 - sens_mean
+      .priors[["Se1"]][j, m] <- sens_mean * smpl_size
+      .priors[["Se2"]][j, m] <- (1 - sens_mean) * smpl_size
+      .priors[["Sp1"]][j, m] <- spec_mean * smpl_size
+      .priors[["Sp2"]][j, m] <- (1 - spec_mean) * smpl_size
+      .priors[["summaries"]][["Se"]][[m]][j, "mean"] <- sens_mean
+      .priors[["summaries"]][["Se"]][[m]][j, "sample_size"] <- smpl_size
+      .priors[["summaries"]][["Se"]][[m]][j, "lower"] <- qbeta(
+        0.025,
+        shape1 = .priors[["Se1"]][j, m], shape2 = .priors[["Se2"]][j, m]
+      )
+      .priors[["summaries"]][["Se"]][[m]][j, "upper"] <- qbeta(
+        0.975,
+        shape1 = .priors[["Se1"]][j, m], shape2 = .priors[["Se2"]][j, m]
+      )
+      .priors[["summaries"]][["Sp"]][[m]][j, "mean"] <- spec_mean
+      .priors[["summaries"]][["Sp"]][[m]][j, "sample_size"] <- smpl_size
+      .priors[["summaries"]][["Sp"]][[m]][j, "lower"] <- qbeta(
+        0.025,
+        shape1 = .priors[["Sp1"]][j, m], shape2 = .priors[["Sp2"]][j, m]
+      )
+      .priors[["summaries"]][["Sp"]][[m]][j, "upper"] <- qbeta(
+        0.975,
+        shape1 = .priors[["Sp1"]][j, m], shape2 = .priors[["Sp2"]][j, m]
+      )
+    }
   }
 
   return(.priors)

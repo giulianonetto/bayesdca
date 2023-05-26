@@ -11,17 +11,19 @@ dca(
   prior_se = NULL,
   prior_sp = NULL,
   priors = NULL,
-  constant_prior = TRUE,
-  shift = 0.45,
-  slope = 0.025,
-  prior_sample_size = 5,
-  min_prior_mean = 0.05,
-  max_prior_mean = 0.95,
+  threshold_varying_prior = FALSE,
+  ignorance_region_cutpoints = c(0.25, 0.75) * max(thresholds),
+  min_sens_prior_mean = 0.01,
+  max_sens_prior_mean = 0.99,
+  max_sens_prior_sample_size = 5,
+  ignorance_region_mean = 0.5,
+  ignorance_region_sample_size = 2,
+  prev_prior_mean = 0.5,
+  prev_prior_sample_size = 2,
   summary_probs = c(0.025, 0.975),
   external_prevalence_data = NULL,
   prior_only = FALSE,
-  n_draws = 4000,
-  ...
+  n_draws = 4000
 )
 }
 \arguments{
@@ -44,14 +46,6 @@ and shape2 (named \code{p2}). Similarly for Se1/Se2 and Sp1/Sp2, except
 these should be matrices with as many rows as thresholds and
 as many columns as models or tests.}
 
-\item{constant_prior}{If TRUE (default), it will set a single
-prior for all models or tests in all thresholds.
-If FALSE, the prior will be threshold and, potentially, model/test-specific.}
-
-\item{min_prior_mean, max_prior_mean}{Minimum
-and maximum prior mean for sensitivity and specificity.
-Only used if \code{constant_prior = FALSE}.}
-
 \item{summary_probs}{Probabilities used to compute credible
 intervals (defaults to a 95\% Cr.I.).}
 
@@ -64,14 +58,19 @@ population).}
 
 \item{prior_only}{If set to TRUE, will produce prior DCA.}
 
-\item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter,
-chains).}
-
 \item{keep_fit}{Logical indicating whether to keep \code{stanfit} in
 the output (default is FALSE).}
 
 \item{keep_draws}{Logical indicating whether to keep posterior
 draws from \code{stanfit} object (default is TRUE).}
+
+\item{constant_prior}{If TRUE (default), it will set a single
+prior for all models or tests in all thresholds.
+If FALSE, the prior will be threshold and, potentially, model/test-specific.}
+
+\item{min_prior_mean, max_prior_mean}{Minimum
+and maximum prior mean for sensitivity and specificity.
+Only used if \code{constant_prior = FALSE}.}
 
 \item{refresh}{Control verbosity of \code{rstan::sampling}
 (check its help

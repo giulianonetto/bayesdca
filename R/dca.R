@@ -42,8 +42,6 @@
 #' @param refresh Control verbosity of `rstan::sampling`
 #' (check its help
 #' page for details).
-#' @param ... Arguments passed to `rstan::sampling` (e.g. iter,
-#' chains).
 #' @return An object of class `BayesDCA`
 #' @importFrom magrittr %>%
 #' @examples
@@ -56,16 +54,19 @@ dca <- function(.data,
                 prior_se = NULL,
                 prior_sp = NULL,
                 priors = NULL,
-                constant_prior = TRUE,
-                shift = 0.45, slope = 0.025,
-                prior_sample_size = 5,
-                min_prior_mean = 0.05,
-                max_prior_mean = 0.95,
+                threshold_varying_prior = FALSE,
+                ignorance_region_cutpoints = c(0.25, 0.75) * max(thresholds),
+                min_sens_prior_mean = 0.01,
+                max_sens_prior_mean = 0.99,
+                max_sens_prior_sample_size = 5,
+                ignorance_region_mean = 0.5,
+                ignorance_region_sample_size = 2,
+                prev_prior_mean = 0.5,
+                prev_prior_sample_size = 2,
                 summary_probs = c(0.025, 0.975),
                 external_prevalence_data = NULL,
                 prior_only = FALSE,
-                n_draws = 4000,
-                ...) {
+                n_draws = 4000) {
   if (colnames(.data)[1] != "outcomes") {
     stop("Missing 'outcomes' column as the first column in input .data")
   }
@@ -87,18 +88,19 @@ dca <- function(.data,
   if (is.null(priors)) {
     priors <- .get_prior_parameters(
       thresholds = thresholds,
-      constant = constant_prior,
+      threshold_varying_prior = threshold_varying_prior,
       prior_p = prior_p,
       prior_se = prior_se,
       prior_sp = prior_sp,
       n_strategies = n_strategies,
-      shift = shift,
-      slope = slope,
-      prior_sample_size = prior_sample_size,
-      min_mean_se = min_prior_mean,
-      max_mean_se = max_prior_mean,
-      min_mean_sp = min_prior_mean,
-      max_mean_sp = max_prior_mean
+      ignorance_region_cutpoints = ignorance_region_cutpoints,
+      min_sens_prior_mean = min_sens_prior_mean,
+      max_sens_prior_mean = max_sens_prior_mean,
+      max_sens_prior_sample_size = max_sens_prior_sample_size,
+      ignorance_region_mean = ignorance_region_mean,
+      ignorance_region_sample_size = ignorance_region_sample_size,
+      prev_prior_mean = prev_prior_mean,
+      prev_prior_sample_size = prev_prior_sample_size
     )
   }
   tp <- threshold_data %>%
@@ -169,7 +171,9 @@ dca <- function(.data,
     .data = .data,
     threshold_data = threshold_data,
     priors = priors,
-    strategies = strategies
+    strategies = strategies,
+    threshold_varying_prior = threshold_varying_prior,
+    prior_only = prior_only
   )
 
   .output <- structure(output_data, class = "BayesDCA")
