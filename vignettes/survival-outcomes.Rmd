@@ -26,10 +26,10 @@ library(bayesDCA)
 head(dca_survival_data)
 ```
 
-The dataset contains the time-to-event `outcomes` (a `survival::Surv` object), the predictions from a prognostic model, and the results from a binary prognostic test. The time horizon for the event prediction is one time units (e.g., year), so we set `prediction_time = 1`. We also set `cores = 4` to speed up MCMC sampling with [Stan](https://mc-stan.org/).
+The dataset contains the time-to-event `outcomes` (a `survival::Surv` object), the predictions from a prognostic model, and the results from a binary prognostic test. The time horizon for the event prediction is one time units (e.g., year), so we set `prediction_time = 1`. We also set `chains = 1` to speed up MCMC sampling with [Stan](https://mc-stan.org/) (in practice you should use at least `chains = 4`, maybe with `cores = 4` for speed as well).
 
 ```{r, fig.height=4.5}
-fit <- dca_surv(dca_survival_data, prediction_time = 1, chains = 1)
+fit <- dca_surv(dca_survival_data, prediction_time = 1, iter = 1000, chains = 1)
 plot(fit)
 ```
 
@@ -53,7 +53,7 @@ compare_dca(fit, type = "useful")
 
 ```{r fig.width=14}
 compare_dca(fit, 
-            models_or_tests = c("model_predictions", "binary_test"), 
+            strategies = c("model_predictions", "binary_test"), 
             type = "pairwise")
 ```
 

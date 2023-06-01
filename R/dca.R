@@ -10,7 +10,7 @@
 #' of predictive models, or with 0 or 1 indicator from each of desired list of
 #' binary tests.
 #' @param thresholds Numeric vector with probability thresholds with which
-#' the net benefit should be computed (default is `seq(0.01, 0.5, 0.02)`).
+#' the net benefit should be computed (default is `seq(0, 0.5, length = 51)`).
 #' @param keep_fit Logical indicating whether to keep `stanfit` in
 #' the output (default is FALSE).
 #' @param keep_draws Logical indicating whether to keep posterior
@@ -46,7 +46,7 @@
 #' @importFrom magrittr %>%
 #' @examples
 #' data(PredModelData)
-#' fit <- dca(PredModelData, cores = 4)
+#' fit <- dca(PredModelData)
 #' plot(fit)
 dca <- function(.data,
                 thresholds = seq(0, 0.5, length = 51),
@@ -220,11 +220,14 @@ dca <- function(.data,
                         prior_p1, prior_p2,
                         prior_Se1, prior_Se2,
                         prior_Sp1, prior_Sp2,
-                        other_models_indices,
                         N_ext = 0,
                         d_ext = 0,
                         n_draws = 4000) {
-  thresholds <- pmin(thresholds, 0.999) # odds(1) = Inf
+  # avoid thresholds in {0, 1}
+  thresholds <- thresholds %>%
+    pmin(0.99) %>%
+    pmax(1e-9) %>%
+    unique()
   n_strategies <- length(strategies)
   # get posterior distributions
 
@@ -341,9 +344,12 @@ dca <- function(.data,
 
 #' @title Get Threshold Performance Data for DCA list
 #'
-#' @param outcomes Integer vector (0 or 1) with binary outcomes.
-#' @param predictions Numeric vector with predicted probabilities.
-#' @param prior_only If TRUE, returns all zeros to made prior DCA.
+#' @param .data A data.frame with an `outcomes` column (0 or 1 for each individual)
+#' and one or more columns with predicted probabilities from each of desired list
+#' of predictive models, or with 0 or 1 indicator from each of desired list of
+#' binary tests.
+#' @param thresholds Decision thresholds.
+#' @param prior_only If TRUE, returns prior only (ignores any data).
 #' @importFrom magrittr %>%
 #' @keywords internal
 .get_thr_data_list <- function(.data,
@@ -557,6 +563,7 @@ print.BayesDCA <- function(obj, ...) {
 #' @param obj BayesDCA object
 #' @param strategies Character vector with subset of decision strategies.
 #' @param type One of "best", "useful", or "pairwise".
+#' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
 #' @keywords internal
 #' @return A ggplot object.
@@ -612,6 +619,7 @@ get_superiority_prob_plot_data_binary <- function(obj, # nolint: object_length_l
 #' @param obj BayesDCA object
 #' @param strategies Character vector with subset of decision strategies.
 #' @param type One of "best", "useful", or "pairwise".
+#' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
 #' @keywords internal
 #' @return A ggplot object.

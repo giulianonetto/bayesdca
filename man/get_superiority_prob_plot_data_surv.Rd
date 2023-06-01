@@ -15,9 +15,13 @@ get_superiority_prob_plot_data_surv(
 \arguments{
 \item{obj}{BayesDCA object}
 
+\item{min_diff}{Minimum difference to call superior.}
+
 \item{strategies}{Character vector with subset of decision strategies.}
 
 \item{type}{One of "best", "useful", or "pairwise".}
+
+\item{labels}{Named vector with label for each model or test.}
 }
 \value{
 A ggplot object.

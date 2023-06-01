@@ -43,12 +43,12 @@ reference:
   - PredModelData
   - dca_survival_data
   - Docking2021Data
-- title: "Other"
+- title: "Other functions"
   contents:
   - plot_delta
   - plot_superiority_prob
   - plot_evpi
-  - .get_prior_parameters
+  - plot_ppc
   - matches("plot")
   - matches("print")
   - bayesDCA-package

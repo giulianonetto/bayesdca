@@ -33,7 +33,7 @@ of predictive models, or with 0 or 1 indicator from each of desired list of
 binary tests.}
 
 \item{thresholds}{Numeric vector with probability thresholds with which
-the net benefit should be computed (default is \code{seq(0.01, 0.5, 0.02)}).}
+the net benefit should be computed (default is \code{seq(0, 0.5, length = 51)}).}
 
 \item{prior_p, prior_se, prior_sp}{Non-negative shape values for
 Beta(alpha, beta) priors used for p, Se, and Sp, respectively.
@@ -87,6 +87,6 @@ using their corresponding posterior draws.
 }
 \examples{
 data(PredModelData)
-fit <- dca(PredModelData, cores = 4)
+fit <- dca(PredModelData)
 plot(fit)
 }

@@ -17,9 +17,9 @@ compare_dca(
 )
 }
 \arguments{
-\item{obj}{BayesDCA object}
+\item{obj}{BayesDCA or BayesDCASurv object}
 
-\item{strategies}{Character vector with models or tests to compare. If null, compares either first two in \code{obj$strategies} or the first one against Treat all/none (if only one available).}
+\item{strategies}{Character vector with models or tests to plot. If null, compares either first two in \code{obj$strategies} or the first one against Treat all/none (if only one available).}
 
 \item{colors}{Named vector with color for each model or test. If provided
 for a subset of models or tests, only that subset will be plotted.}
@@ -27,6 +27,12 @@ for a subset of models or tests, only that subset will be plotted.}
 \item{labels}{Named vector with label for each model or test.}
 
 \item{plot_list}{If TRUE, returns a list of separate ggplot objects.}
+
+\item{.evpi}{If TRUE, adds validation EVPI to plots -- see \link{Sadatsafavi et al. (2020)}(see https://arxiv.org/abs/2208.03343).}
+
+\item{type}{One of "best", "useful", or "pairwise".}
+
+\item{linewidth}{Width of plotted lines.}
 }
 \value{
 A patchwork/ggplot object or a list of ggplot objects.
@@ -36,6 +42,6 @@ Plot BayesDCA comparison
 }
 \examples{
 data(PredModelData)
-fit <- dca(PredModelData, cores = 4)
+fit <- dca(PredModelData)
 compare_dca(fit)
 }

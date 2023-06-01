@@ -2,10 +2,24 @@
 % Please edit documentation in R/plotting.R
 \name{plot_ppc}
 \alias{plot_ppc}
-\title{Plot prior predictive check}
+\title{Plot prior predictive check for BayesDCA (binary case only)}
 \usage{
-plot_ppc(obj, strategy = 1, plot_list = FALSE, n_draws = 4000, bins = 20)
+plot_ppc(obj, plot_list = FALSE, n_draws = 4000, bins = 20)
+}
+\arguments{
+\item{obj}{BayesDCA object}
+
+\item{plot_list}{If TRUE, returns a list with each separate plot.}
+
+\item{n_draws}{Number of prior draws to use.}
+
+\item{bins}{Number of bins to use in the histogram of prior prevalence.}
 }
 \description{
-Plot prior predictive check
+Plot prior predictive check for BayesDCA (binary case only)
+}
+\examples{
+df <- data.frame(outcomes = 1, x = 1)  # specific values don't really matter
+fit <- dca(df, prior_only = TRUE, threshold_varying_prior = TRUE)
+plot_ppc(fit)
 }

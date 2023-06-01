@@ -45,3 +45,4 @@ and maximum prior mean for sensitivity (se) and specificity (sp).}
 \description{
 Get priors for Bayesian DCA
 }
+\keyword{internal}

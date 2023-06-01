@@ -9,3 +9,4 @@
 \description{
 Get relevant parameters to parse from Stan output (BayesDCASurv)
 }
+\keyword{internal}

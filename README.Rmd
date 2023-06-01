@@ -46,10 +46,10 @@ data(PredModelData)
 head(PredModelData)
 ```
 
-We set `cores = 4` to speed up MCMC sampling with [Stan](https://mc-stan.org/).
+Run the DCA itself:
 
 ```{r, fig.height=4.5}
-fit <- dca(PredModelData, cores = 4)
+fit <- dca(PredModelData)
 plot(fit)
 ```
 
@@ -97,7 +97,7 @@ We can also do pairwise comparisons by specifying the pair of strategies we want
 
 ```{r}
 compare_dca(fit, 
-            models_or_tests = c("predictions", "binary_test"), 
+            strategies = c("predictions", "binary_test"), 
             type = "pairwise")
 ```
 
@@ -116,7 +116,7 @@ Notice that the EVPI follows closely the uncertainty around the best strategy: t
 Say you are validating tests using a nested case-control study, so the prevalence parameter must come from the larger sample from which cases and controls were selected. Another example is when you want to use an external estimate of prevalence (say from a large prospective cross-sectional study). You can do so by passing the `external_prevalence_data` argument to `dca`.
 
 ```{r, fig.height=4.5}
-fit <- dca(PredModelData, cores = 4,
+fit <- dca(PredModelData,
            external_prevalence_data = c(100, 500))
 plot(fit)
 ```

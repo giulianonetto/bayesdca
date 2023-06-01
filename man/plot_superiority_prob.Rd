@@ -17,12 +17,20 @@ plot_superiority_prob(
 \arguments{
 \item{obj}{BayesDCA or BayesDCASurv object}
 
+\item{strategies}{Character vector with models or tests to plot. If null, compares either first two in \code{obj$strategies} or the first one against Treat all/none (if only one available).}
+
+\item{type}{One of "best", "useful", or "pairwise".}
+
 \item{min_diff}{Minimal difference for superiority. Defaults to zero. Used only for \code{type = "pairwise"}}
 
 \item{colors}{Named vector with color for each model or test. If provided
 for a subset of models or tests, only that subset will be plotted.}
 
 \item{labels}{Named vector with label for each model or test.}
+
+\item{linewidth}{Width of plotted lines.}
+
+\item{plot_list}{If TRUE, returns a list of separate ggplot objects.}
 }
 \value{
 A ggplot object.
@@ -32,6 +40,6 @@ Plot P(useful) from Wynants 2018 (doi: 10.1002/sim.7653)
 }
 \examples{
 data(PredModelData)
-fit <- dca(PredModelData, cores = 4)
+fit <- dca(PredModelData)
 plot_superiority_prob(fit)
 }

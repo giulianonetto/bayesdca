@@ -1,14 +1,13 @@
 #' @title Plot BayesDCA
 #'
 #' @param obj BayesDCA object
+#' @param strategies Character vector with models or tests to plot.
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
-#' @param strategies Character vector with
-#' models or tests to compare. If null, compares
-#' either first two in `obj$strategies`
-#' or the first one against Treat all/none
-#' (if only one available).
+#' @param raw_values Add raw predicted values on x-axis.
+#' @param raw_values_label Label for raw values.
+#' @param linewidth Width of plotted lines.
 #' @importFrom magrittr %>%
 #' @export
 plot.BayesDCA <- function(obj,
@@ -126,6 +125,13 @@ plot.BayesDCA <- function(obj,
 #' @title Plot BayesDCASurv
 #'
 #' @param obj BayesDCASurv object
+#' @param strategies Character vector with models or tests to plot.
+#' @param colors Named vector with color for each model or test. If provided
+#' for a subset of models or tests, only that subset will be plotted.
+#' @param labels Named vector with label for each model or test.
+#' @param raw_values Add raw predicted values on x-axis.
+#' @param raw_values_label Label for raw values.
+#' @param linewidth Width of plotted lines.
 #' @export
 plot.BayesDCASurv <- function(obj,
                               strategies = NULL,
@@ -241,18 +247,22 @@ plot.BayesDCASurv <- function(obj,
 
 #' @title Plot BayesDCA comparison
 #'
-#' @param obj BayesDCA object
-#' @param strategies Character vector with models or tests to compare. If null, compares either first two in `obj$strategies` or the first one against Treat all/none (if only one available).
+#' @param obj BayesDCA or BayesDCASurv object
+#' @param strategies Character vector with models or tests to plot. If null, compares either first two in `obj$strategies` or the first one against Treat all/none (if only one available).
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
+#' @param plot_list If TRUE, returns a list with each separate plot.
+#' @param .evpi If TRUE, adds validation EVPI to plots -- see [Sadatsafavi et al. (2020)](see https://arxiv.org/abs/2208.03343).
+#' @param linewidth Width of plotted lines.
+#' @param type One of "best", "useful", or "pairwise".
 #' @param plot_list If TRUE, returns a list of separate ggplot objects.
 #' @importFrom magrittr %>%
 #' @import patchwork
 #' @export
 #' @examples
 #' data(PredModelData)
-#' fit <- dca(PredModelData, cores = 4)
+#' fit <- dca(PredModelData)
 #' compare_dca(fit)
 #' @return A patchwork/ggplot object or a list of ggplot objects.
 compare_dca <- function(obj,
@@ -353,15 +363,20 @@ compare_dca <- function(obj,
 
 #' @title Plot BayesDCA delta
 #'
-#' @param obj BayesDCA object
+#' @param obj BayesDCA or BayesDCASurv object
+#' @param strategies Character vector with models or tests to plot. If null, compares either first two in `obj$strategies` or the first one against Treat all/none (if only one available).
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
+#' @param plot_list If TRUE, returns a list with each separate plot.
+#' @param linewidth Width of plotted lines.
+#' @param type One of "best", "useful", or "pairwise".
+#' @param plot_list If TRUE, returns a list of separate ggplot objects.
 #' @importFrom magrittr %>%
 #' @export
 #' @examples
 #' data(PredModelData)
-#' fit <- dca(PredModelData, cores = 4)
+#' fit <- dca(PredModelData)
 #' plot_delta(fit)
 #' @return A ggplot object.
 plot_delta <- function(obj,
@@ -489,17 +504,21 @@ plot_delta <- function(obj,
 
 #' @title Plot P(useful) from Wynants 2018 (doi: 10.1002/sim.7653)
 #' @param obj BayesDCA or BayesDCASurv object
-#' @param min_diff Minimal difference for superiority. Defaults to zero. Used only for `type = "pairwise"`
+#' @param strategies Character vector with models or tests to plot. If null, compares either first two in `obj$strategies` or the first one against Treat all/none (if only one available).
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
+#' @param plot_list If TRUE, returns a list with each separate plot.
+#' @param linewidth Width of plotted lines.
+#' @param type One of "best", "useful", or "pairwise".
+#' @param plot_list If TRUE, returns a list of separate ggplot objects.
+#' @param min_diff Minimal difference for superiority. Defaults to zero. Used only for `type = "pairwise"`
 #' @importFrom magrittr %>%
 #' @export
 #' @examples
 #' data(PredModelData)
-#' fit <- dca(PredModelData, cores = 4)
+#' fit <- dca(PredModelData)
 #' plot_superiority_prob(fit)
-
 #' @return A ggplot object.
 plot_superiority_prob <- function(obj,
                                   strategies = NULL,
@@ -598,12 +617,14 @@ plot_superiority_prob <- function(obj,
 
 #' @title Plot Expected Value of Perfect Information (EVPI)
 #'
-#' @param obj BayesDCA object
-#' @param strategies Character vector with models or tests
-#' to compare. If null, compares either first two in
-#' `obj$strategies` or the first one against
-#' Treat all/none (if only one available).
+#' @param obj BayesDCA or BayesDCASurv object
+#' @param strategies Character vector with models or tests to plot. If null, compares either first two in `obj$strategies` or the first one against Treat all/none (if only one available).
+#' @param colors Named vector with color for each model or test. If provided
+#' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
+#' @param plot_list If TRUE, returns a list with each separate plot.
+#' @param linewidth Width of plotted lines.
+#' @param type One of "best", "useful", or "pairwise".
 #' @importFrom magrittr %>%
 #' @export
 plot_evpi <- function(obj,
@@ -751,101 +772,19 @@ plot_evpi <- function(obj,
   return(.plot)
 }
 
-#' Plot classification performance from Bayesian DCA of binary outcome
-#'
-#' May plot either sensitivity or specificity.
+#' Plot prior predictive check for BayesDCA (binary case only)
 #' @param obj BayesDCA object
-#' @param colors Named vector with color for each model or test. If provided
-#' for a subset of models or tests, only that subset will be plotted.
-#' @param labels Named vector with label for each model or test.
-#' @param strategies Character vector with models or tests
-#' to compare. If null, compares either first two in
-#' `obj$strategies` or the first one against
-#' Treat all/none (if only one available).
-#' @importFrom magrittr %>%
-#' @keywords internal
-plot_classification <- function(obj,
-                                type = c("sensitivity", "specificity"),
-                                strategies = NULL,
-                                colors = NULL,
-                                labels = NULL) {
-  type <- match.arg(type)
-
-  if (!is.null(strategies)) {
-    stopifnot(
-      "Provided `strategies` are not available" = all(
-        strategies %in% obj$strategies
-      )
-    )
-
-    plot_data <- obj$summary[[type]] %>%
-      dplyr::filter(decision_strategy_name %in% strategies) # nolint
-  } else {
-    strategies <- obj$strategies
-    plot_data <- obj$summary[[type]]
-  }
-
-  colors_and_labels <- get_colors_and_labels(
-    obj = obj,
-    colors = colors,
-    labels = labels,
-    strategies = strategies,
-    all_or_none = FALSE
-  )
-  .p <- plot_data %>%
-    dplyr::filter(
-      decision_strategy_name %in% strategies # nolint
-    ) %>%
-    ggplot2::ggplot() +
-    # set x axis
-    ggplot2::aes(x = threshold) + # nolint
-    # add color/fill/label scheme
-    colors_and_labels +
-    # add net benefit curves
-    ggplot2::geom_ribbon(
-      ggplot2::aes(
-        ymin = `2.5%`, ymax = `97.5%`, # nolint
-        fill = decision_strategy_name
-      ),
-      alpha = 0.4
-    ) +
-    ggplot2::geom_line(
-      ggplot2::aes(
-        y = estimate, # nolint
-        color = decision_strategy_name,
-        group = decision_strategy_name
-      )
-    ) +
-    # make it pretty
-    ggplot2::theme_bw(base_size = 14) +
-    ggplot2::coord_cartesian(ylim = c(0, 1)) +
-    ggplot2::scale_x_continuous(
-      labels = scales::percent
-    ) +
-    ggplot2::scale_y_continuous(
-      labels = scales::percent,
-      breaks = scales::pretty_breaks()
-    ) +
-    ggplot2::labs(
-      x = "Decision threshold",
-      y = stringr::str_to_title(type),
-      color = NULL
-    ) +
-    ggplot2::guides(
-      fill = "none",
-      color = ggplot2::guide_legend(
-        keywidth = ggplot2::unit(0.5, "cm")
-      )
-    )
-
-  return(.p)
-}
-
-#' Plot prior predictive check
+#' @param plot_list If TRUE, returns a list with each separate plot.
+#' @param n_draws Number of prior draws to use.
+#' @param bins Number of bins to use in the histogram of prior prevalence.
 #' @import patchwork
 #' @importFrom magrittr %>%
 #' @export
-plot_ppc <- function(obj, strategy = 1, plot_list = FALSE, n_draws = 4000, bins = 20) {
+#' @examples
+#' df <- data.frame(outcomes = 1, x = 1)  # specific values don't really matter
+#' fit <- dca(df, prior_only = TRUE, threshold_varying_prior = TRUE)
+#' plot_ppc(fit)
+plot_ppc <- function(obj, plot_list = FALSE, n_draws = 4000, bins = 20) {
   stopifnot("Only implemented for bayesDCA objects (binary case)" = inherits(obj, "BayesDCA"))
   stopifnot("Only implemented for threshold-varying prior" = obj$threshold_varying_prior)
   .plot <- function(.df, ylab, .color) {
@@ -882,7 +821,7 @@ plot_ppc <- function(obj, strategy = 1, plot_list = FALSE, n_draws = 4000, bins 
   }
   df_sens <- data.frame(
     thr = obj$thresholds,
-    obj$priors$summaries$Se[[strategy]]
+    obj$priors$summaries$Se[[1]]
   )
   p_sens <- .plot(
     .df = df_sens,
@@ -891,7 +830,7 @@ plot_ppc <- function(obj, strategy = 1, plot_list = FALSE, n_draws = 4000, bins 
   )
   df_spec <- data.frame(
     thr = obj$thresholds,
-    obj$priors$summaries$Sp[[strategy]]
+    obj$priors$summaries$Sp[[1]]
   )
   p_spec <- .plot(
     .df = df_spec,

@@ -14,14 +14,20 @@ plot_evpi(
 )
 }
 \arguments{
-\item{obj}{BayesDCA object}
+\item{obj}{BayesDCA or BayesDCASurv object}
 
-\item{strategies}{Character vector with models or tests
-to compare. If null, compares either first two in
-\code{obj$strategies} or the first one against
-Treat all/none (if only one available).}
+\item{strategies}{Character vector with models or tests to plot. If null, compares either first two in \code{obj$strategies} or the first one against Treat all/none (if only one available).}
+
+\item{type}{One of "best", "useful", or "pairwise".}
+
+\item{colors}{Named vector with color for each model or test. If provided
+for a subset of models or tests, only that subset will be plotted.}
 
 \item{labels}{Named vector with label for each model or test.}
+
+\item{linewidth}{Width of plotted lines.}
+
+\item{plot_list}{If TRUE, returns a list with each separate plot.}
 }
 \description{
 Plot Expected Value of Perfect Information (EVPI)

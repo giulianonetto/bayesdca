@@ -18,6 +18,8 @@ get_superiority_prob_plot_data_binary(
 \item{strategies}{Character vector with subset of decision strategies.}
 
 \item{type}{One of "best", "useful", or "pairwise".}
+
+\item{labels}{Named vector with label for each model or test.}
 }
 \value{
 A ggplot object.

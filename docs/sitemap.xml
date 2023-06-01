@@ -40,10 +40,16 @@
     <loc>/reference/dca_survival_data.html</loc>
   </url>
   <url>
+    <loc>/reference/dot-dca_binary.html</loc>
+  </url>
+  <url>
     <loc>/reference/dot-dca_stan_list.html</loc>
   </url>
   <url>
     <loc>/reference/dot-dca_stan_surv.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-dca_stan_surv_weibull.html</loc>
   </url>
   <url>
     <loc>/reference/dot-extract_dca_draws.html</loc>
@@ -67,7 +73,13 @@
     <loc>/reference/dot-get_prior_parameters.html</loc>
   </url>
   <url>
+    <loc>/reference/dot-get_relevant_pars.html</loc>
+  </url>
+  <url>
     <loc>/reference/dot-get_thr_data_list.html</loc>
+  </url>
+  <url>
+    <loc>/reference/dot-get_threshold_varying_prior_parameters.html</loc>
   </url>
   <url>
     <loc>/reference/evpi.html</loc>
@@ -88,6 +100,12 @@
     <loc>/reference/get_cutpoints.html</loc>
   </url>
   <url>
+    <loc>/reference/get_delta_plot_data_binary.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_delta_plot_data_surv.html</loc>
+  </url>
+  <url>
     <loc>/reference/get_events_per_interval.html</loc>
   </url>
   <url>
@@ -104,6 +122,12 @@
   </url>
   <url>
     <loc>/reference/get_prior_sp_mu.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_superiority_prob_plot_data_binary.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_superiority_prob_plot_data_surv.html</loc>
   </url>
   <url>
     <loc>/reference/get_survival_posterior_parameters.html</loc>
@@ -124,6 +148,9 @@
     <loc>/reference/min_events_per_interval.html</loc>
   </url>
   <url>
+    <loc>/reference/plot.BayesDCA.html</loc>
+  </url>
+  <url>
     <loc>/reference/plot.BayesDCAList.html</loc>
   </url>
   <url>
@@ -142,10 +169,16 @@
     <loc>/reference/plot_evpi.html</loc>
   </url>
   <url>
+    <loc>/reference/plot_ppc.html</loc>
+  </url>
+  <url>
     <loc>/reference/plot_prob_better.html</loc>
   </url>
   <url>
     <loc>/reference/plot_superiority_prob.html</loc>
+  </url>
+  <url>
+    <loc>/reference/print.BayesDCA.html</loc>
   </url>
   <url>
     <loc>/reference/print.BayesDCAList.html</loc>

@@ -59,11 +59,10 @@ head(PredModelData)
 #> 6        0  0.00959754           0
 ```
 
-We set `cores = 4` to speed up MCMC sampling with
-[Stan](https://mc-stan.org/).
+Run the DCA itself:
 
 ``` r
-fit <- dca(PredModelData, cores = 4)
+fit <- dca(PredModelData)
 plot(fit)
 ```
 
@@ -76,13 +75,12 @@ strategy – yes, treating all (or none) is a valid decision strategy.
 Given the estimated decision curves, we may want to ask several
 questions, such as:
 
--   What is the best decision strategy?
--   Are the strategies based on predictive models or tests useful *at
-    all*?
--   Is the predictive model guaranteed to be better than the binary
-    test?
--   What is the consequence of the uncertainty imposed by the available
-    data?
+- What is the best decision strategy?
+- Are the strategies based on predictive models or tests useful *at
+  all*?
+- Is the predictive model guaranteed to be better than the binary test?
+- What is the consequence of the uncertainty imposed by the available
+  data?
 
 The `bayesDCA` R package provides an easy workflow for answering these
 questions. In particular, the “DCA part” of Bayesian DCA allows
@@ -135,7 +133,7 @@ single value to compare it against default strategies).
 
 ``` r
 compare_dca(fit, 
-            models_or_tests = c("predictions", "binary_test"), 
+            strategies = c("predictions", "binary_test"), 
             type = "pairwise")
 ```
 
@@ -173,7 +171,7 @@ cross-sectional study). You can do so by passing the
 `external_prevalence_data` argument to `dca`.
 
 ``` r
-fit <- dca(PredModelData, cores = 4,
+fit <- dca(PredModelData,
            external_prevalence_data = c(100, 500))
 plot(fit)
 ```

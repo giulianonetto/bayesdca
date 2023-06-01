@@ -22,8 +22,8 @@
   }
 </script><title>Survival outcomes • bayesDCA</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.1.3/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.1.3/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link href="../deps/bootstrap-5.2.2/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.2.2/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Survival outcomes">
 <meta property="og:description" content="Bayesian DCA for survival (or time-to-event) outcomes.
@@ -118,23 +118,23 @@ dataset <code>dca_survival_data</code> shown below.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">bayesDCA</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">dca_survival_data</span><span class="op">)</span></span>
-<span><span class="co">#&gt;     outcomes model_predictions binary_test</span></span>
-<span><span class="co">#&gt; 1 0.2948349+        0.18806301           0</span></span>
-<span><span class="co">#&gt; 2 1.8747960+        0.25349061           1</span></span>
-<span><span class="co">#&gt; 3 0.0355183+        0.01025269           0</span></span>
-<span><span class="co">#&gt; 4 1.2850960+        0.04836840           0</span></span>
-<span><span class="co">#&gt; 5 0.2398763+        0.23502042           1</span></span>
-<span><span class="co">#&gt; 6 2.0934150+        0.04611183           0</span></span></code></pre></div>
+<span><span class="co">#&gt;   outcomes.time outcomes.status model_predictions binary_test</span></span>
+<span><span class="co">#&gt; 1     0.2948349       0.0000000        0.18806301           0</span></span>
+<span><span class="co">#&gt; 2     1.8747960       0.0000000        0.25349061           1</span></span>
+<span><span class="co">#&gt; 3     0.0355183       0.0000000        0.01025269           0</span></span>
+<span><span class="co">#&gt; 4     1.2850960       0.0000000        0.04836840           0</span></span>
+<span><span class="co">#&gt; 5     0.2398763       0.0000000        0.23502042           1</span></span>
+<span><span class="co">#&gt; 6     2.0934150       0.0000000        0.04611183           0</span></span></code></pre></div>
 <p>The dataset contains the time-to-event <code>outcomes</code> (a
 <code><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">survival::Surv</a></code> object), the predictions from a prognostic
 model, and the results from a binary prognostic test. The time horizon
 for the event prediction is one time units (e.g., year), so we set
-<code>prediction_time = 1</code>. We also set <code>cores = 4</code> to
-speed up MCMC sampling with <a href="https://mc-stan.org/" class="external-link">Stan</a>.</p>
+<code>prediction_time = 1</code>. We also set <code>chains = 1</code> to
+speed up MCMC sampling with <a href="https://mc-stan.org/" class="external-link">Stan</a> (in
+practice you should use at least <code>chains = 4</code>, maybe with
+<code>cores = 4</code> for speed as well).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dca_surv.html">dca_surv</a></span><span class="op">(</span><span class="va">dca_survival_data</span>, prediction_time <span class="op">=</span> <span class="fl">1</span>, chains <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Survival estimation with the following intervals (total event counts):</span></span>
-<span><span class="co">#&gt; [0,0.05]: 12  (0.05,0.1]: 14  (0.1,0.25]: 10  (0.25,0.5]: 16  (0.5,0.75]: 13  (0.75,0.9]: 4  (0.9,1]: 6  (1,Inf): 30</span></span>
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dca_surv.html">dca_surv</a></span><span class="op">(</span><span class="va">dca_survival_data</span>, prediction_time <span class="op">=</span> <span class="fl">1</span>, iter <span class="op">=</span> <span class="fl">1000</span>, chains <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <p><img src="survival-outcomes_files/figure-html/unnamed-chunk-3-1.png" width="3600"></p>
 <div class="section level2">
@@ -161,7 +161,7 @@ outcomes.</p>
 </h3>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compare_dca.html">compare_dca</a></span><span class="op">(</span><span class="va">fit</span>, </span>
-<span>            models_or_tests <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"model_predictions"</span>, <span class="st">"binary_test"</span><span class="op">)</span>, </span>
+<span>            strategies <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"model_predictions"</span>, <span class="st">"binary_test"</span><span class="op">)</span>, </span>
 <span>            type <span class="op">=</span> <span class="st">"pairwise"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="survival-outcomes_files/figure-html/unnamed-chunk-6-1.png" width="4200"></p>
 </div>
@@ -186,7 +186,7 @@ outcomes.</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
   <p class="preferably">Using <a href="https://preferably.amirmasoudabdol.name/?source=footer" class="external-link">preferably</a> template.</p>
 </div>
 

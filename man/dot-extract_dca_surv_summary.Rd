@@ -6,6 +6,13 @@
 \usage{
 .extract_dca_surv_summary(fit, summary_probs, thresholds, strategies)
 }
+\arguments{
+\item{summary_probs}{Probabilities for posterior credible intervals (defaults to a 95\% Cr.I.).}
+
+\item{thresholds}{Decision thresholds -- within interval (0, 1).}
+
+\item{strategies}{Vector of names of models or binary tests under assessment.}
+}
 \value{
 An object of class \code{BayesDCASurv}
 }

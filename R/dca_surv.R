@@ -1,69 +1,4 @@
 #' @title Fit Bayesian Decision Curve Analysis
-#' using Stan for survival outcomes
-#'
-#' @param refresh Control verbosity of [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).  # nolint
-#' @param ... Arguments passed to [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains). # nolint
-#' @return An object of class [`stanfit`](https://mc-stan.org/rstan/reference/stanfit-class.html) returned by [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains)  # nolint
-#' @keywords internal
-.dca_stan_surv_pem <- function(n_thr,
-                               n_strategies,
-                               n_intervals,
-                               thresholds,
-                               time_exposed,
-                               posterior_alpha,
-                               posterior_beta,
-                               posterior_alpha0,
-                               posterior_beta0,
-                               pos_post1,
-                               pos_post2,
-                               other_models_indices,
-                               iter = 4000,
-                               refresh = 0,
-                               ...) {
-  msg <- "`.dca_stan_surv_pem` is under development. Use `.dca_stan_surv_weibull` instead."
-  stop(msg)
-  thresholds <- pmin(thresholds, 0.9999) # odds(1) = Inf  # nolint
-
-  standata <- list(
-    n_thr = n_thr,
-    n_strategies = n_strategies,
-    n_intervals = n_intervals,
-    thresholds = thresholds,
-    time_exposed = time_exposed,
-    posterior_alpha = posterior_alpha,
-    posterior_beta = posterior_beta,
-    posterior_alpha0 = posterior_alpha0,
-    posterior_beta0 = posterior_beta0,
-    pos_post1 = pos_post1,
-    pos_post2 = pos_post2,
-    refresh = refresh
-  )
-
-  dots <- list(...)
-  if ("control" %in% names(dots)) {
-    control <- dots[["control"]]
-  } else {
-    control <- list(adapt_delta = 0.9)
-  }
-
-  gen_inits <- function() {
-    list(
-      alpha_raw = 0.01 * rnorm(1),
-      mu = rnorm(1)
-    )
-  }
-  # .model <- stanmodels$dca_time_to_event
-  stanfit <- rstan::sampling(.model,
-    data = standata,
-    control = control,
-    iter = iter,
-    init = gen_inits,
-    refresh = refresh, ...
-  )
-  return(stanfit)
-}
-
-#' @title Fit Bayesian Decision Curve Analysis
 #' using Stan for survival outcomes (Weibull model)
 #'
 #' @param refresh Control verbosity of
@@ -151,206 +86,37 @@
   return(stanfit)
 }
 
-#' @title Bayesian Decision Curve Analysis for
-#' Survival outcomes (deprecated)
-#'
-#' @return An object of class `BayesDCASurv`
-#' @importFrom magrittr %>%
-#' @keywords internal
-#' @examples
-#' data(dca_survival_data)
-#' fit <- dca_surv_pem(dca_survival_data, prediction_time = 1, cores = 4)
-#' plot(fit)
-dca_surv_pem <- function(.data, # nolint
-                         prediction_time,
-                         thresholds = seq(0, 0.5, length = 51),
-                         keep_draws = TRUE,
-                         keep_fit = FALSE,
-                         summary_probs = c(0.025, 0.975),
-                         cutpoints = NULL,
-                         prior_scaling_factor = 1 / 5,
-                         min_events = 10,
-                         prior_means = NULL,
-                         prior_only = FALSE,
-                         prior_anchor = c("prediction_time", "median"),
-                         keep_prior = FALSE,
-                         iter = 2000,
-                         refresh = 0,
-                         ...) {
-  msg <- "`dca_surv_pem` is under development. Use `dca_surv` instead."
-  stop(msg)
-  prior_anchor <- match.arg(prior_anchor)
-  if (colnames(.data)[1] != "outcomes") {
-    stop("Missing 'outcomes' column as the first column in input .data")
-  }
-
-  stopifnot(
-    "'outcomes' column must be a Surv object. " = survival::is.Surv(.data[["outcomes"]]) # nolint
-  )
-
-  # avoid thresholds in {0, 1}
-  thresholds <- thresholds %>%
-    pmin(0.99) %>%
-    pmax(1e-9) %>%
-    unique()
-
-  # preprocess .data
-  strategies <- colnames(.data)[-1]
-  prediction_data <- data.frame(.data[, -1])
-  colnames(prediction_data) <- strategies
-  surv_data <- data.frame(
-    .time = unname(.data[["outcomes"]][, 1]), # observed time-to-event
-    .status = unname(.data[["outcomes"]][, 2]) # 1 if event, 0 if censored
-  )
-
-  event_times <- surv_data$.time[surv_data$.status > 0]
-
-  # preprocess cutpoints
-  cutpoints <- get_cutpoints(
-    .prediction_time = prediction_time,
-    .event_times = event_times,
-    .base_cutpoints = cutpoints,
-    .min_events = min_events
-  )
-
-  # make sure zero is included and cutpoints are correctly ordered
-  cutpoints <- sort(unique(c(0, cutpoints)))
-
-  events_per_interval <- get_events_per_interval(cutpoints, event_times)
-  epi_text <- paste(
-    names(events_per_interval), events_per_interval,
-    sep = ": ", collapse = "  "
-  ) %>%
-    stringr::str_replace("Inf]", "Inf)")
-  if (!(all(events_per_interval >= min_events))) {
-    msg <- paste0(
-      "Please updade cutpoints, too few events per interval (at least ",
-      min_events, " required):\n",
-      epi_text
-    )
-    stop(msg)
-  }
-
-  msg <- paste0(
-    "Survival estimation with the following intervals (total event counts):\n",
-    epi_text,
-    collapse = "\n"
-  )
-  message(cli::col_br_magenta(msg))
-
-  n_strategies <- ncol(prediction_data)
-  n_thresholds <- length(thresholds)
-  n_intervals <- length(cutpoints)
-  time_exposed <- get_survival_time_exposed(prediction_time, cutpoints)
-
-  posterior_surv_pars <- get_survival_posterior_parameters(
-    .prediction_data = prediction_data,
-    .surv_data = surv_data,
-    .strategies = colnames(prediction_data),
-    .cutpoints = cutpoints,
-    .thresholds = thresholds,
-    .prior_scaling_factor = prior_scaling_factor,
-    .prediction_time = prediction_time,
-    .prior_means = prior_means,
-    .prior_anchor = prior_anchor,
-    .keep_prior = keep_prior,
-    .prior_only = prior_only
-  )
-  posterior_surv_pars0 <- get_survival_posterior_parameters(
-    .prediction_data = NA,
-    .surv_data = surv_data,
-    .strategies = 1,
-    .cutpoints = cutpoints,
-    .thresholds = 0,
-    .prior_scaling_factor = prior_scaling_factor,
-    .prediction_time = prediction_time,
-    .prior_means = prior_means,
-    .prior_anchor = prior_anchor,
-    .keep_prior = keep_prior,
-    .prior_only = prior_only
-  )
-  posterior_positivity_pars <- get_positivity_posterior_parameters(
-    .prediction_data = prediction_data,
-    .thresholds = thresholds,
-    .prior_only = prior_only
-  )
-
-  other_models_indices <- lapply(
-    1:n_strategies,
-    function(i) (1:n_strategies)[-i]
-  )
-
-  fit <- .dca_stan_surv(
-    n_thr = n_thresholds,
-    n_strategies = n_strategies,
-    n_intervals = n_intervals,
-    thresholds = thresholds,
-    time_exposed = time_exposed,
-    posterior_alpha = posterior_surv_pars$.alpha,
-    posterior_beta = posterior_surv_pars$.beta,
-    posterior_alpha0 = posterior_surv_pars0$.alpha,
-    posterior_beta0 = posterior_surv_pars0$.beta,
-    pos_post1 = posterior_positivity_pars$.shape1,
-    pos_post2 = posterior_positivity_pars$.shape2,
-    other_models_indices = other_models_indices,
-    iter = iter,
-    refresh = refresh,
-    ...
-  )
-
-  dca_summary <- .extract_dca_surv_summary(
-    fit = fit,
-    summary_probs = summary_probs,
-    thresholds = thresholds,
-    strategies = strategies
-  )
-
-  output_data <- list(
-    summary = dca_summary,
-    thresholds = thresholds,
-    .time = surv_data$.time,
-    .status = surv_data$.status,
-    .data = .data,
-    cutpoints = cutpoints,
-    strategies = strategies,
-    prediction_time = prediction_time,
-    posterior_surv_pars = posterior_surv_pars[c(".alpha", ".beta")],
-    posterior_surv_pars0 = posterior_surv_pars0[c(".alpha", ".beta")],
-    posterior_positivity_pars = posterior_positivity_pars
-  )
-
-  if (isTRUE(keep_fit)) {
-    output_data[["fit"]] <- fit
-  }
-
-  if (isTRUE(keep_draws)) {
-    output_data[["draws"]] <- .extract_dca_surv_draws(
-      fit = fit,
-      strategies = strategies
-    )
-  }
-
-  if (isTRUE(keep_prior)) {
-    output_data[["priors"]] <- list(
-      surv = posterior_surv_pars$priors,
-      surv0 = posterior_surv_pars0$priors
-    )
-  }
-
-  .output <- structure(output_data, class = "BayesDCASurv")
-  return(.output)
-}
-
 #' @title Bayesian Decision Curve Analysis
-#' for Survival outcomes (Weibull)
-#'
+#' for Survival outcomes
+#' @param .data dataframe whose first column named "outcomes" is a `survival::Surv` object
+#' and remaining columns are the decision strategies to assess.
+#' @param prediction_time Prediction time horizon (e.g., if models predict risk
+#' of death at one year and data is in year, `prediction_time` should be `1`.)
+#' @param thresholds Decision thresholds -- within interval (0, 1).
+#' @param keep_draws If true, posterior draws are kept in the output object.
+#' @param keep_fit If true, `stanfit` object is kept in the output object.
+#' @param summary_probs Probabilities for posterior credible intervals (defaults to a 95% Cr.I.).
+#' @param positivity_prior Shape parameters for prior on positivity probability.
+#' @param shape_prior type of prior distribution for shape parameter of the Weibull distribution. Either "student" or "gamma".
+#' @param scale_prior type of prior distribution for scale parameter of the Weibull distribution. Either "student" or "gamma".
+#' @param shape_prior_pars vector with prior parameters for the prior shape of the Weibull distribution.
+#' If `shape_prior="student"`, it should be a vector of length 3 with degrees of freedom, mean, and scale,
+#' respectively; if `shape_prior="gamma"`, it should be a vector of length 2 with shape and rate, respectively.
+#' @param prior_only If TRUE, samples from the prior only.
+#' @param iter Passed to [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html). Number of iterations/draws for Stan.
+#' @param refresh Controls verbosity of
+#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html)
+#' @param ... Arguments passed to
+#' [`rstan::sampling`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html) (e.g. iter, chains).  # nolint
 #' @export
 #' @return An object of class `BayesDCASurv`
 #' @importFrom magrittr %>%
 #' @examples
+#' \dontrun{
 #' data(dca_survival_data)
-#' fit <- dca_surv(dca_survival_data, prediction_time = 1, cores = 4)
+#' fit <- dca_surv(dca_survival_data, prediction_time = 1, iter = 1000, chains = 1)
 #' plot(fit)
+#' }
 dca_surv <- function(.data, # nolint
                      prediction_time,
                      thresholds = seq(0, 0.5, length = 51),
@@ -534,7 +300,10 @@ dca_surv <- function(.data, # nolint
 }
 
 #' Extract posterior summaries for `BayesDCASurv` object
-#'
+#' 
+#' @param summary_probs Probabilities for posterior credible intervals (defaults to a 95% Cr.I.).
+#' @param thresholds Decision thresholds -- within interval (0, 1).
+#' @param strategies Vector of names of models or binary tests under assessment.
 #' @return An object of class `BayesDCASurv`
 #' @importFrom magrittr %>%
 #' @importFrom stringr str_detect str_c str_extract str_remove str_remove_all
@@ -637,6 +406,7 @@ dca_surv <- function(.data, # nolint
 }
 
 #' Get relevant parameters to parse from Stan output (BayesDCASurv)
+#' @keywords internal
 .get_relevant_pars <- function() {
   return(
     c(
@@ -728,8 +498,10 @@ print.BayesDCASurv <- function(obj, ...) {
 #' @title Get delta plot data for survival bayesDCA
 #'
 #' @param obj BayesDCA object
+#' @param min_diff Minimum difference to call superior.
 #' @param strategies Character vector with subset of decision strategies.
 #' @param type One of "best", "useful", or "pairwise".
+#' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
 #' @keywords internal
 #' @return A ggplot object.
@@ -785,6 +557,7 @@ get_superiority_prob_plot_data_surv <- function(obj, # nolint: object_length_lin
 #' @param obj BayesDCA object
 #' @param strategies Character vector with subset of decision strategies.
 #' @param type One of "best", "useful", or "pairwise".
+#' @param labels Named vector with label for each model or test.
 #' @importFrom magrittr %>%
 #' @keywords internal
 #' @return A ggplot object.

@@ -16,6 +16,19 @@
 }
 \arguments{
 \item{obj}{BayesDCASurv object}
+
+\item{strategies}{Character vector with models or tests to plot.}
+
+\item{colors}{Named vector with color for each model or test. If provided
+for a subset of models or tests, only that subset will be plotted.}
+
+\item{labels}{Named vector with label for each model or test.}
+
+\item{raw_values}{Add raw predicted values on x-axis.}
+
+\item{raw_values_label}{Label for raw values.}
+
+\item{linewidth}{Width of plotted lines.}
 }
 \description{
 Plot BayesDCASurv

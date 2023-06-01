@@ -19,7 +19,6 @@ Stan for list of models or binary tests}
   prior_Se2,
   prior_Sp1,
   prior_Sp2,
-  other_models_indices,
   N_ext = 0,
   d_ext = 0,
   n_draws = 4000

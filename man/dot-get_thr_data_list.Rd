@@ -11,11 +11,14 @@
 )
 }
 \arguments{
-\item{prior_only}{If TRUE, returns all zeros to made prior DCA.}
+\item{.data}{A data.frame with an \code{outcomes} column (0 or 1 for each individual)
+and one or more columns with predicted probabilities from each of desired list
+of predictive models, or with 0 or 1 indicator from each of desired list of
+binary tests.}
 
-\item{outcomes}{Integer vector (0 or 1) with binary outcomes.}
+\item{thresholds}{Decision thresholds.}
 
-\item{predictions}{Numeric vector with predicted probabilities.}
+\item{prior_only}{If TRUE, returns prior only (ignores any data).}
 }
 \description{
 Get Threshold Performance Data for DCA list
