@@ -19,7 +19,7 @@ plot_ppc(obj, plot_list = FALSE, n_draws = 4000, bins = 20)
 Plot prior predictive check for BayesDCA (binary case only)
 }
 \examples{
-df <- data.frame(outcomes = 1, x = 1)  # specific values don't really matter
+df <- data.frame(outcomes = 1, x = 1) # specific values don't really matter
 fit <- dca(df, prior_only = TRUE, threshold_varying_prior = TRUE)
 plot_ppc(fit)
 }

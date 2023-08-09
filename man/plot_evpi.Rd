@@ -10,7 +10,8 @@ plot_evpi(
   type = c("best", "useful", "pairwise"),
   colors = NULL,
   labels = NULL,
-  linewidth = 1.5
+  linewidth = 1.5,
+  data_only = FALSE
 )
 }
 \arguments{
@@ -27,7 +28,7 @@ for a subset of models or tests, only that subset will be plotted.}
 
 \item{linewidth}{Width of plotted lines.}
 
-\item{plot_list}{If TRUE, returns a list with each separate plot.}
+\item{data_only}{If TRUE, returns data.frame used for \code{ggplot2} plot with EVPI data}
 }
 \description{
 Plot Expected Value of Perfect Information (EVPI)
