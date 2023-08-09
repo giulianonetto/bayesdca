@@ -299,10 +299,26 @@ get_positivity_posterior_parameters <- function(.prediction_data, # nolint
     length(prior_sp) == 2 & is.vector(prior_sp)
   )
 
-  se1 <- sapply(1:n_strategies, function(i) rep(prior_se[1], n_thresholds))
-  se2 <- sapply(1:n_strategies, function(i) rep(prior_se[2], n_thresholds))
-  sp1 <- sapply(1:n_strategies, function(i) rep(prior_sp[1], n_thresholds))
-  sp2 <- sapply(1:n_strategies, function(i) rep(prior_sp[2], n_thresholds))
+  se1 <- matrix(
+    sapply(1:n_strategies, function(i) rep(prior_se[1], n_thresholds)),
+    ncol = n_strategies,
+    nrow = n_thresholds
+  )
+  se2 <- matrix(
+    sapply(1:n_strategies, function(i) rep(prior_se[2], n_thresholds)),
+    ncol = n_strategies,
+    nrow = n_thresholds
+  )
+  sp1 <- matrix(
+    sapply(1:n_strategies, function(i) rep(prior_sp[1], n_thresholds)),
+    ncol = n_strategies,
+    nrow = n_thresholds
+  )
+  sp2 <- matrix(
+    sapply(1:n_strategies, function(i) rep(prior_sp[2], n_thresholds)),
+    ncol = n_strategies,
+    nrow = n_thresholds
+  )
 
   .priors <- list(
     p1 = prior_p[1],

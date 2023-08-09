@@ -619,12 +619,12 @@ plot_superiority_prob <- function(obj,
 #'
 #' @param obj BayesDCA or BayesDCASurv object
 #' @param strategies Character vector with models or tests to plot. If null, compares either first two in `obj$strategies` or the first one against Treat all/none (if only one available).
+#' @param type One of "best", "useful", or "pairwise".
 #' @param colors Named vector with color for each model or test. If provided
 #' for a subset of models or tests, only that subset will be plotted.
 #' @param labels Named vector with label for each model or test.
-#' @param plot_list If TRUE, returns a list with each separate plot.
 #' @param linewidth Width of plotted lines.
-#' @param type One of "best", "useful", or "pairwise".
+#' @param data_only If TRUE, returns data.frame used for `ggplot2` plot with EVPI data
 #' @importFrom magrittr %>%
 #' @export
 plot_evpi <- function(obj,
@@ -632,7 +632,8 @@ plot_evpi <- function(obj,
                       type = c("best", "useful", "pairwise"),
                       colors = NULL,
                       labels = NULL,
-                      linewidth = 1.5) { # nolint
+                      linewidth = 1.5,
+                      data_only = FALSE) { # nolint
 
   stopifnot(inherits(obj, c("BayesDCA", "BayesDCASurv")))
   type <- match.arg(type)
@@ -741,8 +742,8 @@ plot_evpi <- function(obj,
       args[["thresholds"]] <- obj$thresholds
     }
     df <- tibble::tibble(
-      .evpi = do.call(evpi, args),
       threshold = obj$thresholds,
+      .evpi = do.call(evpi, args),
       decision_strategy = NA_character_,
       label = NA_character_
     )
@@ -751,8 +752,6 @@ plot_evpi <- function(obj,
       ggplot2::ggplot(ggplot2::aes(x = threshold, y = .evpi)) + # nolint
       ggplot2::geom_line(linewidth = linewidth)
   }
-
-
 
   .plot <- initial_plot +
     ggplot2::theme_bw(base_size = 14) +
@@ -769,6 +768,14 @@ plot_evpi <- function(obj,
       subtitle = .subtitle
     )
 
+  if (isTRUE(data_only)) {
+    output <- .plot$data
+    if (type == "best") {
+      output <- output[, c("threshold", ".evpi")]
+    }
+    return(output)
+  }
+
   return(.plot)
 }
 
@@ -781,7 +788,7 @@ plot_evpi <- function(obj,
 #' @importFrom magrittr %>%
 #' @export
 #' @examples
-#' df <- data.frame(outcomes = 1, x = 1)  # specific values don't really matter
+#' df <- data.frame(outcomes = 1, x = 1) # specific values don't really matter
 #' fit <- dca(df, prior_only = TRUE, threshold_varying_prior = TRUE)
 #' plot_ppc(fit)
 plot_ppc <- function(obj, plot_list = FALSE, n_draws = 4000, bins = 20) {
